@@ -9,7 +9,6 @@ LICENSE = "MIT"
 # PHP
 # PYTHON module
 # ntfs-3G
-# bluez-alsa
 # ympd
 # w_scan
 # bmon
@@ -18,6 +17,7 @@ LICENSE = "MIT"
 # feh
 # gqview
 # midori
+# python-mutagen
 
 NETWORK = " \
     apache2 \
@@ -34,6 +34,7 @@ NETWORK = " \
     wpa-supplicant \
     rsync \
     iftop \ 
+    php \
 "
 
 QT = " \
@@ -65,6 +66,7 @@ QT = " \
     qtvirtualkeyboard-dev \
     qtvirtualkeyboard-mkspecs \
     qtwebengine-dev \
+    qtwebengine-examples \
     qtwebchannel-dev \
     libconnman-qt5 \
     qtx11extras \
@@ -100,6 +102,7 @@ AUDIO = " \
     sox \
     mpd \
     mpc \
+    mpv \
     espeak \
 "
 
@@ -108,13 +111,16 @@ MULTIMEDIA = " \
     minidlna \
     tvheadend \
     vlc \
+    omxplayer \
+    bluez-alsa \
 "
 
 
 DISTRO_FEATURES_append += " bluez5 bluetooth wifi systemd "
 
+MACHINE_FEATURES = "bluetooth wifi"
 
-IMAGE_INSTALL_append = " \
+IMAGE_INSTALL_append += " \
     ${QT} \
     ${X11} \
     ${MY_FEATURES} \
@@ -122,7 +128,12 @@ IMAGE_INSTALL_append = " \
     ${MULTIMEDIA} \
     ${TEXT_EDITOR} \
     ${NETWORK} \
+    git \
     mediaserver \
+    bash \
+    xfmpc \
+    gnome-bluetooth \
+    transmission \
 "
 
 # Include modules in rootfs
@@ -131,6 +142,10 @@ IMAGE_INSTALL += " \
 "
 
 SPLASH = "psplash-raspberrypi"
+
+IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
+
+SERIAL_CONSOLE = "115200 ttyAMA0"
 
 IMAGE_FEATURES += " splash package-management x11-base x11-sato ssh-server-dropbear hwcodecs"
 
