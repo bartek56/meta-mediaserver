@@ -10,7 +10,7 @@ P = "${PN}-${PV}"
 SRC_URI = "https://github.com/transmission/transmission-releases/raw/master/${P}.tar.xz"
 
 S = "${WORKDIR}/${P}"
-
+EXTRA_OECONF="--enable-cli"
 inherit autotools gettext
 
 B = "${S}"
@@ -21,6 +21,7 @@ do_configure_prepend() {
 	./update-version-h.sh
 	intltoolize --copy --force --automake
 }
+
 
 #inherit pkgconfig cmake
 #inherit autotools
