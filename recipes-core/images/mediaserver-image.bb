@@ -6,17 +6,13 @@ inherit sdcard_image-rpi
 SUMMARY = "The minimal image that can run Qt5 applications"
 LICENSE = "MIT"
 
-# PHP
 # PYTHON module
 # ntfs-3G
-# ympd
 # w_scan
 # bmon
-# transmission
 # gmpc
-# feh
-# gqview
-# midori
+# feh screensaver
+# gqview imagemagick
 # python-mutagen
 
 NETWORK = " \
@@ -35,6 +31,7 @@ NETWORK = " \
     rsync \
     iftop \ 
     php \
+    epiphany \
 "
 
 QT = " \
@@ -73,6 +70,7 @@ QT = " \
 "
 
 X11 = " \
+    xscreensaver \
 "
 
 MY_FEATURES = " \
@@ -134,6 +132,8 @@ IMAGE_INSTALL_append += " \
     xfmpc \
     gnome-bluetooth \
     transmission \
+    imagemagick \
+    ristretto \
 "
 
 # Include modules in rootfs
