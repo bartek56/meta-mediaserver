@@ -6,14 +6,12 @@ inherit sdcard_image-rpi
 SUMMARY = "The minimal image that can run Qt5 applications"
 LICENSE = "MIT"
 
-# PYTHON module
 # ntfs-3G
 # w_scan
 # bmon
 # gmpc
 # feh screensaver
 # gqview imagemagick
-# python-mutagen
 
 NETWORK = " \
     apache2 \
@@ -72,6 +70,10 @@ QT = " \
 X11 = " \
     xscreensaver \
 "
+python = " \
+    python-youtubedl \
+    python-mutagen \
+"
 
 MY_FEATURES = " \
     linux-firmware-bcm43430 \
@@ -108,6 +110,7 @@ MULTIMEDIA = " \
     ffmpeg \
     minidlna \
     tvheadend \
+    lua \
     vlc \
     omxplayer \
     bluez-alsa \
@@ -126,6 +129,7 @@ IMAGE_INSTALL_append += " \
     ${MULTIMEDIA} \
     ${TEXT_EDITOR} \
     ${NETWORK} \
+    ${python} \
     git \
     mediaserver \
     bash \
@@ -147,7 +151,7 @@ IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
 
 SERIAL_CONSOLE = "115200 ttyAMA0"
 
-IMAGE_FEATURES += " splash package-management x11-base x11-sato ssh-server-dropbear hwcodecs"
+IMAGE_FEATURES += " splash package-management x11-base x11-sato ssh-server-openssh hwcodecs"
 
 
 TOOLCHAIN_HOST_TASK_append = " nativesdk-intltool nativesdk-glib-2.0"

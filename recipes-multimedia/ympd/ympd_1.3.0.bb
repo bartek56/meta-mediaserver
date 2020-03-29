@@ -16,12 +16,10 @@ inherit pkgconfig cmake systemd
 
 SYSTEMD_PACKAGES = "${PN}" 
 
+do_install_append() {
+    install -d ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/*.service ${D}${systemd_unitdir}/system
+}
 
-#do_install() {
-#    install -d ${D}${bindir}
-#    install -m 0755 ympd ${D}${bindir}
-#    install -d ${D}${systemd_system_unitdir}
-#    install -m 0644 ${WORKDIR}/ympd.service ${D}${systemd_system_unitdir}
-#}
-
+FILES_${PN}+="/lib/systemd/system/ympd.service"
 

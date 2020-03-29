@@ -1,0 +1,8 @@
+[Unit]
+Description=Alarm Snooze Timer
+
+[Timer]
+OnCalendar=*-*-* 07:35
+
+[Install]
+WantedBy=multi-user.target

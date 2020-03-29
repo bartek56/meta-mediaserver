@@ -1,0 +1,14 @@
+[Unit]
+Description=Alarm
+
+[Service]
+EnvironmentFile=/etc/systemdVariables
+ExecStartPre=/usr/bin/systemctl stop screensaver
+ExecStart=/bin/bash /opt/alarm.sh
+ExecStartPost=/usr/bin/systemctl restart start
+
+ExecStopPost=/usr/bin/systemctl $ARG1 start
+
+
+[Install]
+WantedBy=multi-user.target

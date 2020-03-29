@@ -1,0 +1,11 @@
+[Unit]
+Description=MediaServer App
+After=rc-local.service
+
+[Service]
+ExecStart=/opt/MediaServerApp
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
