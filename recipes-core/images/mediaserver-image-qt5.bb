@@ -7,16 +7,9 @@ SUMMARY = "The minimal image that can run Qt5 applications"
 LICENSE = "MIT"
 
 # epiphany
-# vsftpd
 
-# bmon
 # gmpc
 # w_scan
-# ntfs-3g
-# xinit 
-# xterm
-# xinput
-# xinput-calibrator
 #
 
 NETWORK = " \
@@ -32,7 +25,7 @@ NETWORK = " \
     wpa-supplicant \
     rsync \
     iftop \ 
-    ympd \
+    vsftpd \
 "
 
 X11 = " \
@@ -109,6 +102,7 @@ AUDIO = " \
     sox \
     mpd \
     mpc \
+    ympd \
     espeak \
 "
 
@@ -116,12 +110,14 @@ MULTIMEDIA = " \
     ffmpeg \
     minidlna \
     tvheadend \
+    w-scan \
     bluez-alsa \
     ampache \
 "
 
 
-DISTRO_FEATURES_append += " bluez5 bluetooth wifi systemd libpam pam"
+DISTRO_FEATURES_append += " bluez5 bluetooth wifi libpam pam"
+DISTRO_FEATURES += "pam libpam"
 
 IMAGE_INSTALL_append = " \
     ${QT} \
