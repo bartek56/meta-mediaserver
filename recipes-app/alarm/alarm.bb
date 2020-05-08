@@ -18,9 +18,9 @@ SRC_URI[sha256sum] = "bdf7338df04d3f44c62fbf8322d4d38e2317e9bc2bb5277ccf2214761e
 do_install(){
     install -d ${D}/opt
     install -m 0644 ${WORKDIR}/alarm.sh ${D}/opt
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/*.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/*.timer ${D}${systemd_unitdir}/system
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/*.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/*.timer ${D}${systemd_system_unitdir}
 }
 
 FILES_${PN} += "/opt/alarm.sh"

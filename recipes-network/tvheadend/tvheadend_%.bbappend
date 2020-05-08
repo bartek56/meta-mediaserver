@@ -1,4 +1,4 @@
-SUMMARY = "Replacement recipe"
+SUMMARY = "TvHeadEnd service"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://tvheadend.service"
 

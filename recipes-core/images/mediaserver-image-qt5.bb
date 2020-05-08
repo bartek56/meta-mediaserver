@@ -15,7 +15,7 @@ LICENSE = "MIT"
 NETWORK = " \
     dhcpcd \
     bluez5 \
-    crda\
+    crda \
     iw \
     rsync \
     wget \
@@ -23,9 +23,12 @@ NETWORK = " \
     screen \
     iptables \
     wpa-supplicant \
+    wireless-regdb \
     rsync \
     iftop \ 
     vsftpd \
+    samba \
+    filebrowser \
 "
 
 X11 = " \
@@ -128,6 +131,8 @@ IMAGE_INSTALL_append = " \
     ${TEXT_EDITOR} \
     ${NETWORK} \
     youtubedl \
+    php-modphp \
+    curl \
     feh \
     git \
     mediaserver \

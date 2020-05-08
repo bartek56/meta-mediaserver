@@ -7,7 +7,9 @@ SRC_URI[md5sum] = "a1b8113ebc3402787312ecb443d9d3c1"
 DEPENDS = "libevent gnutls openssl libtool intltool-native curl glib-2.0-native"
 
 P = "${PN}-${PV}"
-SRC_URI = "https://github.com/transmission/transmission-releases/raw/master/${P}.tar.xz"
+SRC_URI = "https://github.com/transmission/transmission-releases/raw/master/${P}.tar.xz \
+           file://transmission-daemon.service \
+"
 
 S = "${WORKDIR}/${P}"
 EXTRA_OECONF="--enable-cli"
@@ -22,6 +24,12 @@ do_configure_prepend() {
 	intltoolize --copy --force --automake
 }
 
+do_install_append() {
+        install -d ${D}${systemd_system_unitdir}
+        install -m 0644 ${WORKDIR}/transmission-daemon.service ${D}${systemd_system_unitdir}
+}
+
+FILES_${PN} += "/lib/systemd/system/transmission-daemon.service"
 
 #inherit pkgconfig cmake
 #inherit autotools

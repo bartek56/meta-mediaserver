@@ -1,4 +1,4 @@
-SUMMARY = "MediaServer config files and scripts"
+SUMMARY = "Youtube_dl script"
 HOMEPAGE = "https://github.com/bartek56/LinuxEmbedded"
 LICENSE = "CLOSED"
 

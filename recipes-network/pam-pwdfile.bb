@@ -17,6 +17,5 @@ do_install(){
 }
 
 FILES_${PN} += "lib/security/pam_pwdfile.so"
-#FILES_${PN} += "${systemd_unitdir}/system/*.service"
 
 
