@@ -9,6 +9,9 @@ RDEPENDS_${PN} += " apache2 mysql5 php php-fpm php-cli php-modphp bash perl"
 
 SRC_URI += "https://github.com/ampache/ampache/releases/download/${PV}/${PN}-${PV}_all.zip \
            file://httpd.conf \
+           file://ampacheupdate.service \
+           file://ampacheupdate.timer \
+           file://php-fpm.conf \
            "
 
 SRC_URI[md5sum] = "eb958442fcc0c6377f9070baa7db13b4"
@@ -23,33 +26,33 @@ inherit systemd
 
 do_unpack (){
   unzip ${DL_DIR}/${PN}-${PV}_all.zip -d ${S}/
+  cp ${THISDIR}/${PN}/php-fpm.conf ${WORKDIR}/
+  cp ${THISDIR}/${PN}/httpd.conf ${WORKDIR}/
+  cp ${THISDIR}/${PN}/ampacheupdate.service ${WORKDIR}/
+  cp ${THISDIR}/${PN}/ampacheupdate.timer ${WORKDIR}/
 }
 
 do_install () {
    install -d ${D}/usr/htdocs
  	 cp -r ${S}/ ${D}/usr/htdocs/ampache/
 
-#  install -d ${D}/etc
-#  install -m 0644 ${WORKDIR}/php-fpm.conf /etc
+   install -d ${D}/etc
+   install -m 0644 ${WORKDIR}/php-fpm.conf ${D}/etc
 
-#  install -d ${D}/etc/apache2
-#  install -m 0644 ${WORKDIR}/httpd.conf /etc/apache2
+   install -d ${D}/etc/apache2
+   install -m 0644 ${WORKDIR}/httpd.conf ${D}/etc/apache2
 
 
-
-#  cp ${WORKDIR}/httpd.conf /etc/apache2/httpd.conf  
-#  cp ${WORKDIR}/php-fpm.conf /etc/php-fpm.conf
-
-#   install -d ${D}${systemd_system_unitdir}
-#   install -m 0644 ${WORKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
-#   install -m 0644 ${WORKDIR}/ampacheupdate.timer ${D}${systemd_system_unitdir}
-
-#  install -d ${D}${systemd_unitdir}/system
+   install -d ${D}${systemd_system_unitdir}
+   cp ${WORKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
+   cp ${WORKDIR}/ampacheupdate.timer ${D}${systemd_system_unitdir}
 
 }
 
-FILES_${PN} = "/usr/htdocs/ampache"
-#FILES_${PN} += "${systemd_unitdir}/system/*.service"
-#FILES_${PN} += "${systemd_unitdir}/system/*.timer"
+FILES_${PN} += "/usr/htdocs/ampache"
+FILES_${PN} += "${systemd_system_unitdir}/ampacheupdate.service"
+FILES_${PN} += "${systemd_system_unitdir}/ampacheupdate.timer"
+FILES_${PN} += "/etc/apache2/httpd.conf"
+FILES_${PN} += "/etc/php-fpm.conf"
 
 

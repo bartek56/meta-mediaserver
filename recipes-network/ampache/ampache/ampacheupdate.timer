@@ -1,0 +1,8 @@
+[Unit]
+Description=Update Ampache database
+
+[Timer]
+OnCalendar=*-*-* 05:50:00
+
+[Install]
+WantedBy=multi-user.target
