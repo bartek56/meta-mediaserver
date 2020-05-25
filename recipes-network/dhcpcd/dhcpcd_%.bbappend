@@ -4,6 +4,8 @@ SRC_URI += "file://dhcpcd.service"
 
 inherit systemd
 
+SYSTEMD_SERVICE_${PN} = "dhcpcd.service"
+
 do_install_append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 0644 ${WORKDIR}/dhcpcd.service ${D}${systemd_unitdir}/system

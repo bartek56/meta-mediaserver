@@ -3,7 +3,7 @@ LICENSE = "CLOSED"
 
 RDEPENDS_${PN} += "bash"
 SRC_URI="https://github.com/filebrowser/filebrowser/releases/download/v2.1.0/linux-armv7-filebrowser.tar.gz \
-         file://filebrowser.service"
+         file://fileBrowser.service"
 
 S = "${WORKDIR}"
 
@@ -14,14 +14,14 @@ inherit systemd
 
 do_install_append() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/filebrowser.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/fileBrowser.service ${D}${systemd_system_unitdir}
 }
 
 do_install(){
     install -d ${D}/usr/bin
-    install -m 0644 ${S}/filebrowser ${D}/usr/bin
+    install -m 0755 ${S}/filebrowser ${D}/usr/bin
 }
 
 FILES_${PN} += "/usr/bin/filebrowser"
-FILES_${PN} += "${systemd_system_unitdir}/filebrowser.service"
+FILES_${PN} += "${systemd_system_unitdir}/fileBrowser.service"
 

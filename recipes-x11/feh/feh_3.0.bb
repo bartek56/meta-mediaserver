@@ -20,11 +20,11 @@ S = "${WORKDIR}/${P}"
 
 do_install() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/*.service ${D}${systemd_unitdir}/system
+    install -m 0755 ${WORKDIR}/*.service ${D}${systemd_unitdir}/system
     install -d ${D}${bindir}
-    install -m 0644 ${S}/src/feh ${D}${bindir}
+    install -m 0755 ${S}/src/feh ${D}${bindir}
     install -d ${D}/opt
-    install -m 0644 ${WORKDIR}/startScreensaver.sh ${D}/opt/
+    install -m 0755 ${WORKDIR}/startScreensaver.sh ${D}/opt/
 }
 
 FILES_${PN} += "${systemd_unitdir}/system/*.service"

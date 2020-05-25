@@ -3,7 +3,8 @@ Description=MediaServer App
 After=rc-local.service
 
 [Service]
-ExecStart=/opt/MediaServerApp
+EnvironmentFile=/etc/environment
+ExecStart=/opt/MediaServerApp -platform eglfs
 Restart=always
 RestartSec=2
 
