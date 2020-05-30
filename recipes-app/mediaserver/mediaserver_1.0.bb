@@ -1,4 +1,4 @@
-SUMMARY = "Simple Qt5 Quick application"
+SUMMARY = "MediaServer GUI app"
 SECTION = "examples"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtquickcontrols2"
