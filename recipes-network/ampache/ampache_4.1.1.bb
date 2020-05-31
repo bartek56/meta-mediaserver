@@ -19,27 +19,15 @@ S = "${WORKDIR}/${PN}"
 
 inherit systemd
 
-#do_fetch (){ 
-#}
-
 do_unpack (){
   unzip ${DL_DIR}/${PN}-${PV}_all.zip -d ${S}/
-#  cp ${THISDIR}/${PN}/php-fpm.conf ${WORKDIR}/
-#  cp ${THISDIR}/${PN}/httpd.conf ${WORKDIR}/
   cp ${THISDIR}/${PN}/ampacheupdate.service ${WORKDIR}/
   cp ${THISDIR}/${PN}/ampacheupdate.timer ${WORKDIR}/
 }
 
 do_install () {
    install -d ${D}/usr/htdocs
- 	 cp -r ${S}/ ${D}/usr/htdocs/ampache/
-
-#   install -d ${D}/etc
-#   install -m 0644 ${WORKDIR}/php-fpm.conf ${D}/etc
-
-#   install -d ${D}/etc/apache2
-#   install -m 0644 ${WORKDIR}/httpd.conf ${D}/etc/apache2
-
+   cp -r ${S}/ ${D}/usr/htdocs/ampache/
 
    install -d ${D}${systemd_system_unitdir}
    cp ${WORKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
@@ -50,7 +38,3 @@ do_install () {
 FILES_${PN} += "/usr/htdocs/ampache"
 FILES_${PN} += "${systemd_system_unitdir}/ampacheupdate.service"
 FILES_${PN} += "${systemd_system_unitdir}/ampacheupdate.timer"
-#FILES_${PN} += "/etc/apache2/httpd.conf"
-#FILES_${PN} += "/etc/php-fpm.conf"
-
-
