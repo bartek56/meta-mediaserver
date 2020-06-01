@@ -32,6 +32,8 @@ configure_mediaserver()
 #    echo 'QT_QPA_EGLFS_PHYSICAL_HEIGHT=480' >> /etc/environment
 #    echo 'QT_QPA_EGLFS_PHYSICAL_WIDTH=800' >> /etc/environment
     echo 'QT_QPA_EGLFS_DISABLE_INPUT="1"' >> /etc/environment
+    mkdir /home/Documents
+    mkdir /home/Downloads
     systemctl enable start
 }
 
