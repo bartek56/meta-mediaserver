@@ -1,6 +1,6 @@
 #!/bin/bash
 timeout='8'
-path='/home/Pictures/tapety'
+path='/home/Pictures'
 startTime='120000'
 random='-z'
 

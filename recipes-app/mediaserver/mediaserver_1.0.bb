@@ -26,6 +26,6 @@ do_install_append() {
 }
 
 FILES_${PN} += "/opt/MediaServerApp"
-FILES_${PN} += "/lib/systemd/system/*.service"
+FILES_${PN} += "${systemd_system_unitdir}/*.service"
 
 

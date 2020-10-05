@@ -1,16 +1,14 @@
 [Unit]
 Description=WPA supplicant
-Before=network.target
 Wants=network.target
-After=dbus.service
+After=network.target
 
 [Service]
 Type=forking
-BusName=fi.w1.wpa_supplicant1
 ExecStart=/usr/sbin/wpa_supplicant -Dnl80211 -iwlan0 -c/etc/wpa_supplicant.conf -B
 Restart=always
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
-Alias=dbus-fi.w1.wpa_supplicant1.service
+
