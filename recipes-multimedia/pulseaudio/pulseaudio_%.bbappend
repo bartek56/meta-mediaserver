@@ -11,4 +11,5 @@ do_install_append() {
         install -m 0755 ${WORKDIR}/pulseaudio.service ${D}${systemd_unitdir}/system
 }
 
-FILES_${PN} += "/lib/systemd/system/pulseaudio.service"
+FILES_${PN} += "${systemd_system_unitdir}/*.service"
+

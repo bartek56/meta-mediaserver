@@ -8,7 +8,6 @@ LICENSE = "MIT"
 
 # epiphany
 
-# gmpc
 # w_scan
 
 NETWORK = " \
@@ -23,7 +22,6 @@ NETWORK = " \
     iptables \
     wpa-supplicant \
     wireless-regdb \
-    rsync \
     iftop \ 
     vsftpd \
     samba \
@@ -82,7 +80,6 @@ python = " \
 "
 
 MY_FEATURES = " \
-    linux-firmware-bcm43430 \
     bluez5 \
     i2c-tools \
     python-smbus \
@@ -148,6 +145,7 @@ IMAGE_INSTALL_append = " \
     vlc \ 
     xfmpc \
     feh \
+    gmpc \
     configscript \
 "
 
