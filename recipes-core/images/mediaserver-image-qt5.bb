@@ -146,6 +146,7 @@ IMAGE_INSTALL_append = " \
     xfmpc \
     feh \
     gmpc \
+    tzdata \ 
     configscript \
 "
 
