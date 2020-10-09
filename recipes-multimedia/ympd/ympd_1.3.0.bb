@@ -9,17 +9,17 @@ SRC_URI="https://github.com/notandy/ympd/archive/v${PV}.tar.gz \
 DEPENDS = "libmpdclient openssl mpd"
 
 P = "${PN}-${PV}"
-
 S = "${WORKDIR}/${P}"
 
 inherit pkgconfig cmake systemd
 
-SYSTEMD_PACKAGES = "${PN}" 
+SYSTEMD_PACKAGES = "${PN}"
+SYSTEMD_SERVICE_${PN} = "${PN}.service"
 
 do_install_append() {
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/*.service ${D}${systemd_unitdir}/system
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/ympd.service ${D}${systemd_system_unitdir}
 }
 
-FILES_${PN}+="/lib/systemd/system/ympd.service"
+FILES_${PN} += "${systemd_system_unitdir}/ympd.service"
 

@@ -12,6 +12,10 @@ SRC_URI[sha256sum] = "87451de51f2b230a095225c450a846da48c4f7589c2524cb8b4693a215
 
 inherit systemd
 
+SYSTEMD_PACKAGES = "${PN}" 
+SYSTEMD_SERVICE_${PN} = "fileBrowser.service"
+
+
 do_install_append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/fileBrowser.service ${D}${systemd_system_unitdir}

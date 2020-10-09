@@ -13,6 +13,8 @@ inherit systemd
 
 SYSTEMD_PACKAGES = "${PN}" 
 
+SYSTEMD_SERVICE_${PN} = "vsftpd.service"
+
 do_install_append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 0644 ${WORKDIR}/vsftpd.service ${D}${systemd_system_unitdir}

@@ -13,6 +13,9 @@ SRC_URI += "file://minidlna.conf \
 
 inherit systemd
 
+SYSTEMD_SERVICE_${PN} = "minidlna.service"
+SYSTEMD_PACKAGES = "${PN}" 
+
 do_install_append() {
     install -m 0755 ${WORKDIR}/minidlna.conf ${D}/etc
     install -d ${D}${systemd_system_unitdir}

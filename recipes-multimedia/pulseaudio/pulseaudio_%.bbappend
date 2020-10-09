@@ -5,6 +5,7 @@ SRC_URI += "file://pulseaudio.service"
 inherit systemd 
 
 SYSTEMD_SERVICE_${PN} = "pulseaudio.service"
+SYSTEMD_PACKAGES = "${PN}" 
 
 do_install_append() {
         install -d ${D}${systemd_unitdir}/system
