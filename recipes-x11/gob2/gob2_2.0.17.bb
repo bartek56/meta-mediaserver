@@ -5,17 +5,11 @@ SECTION = "libs"
 DEPENDS = "gtk+ bison flex glib-2.0"
 SRC_URI = "http://ftp.5z.com/pub/gob/old/gob2-${PV}.tar.gz"
 
-SRC_URI[md5sum] = "f8721af6f4e90ff48bd7cb4c96a5a94c"
-SRC_URI[sha256sum] = "c2977b18d1166c62e3f04373feefc0e2af704da3cb98e32612be4a55fd77a3f9"
-
+SRC_URI[md5sum] = "05fa7384b30ebb2921430b2615d2c2e5"
+SRC_URI[sha256sum] = "80b4683af653809970ef237fa45427b203653edf0dd5e3dc8897433e9c29346c"
 LIC_FILES_CHKSUM = "file://COPYING;md5=c93c0550bd3173f4504b2cbd8991e50b"
 
 inherit autotools pkgconfig
-
-# błąd w kodzie źródłowym tej wersji:
-# ../../gob2-2.0.14/src/main.c:2040:3: error: format not a string literal and no format arguments [-Werror=format-security]
-# 2040 |   out_printf(out,v->initializer);
-#      |   ^~~~~~~~~~
 
 build_path="${WORKDIR}/build"
 
