@@ -16,6 +16,10 @@ inherit pkgconfig cmake systemd
 SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE_${PN} = "${PN}.service"
 
+do_compile_prepend() {
+    find ${S} -name CMakeLists.txt | xargs sed -i 's/set(CMAKE_C_FLAGS "-std=gnu99 -Wall")/set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS})/g'
+}
+
 do_install_append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/ympd.service ${D}${systemd_system_unitdir}
