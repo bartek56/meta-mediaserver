@@ -18,6 +18,13 @@ S = "${WORKDIR}/${PN}-${PV}"
 inherit autotools pkgconfig gettext
 
 #błąd kompilacji - rozwiązanie: literówka w lini 54:gmpc-mpddata-model-playlist.c  
+# przyczyną jest gob2
+
+build_path="${WORKDIR}/build"
+
+#do_compile_prepend() {
+#    find ${build_path} -name gmpc-mpddata-model-playlist.c | xargs sed -i 's~GmpcMpdDataModlPllaylistCClass~GmpcMpdDataModelPlaylistClass~g'
+#}
 
 do_install_append() {
         install -d ${D}${systemd_system_unitdir}
