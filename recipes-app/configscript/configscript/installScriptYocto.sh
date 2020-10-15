@@ -37,9 +37,18 @@ configure_mediaserver()
     systemctl enable start
 }
 
+configure_other()
+{
+    chmod -R 777 /usr/htdocs/ampache/config
+	systemctl enable psplash
+	systemctl enable wpa_supplicant
+}
+
 set -e
 
 configure_vsftpd
 configure_minidlna
 configure_x11
 configure_mediaserver
+configure_other
+
