@@ -148,6 +148,7 @@ IMAGE_INSTALL_append = " \
     gmpc \
     tzdata \ 
     configscript \
+    docker \
 "
 
 # Include modules in rootfs
