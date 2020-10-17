@@ -9,9 +9,11 @@ DEPENDS = "libevent gnutls openssl libtool intltool-native curl glib-2.0-native"
 P = "${PN}-${PV}"
 SRC_URI = "https://github.com/transmission/transmission-releases/raw/master/${P}.tar.xz \
            file://transmission-daemon.service \
+           file://settings.json \
 "
 
 S = "${WORKDIR}/${P}"
+
 EXTRA_OECONF="--enable-cli"
 inherit autotools gettext
 
@@ -27,15 +29,12 @@ do_configure_prepend() {
 do_install_append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 0644 ${WORKDIR}/transmission-daemon.service ${D}${systemd_system_unitdir}
+        
+        install -D ${D}/etc/transmission-daemon
+        install -m 0644 ${WORKDIR}/settings.json ${D}/etc/transmission-daemon
 }
 
 FILES_${PN} += "/lib/systemd/system/transmission-daemon.service"
-
-#inherit pkgconfig cmake
-#inherit autotools
-
-#PACKAGECONFIG[gtk] = " --with-gtk,--without-gtk,gtk+3,"
-#PACKAGECONFIG[systemd] = "--with-systemd-daemon,--without-systemd-daemon,systemd,"
-
+FILES_${PN} += "/etc/transmission-daemon/settings.json"
 
 
