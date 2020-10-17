@@ -45,10 +45,30 @@ configure_network()
 
 configure_jellyfin()
 {
-    docker pull jellyfin/jellyfin
-	mkdir /etc/Jellyfin/config
-	mkdir /etc/Jellyfin/cache
-    docker run --volume /etc/Jellyfin/config:/config --volume /etc/Jellyfin/cache:/cache --volume /home:/home_media --volume /mnt:/external_media --net=host --restart=unless-stopped jellyfin/jellyfin
+
+    i="0"
+    test="0"
+    while [ $i -lt 30 ]
+    do
+        test=$(ip address show wlan0 | grep 192 | wc -l)
+        if [ $test -gt 0 ]; then
+            break
+        fi
+        echo "waiting for IP address ..."
+        sleep 2
+        i=$[$i+1]
+    done
+
+    if [ $test -gt 0 ]; then
+        echo "Connected"
+	    docker pull jellyfin/jellyfin
+	    mkdir /etc/Jellyfin/config
+	    mkdir /etc/Jellyfin/cache
+        docker run -d --volume /etc/Jellyfin/config:/config --volume /etc/Jellyfin/cache:/cache --volume /home:/home_media --volume /mnt:/external_media --net=host --restart=unless-stopped jellyfin/jellyfin
+    else
+        echo "Network fails"
+        echo "You have to manual configure Docker"
+    fi
 }
 
 configure_other()
