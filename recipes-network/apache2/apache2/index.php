@@ -17,33 +17,30 @@
 	<center>
 <table  border="0" cellpadding="0" cellspacing="40">
 <tr>
-	<td>
-			<script language="JavaScript">
-document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + window.location.pathname + '/tvheadend' +
-	'" ><img src="tvheadend.png" height="150" alt="" border="0" >' );
-			</script>
-	<center><h2>TvHeadEnd</h2></center>
 
-	</td>
 	<td>
 			<script language="JavaScript">
 document.write('<a href="' + 'http://' + window.location.hostname + ':8080' + window.location.pathname + 
 	'" ><img src="ympd.svg" height="150" alt="" border="0" >' );
 			</script>
 	<center><h2>Music Player</h2></center>
-
-
 	</td>
+
 	<td>
 			<script language="JavaScript">
 document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + window.location.pathname + 
 '/ampache/' + '" ><img src="ampache.png" height="150" alt="" border="0" >' );
 			</script>
 	<center><h2>Music Serwer</h2></center>
-
-
 	</td>
 
+	<td>
+			<script language="JavaScript">
+document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':8096' + window.location.pathname + 
+	'" ><img src="jellyfin.png" height="150" alt="" border="0" >' );
+			</script>
+	<center><h2>Jellyfin</h2></center>
+	</td>
 
 	<td>
 			<script language="JavaScript">
@@ -52,19 +49,18 @@ document.write('<a href="' + window.location.protocol + '//' + window.location.h
 			</script>
 	<center><h2>File Browser</h2></center>
 
+	<td>
+			<script language="JavaScript">
+document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + window.location.pathname + '/tvheadend' +
+	'" ><img src="tvheadend.png" height="150" alt="" border="0" >' );
+			</script>
+	<center><h2>TvHeadEnd</h2></center>
 	</td>
 
+	</td>
 
 
 <!--
-	<td>
-			<script language="JavaScript">
-document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':8096' + window.location.pathname + 
-	'" ><img src="jellyfin.png" height="150" alt="" border="0" >' );
-			</script>
-	<center><h2>Jellyfin</h2></center>
-
-	</td>
 	<td>
 			<script language="JavaScript">
 document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':32400' + window.location.pathname + 

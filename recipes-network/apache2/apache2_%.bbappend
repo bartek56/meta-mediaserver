@@ -12,6 +12,7 @@ SRC_URI += "file://httpd.conf \
             file://transmission.png \
             file://tvheadend.png \
             file://ympd.svg \
+            file://jellyfin.png \
 "
 
 do_install_append () {
@@ -30,6 +31,7 @@ do_install_append () {
 	install -m 0755 ${WORKDIR}/transmission.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/tvheadend.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/ympd.svg ${D}/usr/htdocs
+    install -m 0755 ${WORKDIR}/jellyfin.png ${D}/usr/htdocs
 }
 
 FILES_${PN} += "/etc/apache2/httpd.conf"
@@ -44,4 +46,5 @@ FILES_${PN} += "/usr/htdocs/style.css"
 FILES_${PN} += "/usr/htdocs/transmission.png"
 FILES_${PN} += "/usr/htdocs/tvheadend.png"
 FILES_${PN} += "/usr/htdocs/ympd.svg"
+FILES_${PN} += "/usr/htdocs/jellyfin.png"
 
