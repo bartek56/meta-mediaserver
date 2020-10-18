@@ -10,7 +10,8 @@ theNewestSongs=true
 
 set -e
 IFS=$'\n'
-
+musicDirectoryTemp=$( cat /etc/mpd.conf | grep music_directory | awk '{print $2}' )
+musicDirectory="${musicDirectoryTemp//\"}"
 #$(ls /mnt/TOSHIBA\ EXT/muzyka/Youtube\ list/  -lRt -1 | grep .mp3 | sort -k6 -r | awk '{for(i=9; i<=NF; ++i) printf "%s ", $i; print ""}' | head -n 10)
 
 if [ "$theNewestSongs" == true ]; then
@@ -19,10 +20,10 @@ if [ "$theNewestSongs" == true ]; then
 
     while [ $countSongs -le 2 ]; do
  	      lastDays=$((lastDays + 1))
-	      countSongs=$(find "/mnt/TOSHIBA EXT/muzyka/Youtube list" -type f -mtime -$lastDays -name "*.mp3" | wc -l)
+	      countSongs=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" | wc -l)
     done
 
-    musicList=$(find "/mnt/TOSHIBA EXT/muzyka/Youtube list" -type f -mtime -$lastDays -name "*.mp3" -exec basename '{}' ';' | head -n 10 )
+    musicList=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" -exec basename '{}' ';' | head -n 10 )
     
     mpc --wait clear
 		songs=()

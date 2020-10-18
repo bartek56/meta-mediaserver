@@ -3,11 +3,11 @@ Description=Alarm
 
 [Service]
 EnvironmentFile=/etc/systemdVariables
-ExecStartPre=/usr/bin/systemctl stop screensaver
+ExecStartPre=/bin/systemctl stop screensaver
 ExecStart=/bin/bash /opt/alarm.sh
-ExecStartPost=/usr/bin/systemctl restart start
+ExecStartPost=/bin/systemctl restart start
 
-ExecStopPost=/usr/bin/systemctl $ARG1 start
+ExecStopPost=/bin/systemctl $ARG1 start
 
 
 [Install]
