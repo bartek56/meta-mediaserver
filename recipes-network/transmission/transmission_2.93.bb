@@ -30,7 +30,7 @@ do_install_append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 0644 ${WORKDIR}/transmission-daemon.service ${D}${systemd_system_unitdir}
         
-        install -D ${D}/etc/transmission-daemon
+        install -d ${D}/etc/transmission-daemon
         install -m 0644 ${WORKDIR}/settings.json ${D}/etc/transmission-daemon
 }
 
