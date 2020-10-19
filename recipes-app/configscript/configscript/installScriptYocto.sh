@@ -56,6 +56,7 @@ configure_mediaserver()
         echo 'QT_QPA_EGLFS_DISABLE_INPUT="1"' >> /etc/environment
         mkdir /home/Documents
         mkdir /home/Downloads
+        export LANG=en_US.utf8
         systemctl enable start
         passwd
     fi
@@ -110,9 +111,18 @@ configure_other()
     ln -s /lib/systemd/system/alarm_snooze.service /usr/lib/systemd/system/alarm_snooze.service
     ln -s /lib/systemd/system/alarm_snooze.timer /usr/lib/systemd/system/alarm_snooze.timer
 	chmod -R 777 /usr/htdocs/ampache/config
-    systemctl unmask psplash
+
+	cp /usr/htdocs/ampache/channel/.htaccess.dist /usr/htdocs/ampache/channel/.htaccess
+    chmod 777 /usr/htdocs/ampache/channel/.htaccess
+	cp /usr/htdocs/ampache/rest/.htaccess.dist /usr/htdocs/ampache/rest/.htaccess
+    chmod 777 /usr/htdocs/ampache/rest/.htaccess
+	cp /usr/htdocs/ampache/play/.htaccess.dist /usr/htdocs/ampache/play/.htaccess
+    chmod 777 /usr/htdocs/ampache/play/.htaccess
+	
+	systemctl unmask psplash
     systemctl enable psplash
     systemctl disable serial-getty@ttyS0.service
+	systemctl enable mysqld
 }
 
 set -e
@@ -124,4 +134,5 @@ configure_mediaserver
 configure_other
 configure_network
 configure_jellyfin
+reboot
 

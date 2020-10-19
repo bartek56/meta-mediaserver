@@ -149,6 +149,7 @@ IMAGE_INSTALL_append = " \
     tzdata \ 
     configscript \
     docker \
+    localedef \
 "
 
 # Include modules in rootfs
@@ -162,6 +163,9 @@ IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
 
 IMAGE_FEATURES += " splash package-management x11-base ssh-server-openssh hwcodecs"
 
+GLIBC_GENERATE_LOCALES = "pl_PL.UTF-8 en_US.UTF-8"
+IMAGE_LINGUAS = "en-us en-gb pl-pl"
+#LOCALE_UTF8_ONLY="1"
 
 TOOLCHAIN_HOST_TASK_append = " nativesdk-intltool nativesdk-glib-2.0"
 TOOLCHAIN_HOST_TASK_remove_task-populate-sdk-ext = " nativesdk-intltool nativesdk-glib-2.0"
