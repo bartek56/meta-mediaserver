@@ -31,7 +31,7 @@ document.write('<a href="' + 'http://' + window.location.hostname + ':8080' + wi
 document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + window.location.pathname + 
 '/ampache/' + '" ><img src="ampache.png" height="150" alt="" border="0" >' );
 			</script>
-	<center><h2>Music Serwer</h2></center>
+	<center><h2>Music Server</h2></center>
 	</td>
 
 	<td>
