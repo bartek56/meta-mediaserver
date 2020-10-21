@@ -56,7 +56,7 @@ configure_mediaserver()
         echo 'QT_QPA_EGLFS_DISABLE_INPUT="1"' >> /etc/environment
         mkdir /home/Documents
         mkdir /home/Downloads
-        export LANG=en_US.utf8
+        echo 'LANG=en_US.utf8' >> /etc/environment
         systemctl enable start
         passwd
     fi
