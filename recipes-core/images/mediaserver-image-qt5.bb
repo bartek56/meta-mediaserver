@@ -102,8 +102,13 @@ AUDIO = " \
     pulseaudio-server \
     pulseaudio-misc \
     pulseaudio-module-dbus-protocol \
-    alsa-utils \
+    pulseaudio-module-native-protocol-tcp \
+    pulseaudio-module-esound-protocol-tcp \
+    pulseaudio-module-zeroconf-publish \
+    pulseaudio-module-console-kit \
+    pulseaudio-module-cli \
     pulseaudio \
+    alsa-utils \
     mpg123 \
     mplayer-common \
     sox \
