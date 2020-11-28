@@ -149,7 +149,6 @@ IMAGE_INSTALL_append = " \
     ristretto \
     vlc \ 
     xfmpc \
-    feh \
     gmpc \
     tzdata \ 
     configscript \
