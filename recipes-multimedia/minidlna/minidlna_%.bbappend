@@ -36,6 +36,9 @@ do_install_append() {
 
     install -d ${D}/home/Videos
     cp "${WORKDIR}/VID_20190813_184721.mp4" ${D}/home/Videos/
+
+    install -d ${D}/etc/mediaserver
+    ln -sf /etc/minidlna.conf ${D}/etc/mediaserver/minidlna.conf
 }
 
 FILES_${PN} += "${systemd_system_unitdir}/minidlna.service"

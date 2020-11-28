@@ -1,16 +1,18 @@
 #/bin/bash
-minVolume=25
-maxVolume=80
-defaultVolume=35
+minVolume=30
+maxVolume=70
+defaultVolume=30
 growingVolume=8
 growingSpeed=25
-playlist="Youtube"
+playlist="alarm"
 theNewestSongs=true
+
 
 
 set -e
 IFS=$'\n'
-musicDirectoryTemp=$( cat /etc/mpd.conf | grep music_directory | awk '{print $2}' )
+musicDirectoryTemp=$( cat /etc/mpd.conf | grep music_directory | awk '{$1=""}1' )
+musicDirectoryTemp=${musicDirectoryTemp:1}
 musicDirectory="${musicDirectoryTemp//\"}"
 #$(ls /mnt/TOSHIBA\ EXT/muzyka/Youtube\ list/  -lRt -1 | grep .mp3 | sort -k6 -r | awk '{for(i=9; i<=NF; ++i) printf "%s ", $i; print ""}' | head -n 10)
 

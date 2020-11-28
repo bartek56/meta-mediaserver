@@ -3,8 +3,9 @@ FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://smb.conf "
 
 do_install_append() {
-        install -m 0644 ${WORKDIR}/smb.conf ${D}/etc/samba
-}
+    install -m 0755 ${WORKDIR}/smb.conf ${D}/etc/samba
 
-FILES_${PN} += "${systemd_system_unitdir}/wpa_supplicant.service"
+    install -d ${D}/etc/mediaserver
+    ln -sf /etc/samba/smb.conf ${D}/etc/mediaserver/smb.conf
+}
 

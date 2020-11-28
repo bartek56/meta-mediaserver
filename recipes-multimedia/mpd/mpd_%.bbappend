@@ -23,6 +23,10 @@ PACKAGECONFIG += "zlib"
 do_install_append() {
     install -d ${D}/etc
     install -m 0755 ${WORKDIR}/mpd.conf ${D}/etc
+
+    install -d ${D}/etc/mediaserver
+    ln -sf /etc/mpd.conf ${D}/etc/mediaserver/mpd.conf
+
 }
 
 FILES_${PN} += "etc/mpd.conf"
