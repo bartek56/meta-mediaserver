@@ -26,7 +26,7 @@ content = f.readlines()
 
 for x in content:
     if "music_directory" in x:
-        parameter = x.split(' ')
+        parameter = x.split(" \"")
         musicPath = parameter[1].replace('"','')
         PATH="%s/Youtube list/"%(musicPath)
         PATH=PATH.replace('//','/')

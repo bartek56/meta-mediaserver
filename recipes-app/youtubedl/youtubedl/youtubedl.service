@@ -4,8 +4,7 @@ Description=YouTube downloader
 [Service]
 Type=idle
 Environment="LC_ALL=pl_PL.UTF-8"
-ExecStartPre=/usr/bin/rm -f /var/log/youtubedl/youtubedlErr.log
-ExecStartPre=/usr/bin/rm -f /var/log/youtubedl/youtubedlOut.log
+ExecStartPre=/bin/rm -f /var/log/youtubedl.log
 ExecStart=/usr/bin/python3 /opt/downloadFromYoutube.py
-StandardOutput=file:/var/log/youtubedl/youtubedlOut.log
-StandardError=file:/var/log/youtubedl/youtubedlErr.log
+StandardOutput=file:/var/log/youtubedl/youtubedl.log
+
