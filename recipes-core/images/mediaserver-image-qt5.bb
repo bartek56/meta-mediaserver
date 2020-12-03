@@ -125,6 +125,7 @@ MULTIMEDIA = " \
     w-scan \
     bluez-alsa \
     ampache \
+    qnapi \
 "
 
 

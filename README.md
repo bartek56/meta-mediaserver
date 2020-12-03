@@ -2,7 +2,7 @@
 yocto layer for MediaServer project
 
 Required:
-- Linux Debian 4.19.67-2+deb10u2 (2019-11-11)
+- Debian GNU/Linux 10 (buster) 4.19.67-2+deb10u2 (2019-11-11)
 - min. 150GB disk space
 
 
@@ -68,9 +68,5 @@ MySQL Hostname: 127.0.0.1
 MySQL Port: [empty]
 MySQL Username: root
 MySQL password: mypass
-
-Issues:
-- gmpc_11.8.15.bb -> 54:gmpc-mpddata-model-playlist.c: more info in gmpc_11.8.15.bb file
-
 
 
