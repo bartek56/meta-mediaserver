@@ -23,6 +23,8 @@ load-module module-device-restore
 load-module module-stream-restore
 load-module module-card-restore
 
+load-module module-systemd-login
+
 ### Automatically load driver modules depending on the hardware available
 .ifexists module-udev-detect.so
 load-module module-udev-detect
@@ -32,10 +34,25 @@ load-module module-detect
 .endif
 
 ### Load several protocols
+load-module module-dbus-protocol
 .ifexists module-esound-protocol-unix.so
 load-module module-esound-protocol-unix
 .endif
 load-module module-native-protocol-unix auth-anonymous=true
+
+### Automatically load driver modules for Bluetooth hardware
+.ifexists module-bluetooth-policy.so
+load-module module-bluetooth-policy
+.endif
+
+.ifexists module-bluetooth-discover.so
+load-module module-bluetooth-discover
+.endif
+
+.ifexists module-bluez5-discover.so
+load-module module-bluez5-discover
+.endif
+
 
 ### Automatically restore the default sink/source when changed by the user
 ### during runtime

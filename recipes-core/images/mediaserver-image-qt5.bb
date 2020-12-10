@@ -6,13 +6,9 @@ inherit sdcard_image-rpi
 SUMMARY = "The minimal image that can run Qt5 applications"
 LICENSE = "MIT"
 
-# epiphany
-
-# w_scan
 
 NETWORK = " \
     dhcpcd \
-    bluez5 \
     crda \
     iw \
     rsync \
@@ -49,9 +45,6 @@ QT = " \
     qt3d \
     qt3d-dev \
     qt3d-mkspecs \
-    qtcharts \
-    qtcharts-dev \
-    qtcharts-mkspecs \
     qtconnectivity-dev \
     qtconnectivity-mkspecs \
     qtquickcontrols \
@@ -68,11 +61,15 @@ QT = " \
     qtmultimedia-examples \
     qtvirtualkeyboard-dev \
     qtvirtualkeyboard-mkspecs \
+    qtx11extras \
     qtwebengine-dev \
     qtwebengine-examples \
     qtwebchannel-dev \
-    qtx11extras \
+    qtcharts \
+    qtcharts-dev \
+    qtcharts-mkspecs \
 "
+
 
 python = " \
     python-youtubedl \
@@ -107,8 +104,12 @@ AUDIO = " \
     pulseaudio-module-zeroconf-publish \
     pulseaudio-module-console-kit \
     pulseaudio-module-cli \
+    pulseaudio-module-bluez5-device \
+    pulseaudio-module-bluez5-discover \
+    pulseaudio-module-bluetooth-discover \
+    pulseaudio-module-bluetooth-policy \
+    pulseaudio-module-loopback \
     pulseaudio \
-    alsa-utils \
     mpg123 \
     mplayer-common \
     sox \
@@ -123,11 +124,9 @@ MULTIMEDIA = " \
     minidlna \
     tvheadend \
     w-scan \
-    bluez-alsa \
     ampache \
     qnapi \
 "
-
 
 DISTRO_FEATURES_append += " bluez5 bluetooth wifi libpam pam"
 DISTRO_FEATURES += "pam libpam"
@@ -149,7 +148,6 @@ IMAGE_INSTALL_append = " \
     transmission \
     ristretto \
     vlc \ 
-    xfmpc \
     gmpc \
     tzdata \ 
     configscript \

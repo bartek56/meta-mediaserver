@@ -70,3 +70,11 @@ MySQL Username: root
 MySQL password: mypass
 
 
+Issue:
+1. Manual config pulseaudio access for bluez5 dbus:
+
+  <policy group="pulse">
+    <allow send_destination="org.bluez"/>
+  </policy>
+
+

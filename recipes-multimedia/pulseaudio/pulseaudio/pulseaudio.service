@@ -4,7 +4,7 @@ After=avahi-daemon.service network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/pulseaudio --system --disallow-exit --disallow-module-loading
+ExecStart=/usr/bin/pulseaudio --system --disallow-exit
 Restart=always
 
 [Install]
