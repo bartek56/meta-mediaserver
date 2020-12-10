@@ -46,6 +46,7 @@ else
     mpc random on
 fi
 
+mpc repeat on
 mpc volume $minVolume
 mpc play
 

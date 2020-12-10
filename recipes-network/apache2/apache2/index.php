@@ -60,17 +60,10 @@ document.write('<a href="' + window.location.protocol + '//' + window.location.h
 	</td>
 
 
+
+
+
 <!--
-	<td>
-			<script language="JavaScript">
-document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':32400' + window.location.pathname + 
-	'" ><img src="plex.png" height="150" alt="" border="0" >' );
-			</script>
-	<center><h2>Plex</h2></center>
-
-	</td>
-
-
 	<td>
 			<script language="JavaScript">
 document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':2202' + window.location.pathname + 
@@ -114,6 +107,14 @@ document.write('<a href="' + 'http://' + window.location.hostname + ':8200' + wi
 
 	</td>
 
+	<td>
+			<script language="JavaScript">
+document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':9080' + window.location.pathname + 
+	'" ><img src="alarm.png" height="150" alt="" border="0" >' );
+			</script>
+	<center><h2>Alarm</h2></center>
+
+	</td>
 
 	<td>
 			<script language="JavaScript">
