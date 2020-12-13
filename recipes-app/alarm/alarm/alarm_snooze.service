@@ -3,7 +3,6 @@ Description=Alarm Snooze
 
 [Service]
 EnvironmentFile=/etc/mediaserver/systemdVariables
-ExecStartPre=/bin/systemctl stop screensaver
 ExecStart=/bin/bash /opt/alarm.sh
 ExecStartPost=/bin/systemctl restart start
 

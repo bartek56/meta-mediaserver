@@ -125,7 +125,6 @@ MULTIMEDIA = " \
     tvheadend \
     w-scan \
     ampache \
-    qnapi \
 "
 
 DISTRO_FEATURES_append += " bluez5 bluetooth wifi libpam pam"

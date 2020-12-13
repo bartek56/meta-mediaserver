@@ -6,5 +6,5 @@ Type=idle
 Environment="LC_ALL=pl_PL.UTF-8"
 ExecStartPre=/bin/rm -f /var/log/youtubedl.log
 ExecStart=/usr/bin/python3 /opt/downloadFromYoutube.py
-StandardOutput=file:/var/log/youtubedl/youtubedl.log
+StandardOutput=file:/var/log/youtubedl.log
 

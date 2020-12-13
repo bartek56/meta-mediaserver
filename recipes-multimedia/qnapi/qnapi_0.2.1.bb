@@ -2,7 +2,8 @@ SUMMARY = "QNapi - download subtitles"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://doc/LICENSE;md5=751419260aa954499f7abaabaa882bbe"
 
-DEPENDS += " p7zip qtbase ffmpeg libmediainfo"
+DEPENDS += " qtbase libmediainfo"
+RDEPENDS_${PN} += " p7zip" 
 
 SRC_URI = "https://github.com/QNapi/qnapi/releases/download/${PV}/qnapi-${PV}.tar.gz \
            file://qnapi.ini \
