@@ -14,4 +14,6 @@ do_install(){
 }
 
 FILES_${PN} += "/opt/installScriptYocto.sh"
+FILES_${PN} += "/home/Documents"
+FILES_${PN} += "/home/Downloads"
 

@@ -29,6 +29,7 @@ configure_other()
 set -e
 
 configure_jellyfin
+configure_other
 systemctl enable start.service
 systemctl disable startup.service
 reboot
