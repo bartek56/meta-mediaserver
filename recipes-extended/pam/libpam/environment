@@ -1,0 +1,9 @@
+#
+# This file is parsed by pam_env module
+#
+# Syntax: simple "KEY=VAL" pairs on separate lines
+#
+QT_QPA_EVDEV_TOUCHSCREEN_PARAMETERS="/dev/input/event0"
+QT_QPA_GENERIC_PLUGINS="evdevtouch:/dev/input/event0"
+QT_QPA_EGLFS_DISABLE_INPUT="1"
+LANG=en_US.utf8

@@ -26,13 +26,20 @@ do_unpack (){
 }
 
 do_install () {
-   install -d ${D}/usr/htdocs
-   cp -r ${S}/ ${D}/usr/htdocs/ampache/
+    install -d ${D}/usr/htdocs
+    cp -r ${S}/ ${D}/usr/htdocs/ampache/
 
-   install -d ${D}${systemd_system_unitdir}
-   cp ${WORKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
-   cp ${WORKDIR}/ampacheupdate.timer ${D}${systemd_system_unitdir}
+    install -d ${D}${systemd_system_unitdir}
+    cp ${WORKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
+    cp ${WORKDIR}/ampacheupdate.timer ${D}${systemd_system_unitdir}
 
+    chmod -R 777 ${D}/usr/htdocs/ampache/config
+	cp ${D}/usr/htdocs/ampache/channel/.htaccess.dist ${D}/usr/htdocs/ampache/channel/.htaccess
+    chmod 777 ${D}/usr/htdocs/ampache/channel/.htaccess
+	cp ${D}/usr/htdocs/ampache/rest/.htaccess.dist ${D}/usr/htdocs/ampache/rest/.htaccess
+    chmod 777 ${D}/usr/htdocs/ampache/rest/.htaccess
+	cp ${D}/usr/htdocs/ampache/play/.htaccess.dist ${D}/usr/htdocs/ampache/play/.htaccess
+    chmod 777 ${D}/usr/htdocs/ampache/play/.htaccess
 }
 
 FILES_${PN} += "/usr/htdocs/ampache"

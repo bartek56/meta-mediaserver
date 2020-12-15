@@ -9,11 +9,13 @@ SRC_URI += "file://vsftpd.service \
 
 RDEPENDS_${PN} += " pam-pwdfile"
 
-inherit systemd
+inherit systemd useradd
 
-SYSTEMD_PACKAGES = "${PN}" 
-
+#SYSTEMD_PACKAGES = "${PN}" 
 SYSTEMD_SERVICE_${PN} = "vsftpd.service"
+
+USERADD_PACKAGES = "${PN}"
+USERADD_PARAM_${PN} = "-d /home/vsftpd -s /bin/false -G nogroup -U vsftpd"
 
 do_install_append() {
         install -d ${D}${systemd_system_unitdir}

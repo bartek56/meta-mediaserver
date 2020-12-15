@@ -1,0 +1,12 @@
+[Unit]
+Description=MediaServer Startup
+After=rc-local.service
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStart=/opt/MediaServerStartup -platform eglfs
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

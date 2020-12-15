@@ -8,7 +8,7 @@ SRC_URI += "file://wpa_supplicant.service \
 
 inherit systemd
 
-SYSTEMD_PACKAGES = "${PN}" 
+SYSTEMD_AUTO_ENABLE = "enable" 
 SYSTEMD_SERVICE_${PN} = "wpa_supplicant.service"
 
 

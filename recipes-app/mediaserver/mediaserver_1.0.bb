@@ -11,6 +11,7 @@ SRC_URI = "git://github.com/bartek56/MediaServer \
           file://fstab_manager.sh \
           file://screensaver.conf \
           file://start.service \
+          file://startup.service \
           file://mediaserverweb.service"
 
 
@@ -20,26 +21,28 @@ require recipes-qt/qt5/qt5.inc
 
 inherit qmake5 systemd
 
-SYSTEMD_PACKAGES = "${PN}" 
+SYSTEMD_AUTO_ENABLE = "enable" 
+SYSTEMD_SERVICE_${PN} = "startup.service"
 
 do_install_append() {
     install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/start.service ${D}${systemd_unitdir}/system
-
-    install -d ${D}${systemd_unitdir}/system
     install -m 0644 ${WORKDIR}/mediaserverweb.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${WORKDIR}/startup.service ${D}${systemd_unitdir}/system
 
     install -d ${D}/opt
     install -m 0644 ${WORKDIR}/fstab_manager.sh ${D}/opt
 
     install -d ${D}/etc/mediaserver
-    install -m 0644 ${WORKDIR}/screensaver.conf ${D}/${sysconfdir}/mediaserver
+    install -m 0644 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
 }
 
 FILES_${PN} += "/opt/MediaServerApp"
 FILES_${PN} += "/opt/MediaServerWeb"
+FILES_${PN} += "/opt/MediaServerStartup"
 FILES_${PN} += "/opt/fstab_manager.sh"
 FILES_${PN} += "${sysconfdir}/mediaserver/screensaver.conf"
 FILES_${PN} += "${systemd_system_unitdir}/start.service"
 FILES_${PN} += "${systemd_system_unitdir}/mediaserverweb.service"
+FILES_${PN} += "${systemd_system_unitdir}/startup.service"
 
