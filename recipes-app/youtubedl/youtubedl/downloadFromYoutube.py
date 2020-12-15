@@ -6,6 +6,7 @@ import warnings
 from datetime import datetime
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
+from configparser import ConfigParser
 
 class bcolors:
     HEADER = '\033[95m'
@@ -17,11 +18,13 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+CONFIG_FILE='/etc/mediaserver/youtubedl.ini'
+
 PATH='/home/Music/Youtube list/'
 #PATH='/media/shareTV/share/music/Youtube list'
 #PATH='/tmp/muzyka/Youtube list/'
 
-f = open("/etc/mpd.conf","r")
+f = open("/etc/mediaserver/mpd.conf","r")
 content = f.readlines()
 
 for x in content:
@@ -32,6 +35,8 @@ for x in content:
         PATH=PATH.replace('//','/')
         PATH=PATH.replace('\n','')
         PATH=PATH.replace('\r','')
+
+PATH='/tmp/muzyka/Youtube list/'
 
 def convert_song_name(songName):
     songName = songName.replace("(Oficial Video HD)", "")
@@ -268,41 +273,16 @@ def main():
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
     print("---------  " + dt_string + "  ---------") 
 
-#  PART 1
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfiCtXJW-I0OASdxMc7sGHn5", "chillout")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfgHTfI_P_BaACTGN2Km_4Yk", "Bachata")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfjahtnJWMf2cW6TDmpfTUqk", "spokojne-sad")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfjKkH06p81TLmGItIfoMnb5", "relaks")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfi6xtpV-Di4Hgf3qCHiScyU", "Kizomba")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfiB-7Td9IIYbYM0DsPjxAt0", "imprezka")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfi2UzQtyRhB4zVClwJlzuHD", "Reggae")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfiC8LyEB92IEsBFlbBjxCj0", "techno")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfgDX6QR1isPJEUNkWRbPa0e", "polskie hity")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfgMkKYQ8zK1wPzLE7nuYbYk", "stare ale jare")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfg4ur-Bk9PCdqguhKoHCfMD", "muzyka filmowa")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfgXRVUHpk-nhxfY4PmNMQp5", "electro Swing")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfhPdw0tTOp-k2WGWkScw6pU", "hip-hop")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfh6_5dWYpBB9bGVIKctGT2Y", "muzyka klasyczna")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfh9AqFWYPJ-AIQag25aa6nL", "taniec")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfi5RcPXcTSqnkHN6En7URPS", "salsa")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfgRcnKrIsUXb2lEfknbLBWX", "Semba")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfiYtX-sgGsQDKbSOuvNZnrj", "Bachata Dominikana")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfino9zJN7YFayg5vT4yhj4b", "Rock-Electronic")
-
-
-#  PART 2
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfgcWvb2c97oOX773DQHnhjQ", "wesele stare hity")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfh09hGVx2_RreHvFmenLMma", "wesele pop")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfjJaHNCH5XacdQdGOOCjuej", "wesele disco-polo")
-#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfjIGBN67_y2HEUx3lAjLGih", "wesele impreza")
-
-
-#   update_metadata_from_YTplaylist("https://www.youtube.com/playlist?list=PL6uhlddQJkfjahtnJWMf2cW6TDmpfTUqk", "spokojne-sad")
-   
-    songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfh4YsbxgPE70a6KeFOCDgG_", "test")
+#   songsCounter += download_video_playlist("https://www.youtube.com/playlist?list=PL6uhlddQJkfh4YsbxgPE70a6KeFOCDgG_", "test")
 #   update_metadata_from_YTplaylist("https://www.youtube.com/playlist?list=PL6uhlddQJkfh4YsbxgPE70a6KeFOCDgG_", "test")
 
 
+    config = ConfigParser()
+    config.read(CONFIG_FILE)
+    print(config.sections())
+    for section_name in config.sections():
+        if section_name != "GLOBAL":
+            songsCounter += download_video_playlist(config[section_name]['link'], config[section_name]['name'])
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
