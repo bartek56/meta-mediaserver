@@ -1,0 +1,10 @@
+[Unit]
+Description=Terminate Psplash Boot Screen
+After=start.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/psplash-write "QUIT"
+
+[Install]
+WantedBy=graphical.target

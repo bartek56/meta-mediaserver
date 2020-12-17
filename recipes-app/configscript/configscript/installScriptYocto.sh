@@ -19,10 +19,10 @@ configure_jellyfin()
 
 configure_other()
 {	
-	systemctl unmask psplash
-    systemctl enable psplash
     systemctl disable serial-getty@ttyS0.service
     systemctl disable getty@tty1
+    systemctl enable psplash-start.service
+    systemctl enable psplash-quit.service
 	systemctl enable mysqld
 }
 

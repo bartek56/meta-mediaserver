@@ -1,12 +1,13 @@
 [Unit]
 Description=Starts Psplash Boot screen
 Wants=systemd-vconsole-setup.service
-After=systemd-vconsole-setup.service systemd-udev-trigger.service systemd-udevd.service
+After=systemd-user-sessions.service
 DefaultDependencies=no
 
 [Service]
+Type=onesshot
 ExecStart=/usr/bin/psplash -n
 
 [Install]
-WantedBy=sysinit.target
+WantedBy=multi-user.target
 
