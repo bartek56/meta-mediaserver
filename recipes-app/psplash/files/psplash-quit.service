@@ -5,6 +5,7 @@ After=start.service
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/psplash-write "QUIT"
+TimeoutSec=20
 
 [Install]
 WantedBy=graphical.target

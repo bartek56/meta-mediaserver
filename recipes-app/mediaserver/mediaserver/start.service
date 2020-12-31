@@ -1,6 +1,6 @@
 [Unit]
 Description=MediaServer App
-After=rc-local.service
+After=pulseaudio.service
 
 [Service]
 EnvironmentFile=/etc/environment
@@ -9,4 +9,4 @@ Restart=always
 RestartSec=2
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=graphical.target
