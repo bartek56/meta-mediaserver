@@ -20,10 +20,10 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+CONFIG_FILE='/etc/mediaserver/youtubedl.ini'
 
 f = open("/etc/mediaserver/minidlna.conf","r")
 content = f.readlines()
-CONFIG_FILE='/etc/mediaserver/youtubedl.ini'
 
 for x in content:
     if "media_dir=A" in x:
@@ -41,10 +41,10 @@ for x in content:
         VIDEO_PATH=VIDEO_PATH.replace('\r','')
 
 # tests path
-MUSIC_PATH='/tmp/music/quick_download/'
-VIDEO_PATH='/tmp/video/quick_download/'
-PLAYLISTS_PATH='/tmp/music/Youtube list/'
-CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
+#MUSIC_PATH='/tmp/music/quick_download/'
+#VIDEO_PATH='/tmp/video/quick_download/'
+#PLAYLISTS_PATH='/tmp/music/Youtube list/'
+#CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
 
 def convert_song_name(songName):
     songName = songName.replace(" -", " - ")
