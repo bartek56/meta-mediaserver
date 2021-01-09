@@ -41,10 +41,10 @@ for x in content:
         VIDEO_PATH=VIDEO_PATH.replace('\r','')
 
 # tests path
-#MUSIC_PATH='/tmp/music/quick_download/'
-#VIDEO_PATH='/tmp/video/quick_download/'
-#PLAYLISTS_PATH='/tmp/music/Youtube list/'
-#CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
+MUSIC_PATH='/tmp/music/quick_download/'
+VIDEO_PATH='/tmp/video/quick_download/'
+PLAYLISTS_PATH='/tmp/music/Youtube list/'
+CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
 
 def convert_song_name(songName):
     songName = songName.replace(" -", " - ")

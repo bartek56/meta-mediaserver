@@ -74,6 +74,7 @@ QT = " \
 python = " \
     python-youtubedl \
     python-mutagen \
+    python3-flask \
 "
 
 MY_FEATURES = " \
