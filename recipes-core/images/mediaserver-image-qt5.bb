@@ -140,6 +140,7 @@ IMAGE_INSTALL_append = " \
     ${TEXT_EDITOR} \
     ${NETWORK} \
     youtubedl \
+    youtubedl-web \
     php-modphp \
     curl \
     git \
