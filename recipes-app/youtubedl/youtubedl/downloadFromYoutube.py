@@ -33,7 +33,7 @@ for x in content:
         PLAYLISTS_PATH="%s/Youtube list/"%(musicPath)
 
 # tests path
-PLAYLISTS_PATH='/tmp/music/Youtube list/'
+#PLAYLISTS_PATH='/tmp/music/Youtube list/'
 #CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
 
 def download_video_playlist(url, playlistName):
@@ -85,6 +85,35 @@ def download_playlists():
     summary = "[SUMMARY] downloaded  %s songs"%(songsCounter)
     print (bcolors.OKGREEN + summary + bcolors.ENDC)
 
+def download_mp3(url):
+    path=PLAYLISTS_PATH+"/test"
+
+
+    if not os.path.exists(path):
+      os.makedirs(path)
+
+    info = "[INFO] start download MP3 from link %s "%(url)
+#    print (bcolors.OKGREEN + info + bcolors.ENDC)
+
+    ydl_opts = {
+          'format': 'bestaudio/best',
+          'addmetadata': True,
+          'outtmpl': path+'/'+'%(title)s.%(ext)s',
+          'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '192',
+             }],
+          'ignoreerrors': True
+          }
+    result = youtube_dl.YoutubeDL(ydl_opts).extract_info(url)
+
+    songTitle = result['title']
+    artist = result['artist']
+    album = result['album']
+
+    return metadata_mp3.add_metadata_song(path, album, artist, songTitle)
+
 
 def main():
     now = datetime.now()
@@ -92,6 +121,7 @@ def main():
     print("---------  " + dt_string + "  ---------") 
 
     download_playlists()
+#    print(download_mp3("https://youtu.be/6vm9s44uNQA"))
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
