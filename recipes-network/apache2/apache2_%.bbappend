@@ -1,6 +1,7 @@
 SUMMARY = "Replacement recipe"
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://httpd.conf \
+            file://youtubedl-web.conf \
             file://ampache.png \
             file://background.jpg \
             file://dlna.png \
@@ -19,7 +20,8 @@ SRC_URI += "file://httpd.conf \
 do_install_append () {
 	install -d ${D}/etc/apache2
 	install -m 0755 ${WORKDIR}/httpd.conf ${D}/etc/apache2
-	
+	install -m 0755 ${WORKDIR}/youtubedl-web.conf ${D}/etc/apache2/conf.d
+
 	install -d ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/ampache.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/background.jpg ${D}/usr/htdocs

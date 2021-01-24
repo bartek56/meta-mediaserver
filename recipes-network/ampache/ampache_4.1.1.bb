@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://README.md;md5=e3685ab5aa1e420cf67ee242788e4d38"
 
 FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
 DEPENDS += " apache2"
-RDEPENDS_${PN} += " apache2 mysql5 php php-fpm php-cli php-modphp bash perl"
+RDEPENDS_${PN} += " apache2 mod-wsgi mysql5 php php-fpm php-cli php-modphp bash perl"
 
 SRC_URI += "https://github.com/ampache/ampache/releases/download/${PV}/${PN}-${PV}_all.zip \
            file://ampacheupdate.service \

@@ -1,9 +1,0 @@
-[Unit]
-Description=YouTubedl-web
-
-[Service]
-Type=single
-Environment="LC_ALL=pl_PL.UTF-8"
-ExecStart=/usr/bin/python3 /opt/youtubedl-web/main.py
-StandardOutput=file:/var/log/youtubedl-web.log
-
