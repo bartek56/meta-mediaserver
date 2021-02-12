@@ -23,7 +23,9 @@ configure_other()
     systemctl disable getty@tty1
     systemctl enable psplash-start.service
     systemctl enable psplash-quit.service
-	systemctl enable mysqld
+    systemctl enable mysqld.service
+    systemctl disable dhcpcd.service
+	echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
 }
 
 set -e
