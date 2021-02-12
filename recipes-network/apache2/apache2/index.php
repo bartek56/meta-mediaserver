@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <title>Media Server</title>
 <meta name="description" content="Serwer multimedialny" />
-	<meta name="keywords" content="Informacje o salonie kosmetycznym"" />
+	<meta name="keywords" content="Serwer multimedialny" />
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 	<link rel="stylesheet" href="style.css" type="text/css" />	
 </head>
@@ -109,10 +109,10 @@ document.write('<a href="' + 'http://' + window.location.hostname + ':8200' + wi
 
 	<td>
 			<script language="JavaScript">
-document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':9080' + window.location.pathname + 
-	'" ><img src="alarm.png" height="150" alt="" border="0" >' );
+document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + '/youtubedl' + window.location.pathname + 
+	'" ><img src="youtubedl.png" height="150" alt="" border="0" >' );
 			</script>
-	<center><h2>Alarm</h2></center>
+	<center><h2>Youtube-DL</h2></center>
 
 	</td>
 
