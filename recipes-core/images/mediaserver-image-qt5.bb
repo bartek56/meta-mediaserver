@@ -24,18 +24,6 @@ NETWORK = " \
     filebrowser \
 "
 
-X11 = " \
- xinit \
- xterm \
- xinput \
- xinput-calibrator \
- xf86-input-evdev  \
- xf86-input-libinput \
- xf86-input-mouse \
- xf86-input-keyboard \
- xf86-video-fbdev \
-"
-
 QT = " \
     qtbase \
     qtbase-dev \
@@ -68,13 +56,6 @@ QT = " \
     qtcharts \
     qtcharts-dev \
     qtcharts-mkspecs \
-"
-
-
-python = " \
-    python-youtubedl \
-    python-mutagen \
-    python3-flask \
 "
 
 MY_FEATURES = " \
@@ -121,7 +102,6 @@ AUDIO = " \
 "
 
 MULTIMEDIA = " \
-    ffmpeg \
     minidlna \
     tvheadend \
     w-scan \
@@ -133,7 +113,6 @@ DISTRO_FEATURES += "pam libpam"
 
 IMAGE_INSTALL_append = " \
     ${QT} \
-    ${X11} \
     ${MY_FEATURES} \
     ${AUDIO} \
     ${MULTIMEDIA} \

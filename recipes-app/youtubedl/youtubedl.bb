@@ -2,7 +2,7 @@ SUMMARY = "Youtube_dl script"
 HOMEPAGE = "https://github.com/bartek56/LinuxEmbedded"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "python python-mutagen python-youtubedl metadata-mp3"
+RDEPENDS_${PN} += "python python-mutagen python-youtubedl metadata-mp3 ffmpeg"
 SRC_URI="file://downloadFromYoutube.py \
          file://youtubedl.service \
          file://youtubedl.timer \

@@ -1,12 +1,12 @@
 SUMMARY = "Youtubedl-web"
-HOMEPAGE = "https://github.com/bartek56/LinuxEmbedded"
+HOMEPAGE = "https://github.com/bartek56/youtubedl-web"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "python3 python3-flask metadata-mp3"
+RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/youtubedl-web \
-          "
+SRC_URI = "git://github.com/bartek56/youtubedl-web"
+
 do_install(){
     install -d ${D}/opt/youtubedl-web
     install -m 0644 ${WORKDIR}/git/youtubedl.py ${D}/opt/youtubedl-web
