@@ -3,7 +3,7 @@ include recipes-core/images/rpi-basic-image.bb
 # This image is a little more full featured, and includes wifi
 # support, provided you have a raspberrypi3
 inherit sdcard_image-rpi
-SUMMARY = "The minimal image that can run Qt5 applications"
+SUMMARY = "Media Server with QT5 GUI"
 LICENSE = "MIT"
 
 
@@ -26,36 +26,23 @@ NETWORK = " \
 
 QT = " \
     qtbase \
-    qtbase-dev \
     qtbase-mkspecs \
     qtbase-plugins \
     qtbase-tools \
     qt3d \
-    qt3d-dev \
-    qt3d-mkspecs \
-    qtconnectivity-dev \
-    qtconnectivity-mkspecs \
+    qtconnectivity \
     qtquickcontrols \
     qtquickcontrols2 \
-    qtquickcontrols2-dev \
-    qtquickcontrols2-mkspecs \
     qtdeclarative \
-    qtdeclarative-dev \
-    qtdeclarative-mkspecs \
     qtgraphicaleffects \
-    qtgraphicaleffects-dev \
-    qtmultimedia-dev \
-    qtmultimedia-mkspecs \
+    qtmultimedia \
     qtmultimedia-examples \
-    qtvirtualkeyboard-dev \
-    qtvirtualkeyboard-mkspecs \
+    qtvirtualkeyboard \
     qtx11extras \
-    qtwebengine-dev \
+    qtwebengine \
     qtwebengine-examples \
-    qtwebchannel-dev \
+    qtwebchannel \
     qtcharts \
-    qtcharts-dev \
-    qtcharts-mkspecs \
 "
 
 MY_FEATURES = " \
@@ -106,6 +93,7 @@ MULTIMEDIA = " \
     tvheadend \
     w-scan \
     ampache \
+    nextcloud \
 "
 
 DISTRO_FEATURES_append += " bluez5 bluetooth wifi libpam pam"
