@@ -36,6 +36,39 @@ for x in content:
 #PLAYLISTS_PATH='/tmp/music/Youtube list/'
 #CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
 
+def update_metadata_from_YTplaylist(url, playlistName):
+    path=PLAYLISTS_PATH+playlistName
+    albumName="YT "+playlistName
+    if not os.path.exists(path):
+        os.makedirs(path)
+    trackNumber = len([f for f in os.listdir(path) if f.endswith('.mp3')])
+
+    ydl_opts = {
+            'addmetadata': True,
+            }  
+    results = youtube_dl.YoutubeDL(ydl_opts).extract_info(url,download=False)
+    if not results:
+       warningInfo="ERROR: not extract_info in results"
+       print (bcolors.FAIL + warningInfo + bcolors.ENDC)
+       return
+   
+    artistList = []
+    playlistIndexList = []
+    songsTitleList = []
+    for i in results['entries']:
+        
+        playlistIndexList.append(i['playlist_index'])
+        songsTitleList.append(i['title'])
+       
+        if "artist" in i:
+            artistList.append(i['artist'])
+        else:
+            artistList.append("")
+
+    for x in range(len(songsTitleList)):
+        metadata_mp3.add_metadata_playlist(PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songsTitleList[x])
+
+
 def download_video_playlist(url, playlistName):
     path=PLAYLISTS_PATH+playlistName
     if not os.path.exists(path):
@@ -61,10 +94,20 @@ def download_video_playlist(url, playlistName):
            print (bcolors.FAIL + warningInfo + bcolors.ENDC)
            return 0
 
-    songsTitleList = [i['title'] for i in results['entries']]
-    playlistIndexList = [i['playlist_index'] for i in results['entries']]
-    artistList = [i['artist'] for i in results['entries']]
+    artistList = []
+    playlistIndexList = []
+    songsTitleList = []
+
+    for i in results['entries']:
         
+        playlistIndexList.append(i['playlist_index'])
+        songsTitleList.append(i['title'])
+       
+        if "artist" in i:
+            artistList.append(i['artist'])
+        else:
+            artistList.append("")
+
     songCounter=0
     for x in range(len(songsTitleList)):
         metadata_mp3.add_metadata_playlist(PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songsTitleList[x])
@@ -121,7 +164,11 @@ def main():
     print("---------  " + dt_string + "  ---------") 
 
     download_playlists()
+
 #    print(download_mp3("https://youtu.be/6vm9s44uNQA"))
+#    url="https://www.youtube.com/playlist?list=PL6uhlddQJkfiB-7Td9IIYbYM0DsPjxAt0"
+#    playlistName = "imprezka"
+#    update_metadata_from_YTplaylist(url, playlistName)
 
     now = datetime.now()
     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
