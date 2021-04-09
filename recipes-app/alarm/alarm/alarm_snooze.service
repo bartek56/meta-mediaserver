@@ -2,12 +2,11 @@
 Description=Alarm Snooze
 
 [Service]
-EnvironmentFile=/etc/mediaserver/systemdVariables
+ExecStartPre=/bin/systemctl stop start.service
 ExecStart=/bin/bash /opt/alarm.sh
-ExecStartPost=/bin/systemctl restart start
+ExecStartPost=/bin/systemctl start alarm_gui.service
 
-ExecStopPost=/bin/systemctl $ARG1 start
-
+ExecStopPost=/bin/systemctl start start.service
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Alarm
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStart=/opt/Alarm -platform eglfs
+
+ExecStopPost=/bin/systemctl start start.service
+
+[Install]
+WantedBy=graphical.target

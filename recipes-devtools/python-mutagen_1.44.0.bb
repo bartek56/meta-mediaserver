@@ -7,7 +7,5 @@ SRC_URI[md5sum] = "ce773321eedcb38b31d0624540191401"
 
 PYPI_PACKAGE = "mutagen"
 
-#PYPI_PACKAGE_EXT = "zip"
-
 inherit pypi setuptools3
 
