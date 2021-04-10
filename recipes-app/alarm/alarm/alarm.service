@@ -6,5 +6,6 @@ ExecStartPre=/bin/systemctl stop start
 ExecStart=/bin/bash /opt/alarm.sh
 ExecStartPost=/bin/systemctl start alarm_gui
 
+
 [Install]
 WantedBy=multi-user.target
