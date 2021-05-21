@@ -39,8 +39,6 @@ QT = " \
     qtmultimedia-examples \
     qtvirtualkeyboard \
     qtx11extras \
-    qtwebengine \
-    qtwebengine-examples \
     qtwebchannel \
     qtcharts \
 "
