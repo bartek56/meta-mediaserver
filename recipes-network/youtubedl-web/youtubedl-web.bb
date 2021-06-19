@@ -24,7 +24,7 @@ do_install(){
 
 
 FILES_${PN} += "/opt/youtubedl-web/youtubedl.py"
-FILES_${PN} += "/opt/youtubedl-web/install_boostrap.sh"
+FILES_${PN} += "/opt/youtubedl-web/install_bootstrap.sh"
 FILES_${PN} += "/opt/youtubedl-web/youtubedl.wsgi"
 FILES_${PN} += "/opt/youtubedl-web/templates"
 FILES_${PN} += "/opt/youtubedl-web/static"
