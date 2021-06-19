@@ -30,6 +30,7 @@ do_install_append() {
     cp ${WORKDIR}/IMG_20190922_171239.jpg ${D}/home/Pictures/
 
     install -d ${D}/home/Music
+    chmod -R 777 ${D}/home/Music
     cp ${WORKDIR}/Kings_Of_Leon_-_Sex_on_Fire.mp3 ${D}/home/Music/
     cp ${WORKDIR}/Myslovitz_-_Nienawisc.mp3 ${D}/home/Music/
     cp ${WORKDIR}/Sam_Smith_-_Money_On_My_Mind.mp3 ${D}/home/Music/    

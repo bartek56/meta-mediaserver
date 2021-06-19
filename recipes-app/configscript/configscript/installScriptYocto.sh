@@ -28,8 +28,18 @@ configure_other()
 	echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
 }
 
+install_bootstrap()
+{
+    cd /opt/youtubedl-web/static
+    wget https://github.com/twbs/bootstrap/releases/download/v5.0.0-beta1/bootstrap-5.0.0-beta1-dist.zip
+    unzip bootstrap-5.0.0-beta1-dist.zip
+    mv bootstrap-5.0.0-beta1-dist bootstrap-5.0.0
+    rm bootstrap-5.0.0-beta1-dist.zip
+    cd /opt
+}
 set -e
 
+install_bootstrap
 configure_jellyfin
 configure_other
 systemctl enable start.service

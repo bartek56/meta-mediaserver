@@ -10,6 +10,7 @@ SRC_URI = "git://github.com/bartek56/youtubedl-web"
 do_install(){
     install -d ${D}/opt/youtubedl-web
     install -m 0644 ${WORKDIR}/git/youtubedl.py ${D}/opt/youtubedl-web
+    install -m 0644 ${WORKDIR}/git/install_bootstrap.sh ${D}/opt/youtubedl-web
 
     install -d ${D}/opt/youtubedl-web
     install -m 0644 ${WORKDIR}/git/youtubedl.wsgi ${D}/opt/youtubedl-web
@@ -23,6 +24,7 @@ do_install(){
 
 
 FILES_${PN} += "/opt/youtubedl-web/youtubedl.py"
+FILES_${PN} += "/opt/youtubedl-web/install_boostrap.sh"
 FILES_${PN} += "/opt/youtubedl-web/youtubedl.wsgi"
 FILES_${PN} += "/opt/youtubedl-web/templates"
 FILES_${PN} += "/opt/youtubedl-web/static"

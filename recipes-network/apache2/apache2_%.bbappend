@@ -14,6 +14,7 @@ SRC_URI += "file://httpd.conf \
             file://tvheadend.png \
             file://ympd.svg \
             file://jellyfin.png \
+            file://youtubedl.png \
             file://alarm.png \
 "
 
@@ -25,6 +26,7 @@ do_install_append () {
 	install -d ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/ampache.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/background.jpg ${D}/usr/htdocs
+	install -m 0755 ${WORKDIR}/youtubedl.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/dlna.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/filebrowser.png ${D}/usr/htdocs
 	install -m 0755 ${WORKDIR}/ftp.png ${D}/usr/htdocs
@@ -51,5 +53,6 @@ FILES_${PN} += "/usr/htdocs/transmission.png"
 FILES_${PN} += "/usr/htdocs/tvheadend.png"
 FILES_${PN} += "/usr/htdocs/ympd.svg"
 FILES_${PN} += "/usr/htdocs/jellyfin.png"
+FILES_${PN} += "/usr/htdocs/youtubedl.png"
 FILES_${PN} += "/usr/htdocs/alarm.png"
 
