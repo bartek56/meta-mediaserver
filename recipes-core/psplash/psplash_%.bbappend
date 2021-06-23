@@ -21,5 +21,5 @@ do_install_append() {
 
 FILES_${PN} += "${systemd_system_unitdir}/psplash-start.service"
 FILES_${PN} += "${systemd_system_unitdir}/psplash-quit.service"
-
+FILES_${PN} += "${systemd_system_unitdir}/psplash-systemd.service"
 
