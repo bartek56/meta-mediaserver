@@ -4,7 +4,8 @@ SRCREV = "${PV}"
 
 SRC_URI[md5sum] = "90206af29c42af66fc900054816aee24"
 SRC_URI="https://github.com/notandy/ympd/archive/v${PV}.tar.gz \
-         file://ympd.service"
+         file://ympd.service \
+         file://001-resolve_mpd_duplicate_during_linking.patch"
 
 DEPENDS = "libmpdclient openssl mpd"
 

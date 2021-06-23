@@ -1,0 +1,30 @@
+diff --git a/src/mpd_client.c b/src/mpd_client.c
+index 7271984..e7af689 100644
+--- a/src/mpd_client.c
++++ b/src/mpd_client.c
+@@ -30,6 +30,9 @@
+ /* forward declaration */
+ static int mpd_notify_callback(struct mg_connection *c, enum mg_event ev);
+ 
++char dirble_api_token[28];
++struct t_mpd mpd;
++
+ const char * mpd_cmd_strs[] = {
+     MPD_CMDS(GEN_STR)
+ };
+diff --git a/src/mpd_client.h b/src/mpd_client.h
+index dd78af9..cfa07f8 100644
+--- a/src/mpd_client.h
++++ b/src/mpd_client.h
+@@ -92,7 +92,10 @@ struct t_mpd {
+ 
+     int song_id;
+     unsigned queue_version;
+-} mpd;
++};
++
++extern struct t_mpd mpd;
++extern char dirble_api_token[28];
+ 
+ struct t_mpd_client_session {
+     int song_id;
