@@ -2,7 +2,7 @@ SUMMARY = "Youtubedl-web"
 HOMEPAGE = "https://github.com/bartek56/youtubedl-web"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3"
+RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl"
 
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/youtubedl-web"

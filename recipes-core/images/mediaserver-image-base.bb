@@ -5,10 +5,12 @@ inherit sdcard_image-rpi
 SUMMARY = "Media Server without GUI"
 LICENSE = "MIT"
 
+#w-scan 
+#ampache 
+#pulseaudio-module-esound-protocol-tcp
 
 NETWORK = " \
     dhcpcd \
-    crda \
     iw \
     rsync \
     wget \
@@ -21,12 +23,12 @@ NETWORK = " \
     vsftpd \
     samba \
     filebrowser \
+    youtubedl-web \
 "
 
 TOOLS = " \
     bluez5 \
     i2c-tools \
-    python-smbus \
     bridge-utils \
     hostapd \
     screen \
@@ -53,7 +55,6 @@ AUDIO = " \
     pulseaudio-misc \
     pulseaudio-module-dbus-protocol \
     pulseaudio-module-native-protocol-tcp \
-    pulseaudio-module-esound-protocol-tcp \
     pulseaudio-module-zeroconf-publish \
     pulseaudio-module-console-kit \
     pulseaudio-module-cli \
@@ -64,7 +65,6 @@ AUDIO = " \
     pulseaudio-module-loopback \
     pulseaudio \
     mpg123 \
-    mplayer-common \
     sox \
     mpd \
     mpc \
@@ -75,8 +75,6 @@ AUDIO = " \
 MULTIMEDIA = " \
     minidlna \
     tvheadend \
-    w-scan \
-    ampache \
     nextcloud \
 "
 
@@ -89,8 +87,6 @@ IMAGE_INSTALL_append = " \
     ${MULTIMEDIA} \
     ${TEXT_EDITOR} \
     ${NETWORK} \
-    youtubedl \
-    youtubedl-web \
     php-modphp \
     transmission \
     docker \
@@ -100,8 +96,6 @@ IMAGE_INSTALL_append = " \
 IMAGE_INSTALL += " \
 	kernel-modules \
 "
-
-IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
 
 IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs"
 
