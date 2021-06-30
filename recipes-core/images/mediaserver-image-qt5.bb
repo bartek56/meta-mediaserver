@@ -5,7 +5,6 @@ inherit sdcard_image-rpi
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
-#w-scan 
 #pulseaudio-module-esound-protocol-tcp
 #gmpc
 
@@ -60,6 +59,8 @@ TOOLS = " \
     tzdata \ 
     configscript \
     localedef \
+    dvb-apps \
+    dvb-scan \
 "
 
 TEXT_EDITOR = " \
