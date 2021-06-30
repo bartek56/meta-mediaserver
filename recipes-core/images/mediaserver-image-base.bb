@@ -6,7 +6,6 @@ SUMMARY = "Media Server without GUI"
 LICENSE = "MIT"
 
 #w-scan 
-#ampache 
 #pulseaudio-module-esound-protocol-tcp
 
 NETWORK = " \
@@ -75,6 +74,7 @@ AUDIO = " \
 MULTIMEDIA = " \
     minidlna \
     tvheadend \
+    ampache \
     nextcloud \
 "
 

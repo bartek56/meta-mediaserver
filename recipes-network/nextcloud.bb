@@ -1,7 +1,7 @@
 SUMMARY = "Next Cloud"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} = "php"
+RDEPENDS_${PN} = "php mysql5"
 SRC_URI="https://download.nextcloud.com/server/installer/setup-nextcloud.php"
 
 S = "${WORKDIR}"

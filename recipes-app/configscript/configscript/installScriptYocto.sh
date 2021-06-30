@@ -25,17 +25,22 @@ configure_other()
     systemctl enable psplash-quit.service
     systemctl enable mysqld.service
     systemctl disable dhcpcd.service
-	echo vm.swappiness=0 | sudo tee -a /etc/sysctl.conf
+	echo vm.swappiness=0 | tee -a /etc/sysctl.conf
 }
 
 install_bootstrap()
 {
-    cd /opt/youtubedl-web/static
-    wget https://github.com/twbs/bootstrap/releases/download/v5.0.0-beta1/bootstrap-5.0.0-beta1-dist.zip
-    unzip bootstrap-5.0.0-beta1-dist.zip
-    mv bootstrap-5.0.0-beta1-dist bootstrap-5.0.0
-    rm bootstrap-5.0.0-beta1-dist.zip
-    cd /opt
+    bootstrapExist=$(ls /opt/youtubedl-web/static/ | grep bootstrap | wc -l)
+    if [ $bootstrapExist -gt 0 ]; then
+        printf "Boostrap is installed \n"
+    else
+        cd /opt/youtubedl-web/static
+        wget https://github.com/twbs/bootstrap/releases/download/v5.0.0-beta1/bootstrap-5.0.0-beta1-dist.zip
+        unzip bootstrap-5.0.0-beta1-dist.zip
+        mv bootstrap-5.0.0-beta1-dist bootstrap-5.0.0 --force
+        rm bootstrap-5.0.0-beta1-dist.zip
+        cd /opt
+    fi
 }
 set -e
 

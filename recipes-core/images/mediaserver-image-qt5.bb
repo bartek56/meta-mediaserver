@@ -1,28 +1,13 @@
-# Pulled from a mix of different images:
 include recipes-core/images/rpi-basic-image.bb
-# This image is a little more full featured, and includes wifi
-# support, provided you have a raspberrypi3
+
 inherit sdcard_image-rpi
-SUMMARY = "Media Server with QT5 GUI"
+
+SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
-
-NETWORK = " \
-    dhcpcd \
-    crda \
-    iw \
-    rsync \
-    wget \
-    wpan-tools \
-    screen \
-    iptables \
-    wpa-supplicant \
-    wireless-regdb \
-    iftop \ 
-    vsftpd \
-    samba \
-    filebrowser \
-"
+#w-scan 
+#pulseaudio-module-esound-protocol-tcp
+#gmpc
 
 QT = " \
     qtbase \
@@ -36,17 +21,32 @@ QT = " \
     qtdeclarative \
     qtgraphicaleffects \
     qtmultimedia \
-    qtmultimedia-examples \
     qtvirtualkeyboard \
     qtx11extras \
     qtwebchannel \
     qtcharts \
 "
 
-MY_FEATURES = " \
+NETWORK = " \
+    dhcpcd \
+    iw \
+    rsync \
+    wget \
+    wpan-tools \
+    screen \
+    iptables \
+    wpa-supplicant \
+    wireless-regdb \
+    iftop \ 
+    vsftpd \
+    samba \
+    filebrowser \
+    youtubedl-web \
+"
+
+TOOLS = " \
     bluez5 \
     i2c-tools \
-    python-smbus \
     bridge-utils \
     hostapd \
     screen \
@@ -54,6 +54,12 @@ MY_FEATURES = " \
     at \
     minicom \
     mc \
+    curl \
+    git \
+    bash \
+    tzdata \ 
+    configscript \
+    localedef \
 "
 
 TEXT_EDITOR = " \
@@ -67,7 +73,6 @@ AUDIO = " \
     pulseaudio-misc \
     pulseaudio-module-dbus-protocol \
     pulseaudio-module-native-protocol-tcp \
-    pulseaudio-module-esound-protocol-tcp \
     pulseaudio-module-zeroconf-publish \
     pulseaudio-module-console-kit \
     pulseaudio-module-cli \
@@ -78,7 +83,6 @@ AUDIO = " \
     pulseaudio-module-loopback \
     pulseaudio \
     mpg123 \
-    mplayer-common \
     sox \
     mpd \
     mpc \
@@ -89,8 +93,7 @@ AUDIO = " \
 MULTIMEDIA = " \
     minidlna \
     tvheadend \
-    w-scan \
-    ampache \
+    ampache \ 
     nextcloud \
 "
 
@@ -99,26 +102,15 @@ DISTRO_FEATURES += "pam libpam"
 
 IMAGE_INSTALL_append = " \
     ${QT} \
-    ${MY_FEATURES} \
+    ${TOOLS} \
     ${AUDIO} \
     ${MULTIMEDIA} \
     ${TEXT_EDITOR} \
     ${NETWORK} \
-    youtubedl \
-    youtubedl-web \
     php-modphp \
-    curl \
-    git \
-    mediaserver \
-    bash \
     transmission \
-    ristretto \
-    vlc \ 
-    gmpc \
-    tzdata \ 
-    configscript \
     docker \
-    localedef \
+    mediaserver \
 "
 
 # Include modules in rootfs
@@ -126,11 +118,9 @@ IMAGE_INSTALL += " \
 	kernel-modules \
 "
 
+IMAGE_FEATURES += " splash package-management ssh-server-openssh hwcodecs"
+
 SPLASH = "psplash-mediaserver"
-
-IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
-
-IMAGE_FEATURES += " splash package-management x11-base ssh-server-openssh hwcodecs"
 
 GLIBC_GENERATE_LOCALES = "pl_PL.UTF-8 en_US.UTF-8"
 IMAGE_LINGUAS = "en-us en-gb pl-pl"
