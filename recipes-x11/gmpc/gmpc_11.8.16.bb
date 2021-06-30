@@ -10,7 +10,7 @@ SRC_URI[md5sum] = "223aeb000e41697d8fdf54ccedee89d5"
 SRC_URI[sha256sum] = "a69414f35396846733632ca9619921d7acda537ffd6d49bd84b444945cb76b2c"
 
 
-DEPENDS = "glib-2.0 gettext-native gettext libmpd libsoup-2.4 sqlite libice libsm libx11 gtk+ intltool-native libunique gob2-native"
+DEPENDS = "glib-2.0 gettext-native gettext libmpd libsoup-2.4 sqlite libice libsm libx11 gtk+ intltool-native gob2-native"
 RDEPENDS_${PN} = "gtk+ xserver-xorg xinit xterm xinput xinput-calibrator xf86-input-evdev xf86-input-libinput xf86-input-mouse xf86-input-keyboard xf86-video-fbdev"
 EXTRA_OECONF="--disable-mmkeys --disable-unique LIBS='-lm' "
 
