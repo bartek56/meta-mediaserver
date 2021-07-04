@@ -26,6 +26,7 @@ configure_other()
     systemctl enable mysqld.service
     systemctl disable dhcpcd.service
 	echo vm.swappiness=0 | tee -a /etc/sysctl.conf
+    pactl set-default-sink 1
 }
 
 install_bootstrap()

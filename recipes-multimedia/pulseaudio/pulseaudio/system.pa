@@ -73,7 +73,6 @@ load-module module-suspend-on-idle
 ### Enable positioned event sounds
 load-module module-position-event-sounds
 
-load-module module-esound-protocol-tcp
 load-module module-native-protocol-tcp auth-anonymous=true
 load-module module-zeroconf-publish
 

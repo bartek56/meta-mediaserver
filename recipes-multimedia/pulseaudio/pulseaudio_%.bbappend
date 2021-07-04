@@ -15,6 +15,7 @@ PACKAGECONFIG += "bluez5"
 PACKAGECONFIG += "avahi"
 PACKAGECONFIG += "x11"
 PACKAGECONFIG += "autospawn-for-root"
+EXTRA_OECONF_append=" --enable-esound"
 
 do_install_append() {
         install -d ${D}${systemd_unitdir}/system
