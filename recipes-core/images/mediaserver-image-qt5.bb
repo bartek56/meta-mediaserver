@@ -41,6 +41,8 @@ NETWORK = " \
     samba \
     filebrowser \
     youtubedl-web \
+    transmission \
+    transmission-web \
 "
 
 TOOLS = " \
@@ -109,7 +111,6 @@ IMAGE_INSTALL_append = " \
     ${TEXT_EDITOR} \
     ${NETWORK} \
     php-modphp \
-    transmission \
     docker \
     mediaserver \
 "
