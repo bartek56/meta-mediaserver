@@ -16,6 +16,7 @@ SRC_URI += "file://httpd.conf \
             file://jellyfin.png \
             file://youtubedl.png \
             file://alarm.png \
+            file://apache2.service \           
 "
 
 do_install_append () {
