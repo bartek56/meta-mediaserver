@@ -40,6 +40,7 @@ NETWORK = " \
     vsftpd \
     samba \
     filebrowser \
+    speedtest \
     youtubedl-web \
     transmission \
     transmission-web \
