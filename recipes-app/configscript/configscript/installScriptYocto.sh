@@ -14,6 +14,7 @@ configure_jellyfin()
         mkdir /etc/Jellyfin/config
         mkdir /etc/Jellyfin/cache
         docker run -d --volume /etc/Jellyfin/config:/config --volume /etc/Jellyfin/cache:/cache --volume /home:/home_media --volume /mnt:/external_media --net=host --restart=unless-stopped jellyfin/jellyfin
+        systemctl enable docker.service
     fi
 }
 
