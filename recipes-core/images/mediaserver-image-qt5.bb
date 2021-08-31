@@ -5,7 +5,6 @@ inherit sdcard_image-rpi
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
-#pulseaudio-module-esound-protocol-tcp
 #gmpc
 
 QT = " \
