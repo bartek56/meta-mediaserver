@@ -25,7 +25,7 @@ do_install_append() {
         install -d ${D}${sysconfdir}/pulse
         install -m 0755 ${WORKDIR}/system.pa ${D}${sysconfdir}/pulse
         install -m 0755 ${WORKDIR}/daemon.conf ${D}${sysconfdir}/pulse
-        install -m 0755 ${WORKDIR}/dafault.conf ${D}${sysconfdir}/pulse
+        install -m 0755 ${WORKDIR}/default.pa ${D}${sysconfdir}/pulse
 }
 
 FILES_${PN} += "${systemd_system_unitdir}/pulseaudio.service"
