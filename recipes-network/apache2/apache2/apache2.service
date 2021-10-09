@@ -4,9 +4,9 @@ After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=simple
-Environment=LC_ALL="pl_PL.UTF-8"
-ExecStart=@SBINDIR@/httpd -DFOREGROUND -D SSL -D PHP5 -k start
-ExecStop=@BASE_BINDIR@/kill -WINCH ${MAINPID}
+Environment=LANG="pl_PL.UTF-8"
+ExecStart=/usr/sbin/httpd -DFOREGROUND -D SSL -D PHP5 -k start
+ExecStop=/bin/kill -WINCH ${MAINPID}
 KillSignal=SIGCONT
 PrivateTmp=true
 
