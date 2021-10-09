@@ -82,7 +82,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + 'http://' + window.location.hostname + ':8080' + window.location.pathname +
+                        document.write('<a href="' + 'http://' + window.location.hostname + ':8080' + 
                             '" ><img src="ympd.svg" height="150" alt="" border="0" ></a>');
                     </script>
                     <h2>Music Player</h2>
@@ -91,8 +91,8 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + window.location.pathname +
-                            '/ampache/' + '" ><img src="ampache.png" height="150" alt="" border="0" ></a>');
+                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname +
+                        '/ampache/' + '" ><img src="ampache.png" height="150" alt="" border="0" ></a>');
                     </script>
                     <h2>Music Server</h2>
             </div>
@@ -101,7 +101,7 @@
                 <center>
                     <td>
                         <script language="JavaScript">
-                            document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':8096' + window.location.pathname +
+                            document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':8096' +
                                 '" ><img src="jellyfin.png" height="150" alt="" border="0"/> </a>');
                         </script>
                         <h2>Jellyfin</h2>
@@ -115,7 +115,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':8090' + window.location.pathname +
+                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':8090' + 
                             '" ><img src="filebrowser.png" height="150" alt="" border="0"> </a>');
                     </script>
                     <h2>File Browser</h2>
@@ -126,7 +126,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + window.location.pathname + '/tvheadend' +
+                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':9981' +
                             '" ><img src="tvheadend.png" height="150" alt="" border="0"> </a>');
                     </script>
                     <h2>TvHeadEnd</h2>
@@ -137,7 +137,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href=ftp://' + window.location.hostname + window.location.pathname +
+                        document.write('<a href=ftp://' + window.location.hostname +
                             '><img src="ftp.png" height="150" alt="" border="0"/> </a>');
                     </script>
                     <h2>FTP</h2>
@@ -147,7 +147,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href=smb://' + window.location.hostname + window.location.pathname +
+                        document.write('<a href=smb://' + window.location.hostname + 
                             '><img src="samba.png" height="150" alt="" border="0" /> </a> ');
                     </script>
                     <h2>Samba</h2>
@@ -157,7 +157,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + 'http://' + window.location.hostname + ':8200' + window.location.pathname +
+                        document.write('<a href="' + 'http://' + window.location.hostname + ':8200' +
                             '" ><img src="dlna.png" height="150" alt="" border="0" /> </a> ');
                     </script>
                     <h2>DLNA status</h2>
@@ -168,7 +168,8 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + '/youtubedl' + window.location.pathname +
+                         document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + '/youtubedl' +
+                            "/index.html" +
                             '" ><img src="youtubedl.png" height="150" alt="" border="0" /> </a>');
                     </script>
                     <center>
@@ -179,7 +180,7 @@
             <div class="col-md">
                 <center>
                     <script language="JavaScript">
-                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':9091' + window.location.pathname +
+                        document.write('<a href="' + window.location.protocol + '//' + window.location.hostname + ':9091' +
                             '" ><img src="transmission.png" height="150" alt="" border="0" />  </a> ');
                     </script>
                     <h2>Torrent</h2>
