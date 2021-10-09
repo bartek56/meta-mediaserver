@@ -22,6 +22,7 @@ NETWORK = " \
     filebrowser \
     speedtest \
     youtubedl-web \
+    mediaserver-web \
     transmission \
     transmission-web \
 "
