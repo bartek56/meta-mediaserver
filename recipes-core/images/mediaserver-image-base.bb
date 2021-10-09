@@ -5,8 +5,6 @@ inherit sdcard_image-rpi
 SUMMARY = "Media Server without GUI"
 LICENSE = "MIT"
 
-#w-scan 
-#pulseaudio-module-esound-protocol-tcp
 
 NETWORK = " \
     dhcpcd \
@@ -22,7 +20,10 @@ NETWORK = " \
     vsftpd \
     samba \
     filebrowser \
+    speedtest \
     youtubedl-web \
+    transmission \
+    transmission-web \
 "
 
 TOOLS = " \
@@ -41,6 +42,8 @@ TOOLS = " \
     tzdata \ 
     configscript \
     localedef \
+    dvb-apps \
+    dvb-scan \
 "
 
 TEXT_EDITOR = " \
@@ -88,7 +91,6 @@ IMAGE_INSTALL_append = " \
     ${TEXT_EDITOR} \
     ${NETWORK} \
     php-modphp \
-    transmission \
     docker \
 "
 
