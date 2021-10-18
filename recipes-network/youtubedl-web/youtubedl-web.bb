@@ -2,10 +2,11 @@ SUMMARY = "Youtubedl-web"
 HOMEPAGE = "https://github.com/bartek56/youtubedl-web"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl"
+RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl sudo"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/youtubedl-web"
+SRC_URI = "git://github.com/bartek56/youtubedl-web \
+           file://www-data"
 
 do_install(){
     install -d ${D}/opt/youtubedl-web
@@ -20,6 +21,9 @@ do_install(){
 
     install -d ${D}/opt/youtubedl-web/templates
     install -m 0644 ${WORKDIR}/git/templates/* ${D}/opt/youtubedl-web/templates
+
+    install -d ${D}/etc/sudoers.d
+    install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
 }
 
 

@@ -1,0 +1,3 @@
+Cmnd_Alias  MYDAEMONS = /bin/systemctl stop alarm.timer, /bin/systemctl start alarm.timer, /bin/systemctl enable alarm.timer, /bin/systemctl disable alarm.timer, /bin/systemctl stop alarm.service, /bin/systemctl start alarm.service, /bin/systemctl daemon-reload
+www-data ALL = (root) NOPASSWD: MYDAEMONS
+
