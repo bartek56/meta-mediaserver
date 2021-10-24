@@ -29,6 +29,7 @@ QT = " \
 IMAGE_INSTALL_append += " \
     ${QT} \
     mediaserver \
+    mediaserver-startup \
 "
 
 IMAGE_FEATURES += " splash"
