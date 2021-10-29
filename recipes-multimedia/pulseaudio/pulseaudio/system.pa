@@ -75,4 +75,7 @@ load-module module-position-event-sounds
 
 load-module module-native-protocol-tcp auth-anonymous=true
 load-module module-zeroconf-publish
+load-module module-alsa-source device=hw:1
+set-default-sink alsa_output.platform-bcm2835_audio.stereo-fallback.2
+load-module module-rtp-recv sap_address=192.168.1.5
 
