@@ -71,7 +71,8 @@ HDMI_DRIVE = "1"
 ENABLE_UART = "1"
 DISABLE_OVERSCAN = "1"
 ENABLE_SPI_BUS = "1"
-DISABLE_SPLASH = "1"
+DISABLE_RPI_BOOT_LOGO = "1"
+
 RPI_EXTRA_CONFIG = "#   -----------------  \n\
 dtparam=audio=on \n\
 hdmi_cvt 800 480 60 6 0 0 0 \n\

@@ -64,6 +64,7 @@ SKIP_META_VIRT_SANITY_CHECK = "1"
 ENABLE_UART = "1"
 DISABLE_OVERSCAN = "1"
 DISABLE_SPLASH = "1"
+DISABLE_RPI_BOOT_LOGO = "1"
 RPI_EXTRA_CONFIG = "#   -----------------  \n\
 dtparam=audio=on \n\
 dtoverlay=pi3-miniuart-bt \n\

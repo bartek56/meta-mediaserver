@@ -1,8 +1,8 @@
 # meta-mediaserver
 yocto layer for MediaServer project
 
-Required:
-- Debian GNU/Linux 10 (buster) 4.19.67-2+deb10u2 (2019-11-11)
+Required:.
+- Debian 10 (buster) or Ubuntu 18.04
 - min. 150GB disk space
 
 
@@ -10,29 +10,38 @@ Required:
 
 - mkdir yocto_mediaserver
 - cd yocto_mediaserver
-- git clone -b zeus git://git.yoctoproject.org/poky.git
-- git clone -b zeus git://github.com/meta-qt5/meta-qt5.git
-- git clone -b zeus git://git.openembedded.org/meta-openembedded
-- git clone -b zeus git://git.yoctoproject.org/meta-virtualization
-- git clone -b zeus git://github.com/agherzan/meta-raspberrypi.git
-- git clone -b zeus git://github.com/bartek56/meta-mediaserver.git
+- git clone -b hardknott git://git.yoctoproject.org/poky.git
+- git clone -b hardknott git://github.com/meta-qt5/meta-qt5.git
+- git clone -b hardknott git://git.openembedded.org/meta-openembedded
+- git clone -b hardknott git://git.yoctoproject.org/meta-virtualization
+- git clone -b hardknott git://github.com/agherzan/meta-raspberrypi.git
+- git clone -b hardknott git://github.com/bartek56/meta-mediaserver.git
 
 
-2. Creating main config template
+2. Creating default config 
 
 - source poky/oe-init-build-env build-mediaserver
 
 3. Edit configuration files
 
-File local.conf You can override using commend: 
-- cd conf
-- wget https://github.com/bartek56/LinuxEmbedded/raw/master/yocto/MediaServer/local.conf
+File bblayers.conf You can override, but rememebr to change path in this file: 
+- cp ../meta-mediaserver/conf/bblayers.conf.sample conf/bblayers.conf 
 
-add path to layers in bblayers.conf. Template is in link: https://github.com/bartek56/LinuxEmbedded/blob/master/yocto/MediaServer/bblayers.conf
+File local.conf depends on target
+for target with Qt5 Gui
+- cp ../meta-mediaserver/conf/local.conf.qt5.sample conf/local.conf
+
+for target without Qt5 Gui
+- cp ../meta-mediaserver/conf/local.conf.base.sample conf/local.conf
+
 
 4. Build MediaServer
 
+with Qt5 GUI:
 - bitbake mediaserver-image-qt5
+
+without GUI
+- bitbake mediaserver-image-base
 
 5. Configure MediaServer
 
