@@ -24,6 +24,10 @@ do_install(){
 
     install -d ${D}/etc/sudoers.d
     install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
+
+    install -d ${D}/var/log
+    printf "" > ${D}/var/log/youtubedlweb.log
+    chown www-data:www-data /var/log/youtubedlweb.log
 }
 
 
@@ -34,4 +38,5 @@ FILES_${PN} += "/opt/youtubedl-web/templates"
 FILES_${PN} += "/opt/youtubedl-web/static"
 FILES_${PN} += "/opt/youtubedl-web/templates/index.html"
 FILES_${PN} += "/opt/youtubedl-web/static/style.css"
+FILES_${PN} += "/var/log/youtubedlweb.log"
 
