@@ -2,12 +2,13 @@ SUMMARY = "MediaServer GUI app"
 SECTION = "examples"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtquickcontrols2 systemdlib-qt"
-RDEPENDS_${PN} = "alarm ntfs-3g qnapi python-wikiquote"
+RDEPENDS_${PN} = "alarm ntfs-3g qnapi python-wikiquote systemdlib-qt"
 SRC_URI[md5sum] = "5900b09d36848e446e53e19c413ec363"
 SRC_URI[sha256sum] = "b828614be6b8be36493e18b7c239d6264dd78e1f4e325301f2d1722cad6eaf5e"
 
+
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/MediaServer \
+SRC_URI = "git://github.com/bartek56/MediaServer;protocol=https \
           file://fstab_manager.sh \
           file://quotes.py \
           file://screensaver.conf \
@@ -44,6 +45,7 @@ do_install_append() {
     install -m 0644 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver  
 }
 
+INSANE_SKIP_${PN} += " libMediaServerLib.so.1()(64bit)"
 FILES_${PN} += "/opt/MediaServerApp"
 FILES_${PN} += "/opt/Alarm"
 FILES_${PN} += "/opt/fstab_manager.sh"

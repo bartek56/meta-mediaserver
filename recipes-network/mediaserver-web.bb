@@ -4,7 +4,7 @@ LICENSE = "CLOSED"
 DEPENDS += "apache2"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/MediaServer-Web;branch=main"
+SRC_URI = "git://github.com/bartek56/MediaServer-Web;branch=main;protocol=https"
 
 S = "${WORKDIR}/git"
 

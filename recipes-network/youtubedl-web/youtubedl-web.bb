@@ -5,7 +5,7 @@ LICENSE = "CLOSED"
 RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl sudo"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/youtubedl-web \
+SRC_URI = "git://github.com/bartek56/youtubedl-web;protocol=https \
            file://www-data"
 
 do_install(){
@@ -25,9 +25,9 @@ do_install(){
     install -d ${D}/etc/sudoers.d
     install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
 
-    install -d ${D}/var/log
-    printf "" > ${D}/var/log/youtubedlweb.log
-    chown www-data:www-data /var/log/youtubedlweb.log
+#    install -d ${D}/var/log
+#    printf "" > ${D}/var/log/youtubedlweb.log
+#    chown www-data:www-data /var/log/youtubedlweb.log
 }
 
 
