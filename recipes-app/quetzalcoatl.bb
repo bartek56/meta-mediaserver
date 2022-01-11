@@ -18,7 +18,9 @@ inherit cmake_qt5 pkgconfig
 do_install(){
     install -d ${D}/opt
 	install -m 0755 quetzalcoatl ${D}/opt
+    install -d ${D}/usr/share/icons
+    cp -r ${S}/app/icons/breeze ${D}/usr/share/icons/
 }
 
 FILES_${PN} += "/opt/quetzalcoatl"
-#FILES_${PN} += "//quetzalcoatl"
+FILES_${PN} += "/usr/share/icons/breeze/*"
