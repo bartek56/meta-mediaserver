@@ -1,0 +1,17 @@
+[Unit]
+Description=MPC Qt5 
+
+[Service]
+ExecStartPre=/bin/systemctl stop start
+ExecStartPre=/bin/sleep 0.3
+
+EnvironmentFile=/etc/environment
+ExecStart=/opt/quetzalcoatl -platform eglfs
+Restart=always
+RestartSec=2
+
+ExecStartPost=/bin/sleep 0.3
+ExecStopPost=/bin/systemctl start start
+
+[Install]
+WantedBy=multi-user.target
