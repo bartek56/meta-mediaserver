@@ -28,6 +28,7 @@ QT = " \
 
 IMAGE_INSTALL_append += " \
     ${QT} \
+    quetzalcoatl \
     mediaserver \
     mediaserver-startup \
 "

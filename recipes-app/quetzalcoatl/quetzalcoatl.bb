@@ -24,9 +24,7 @@ do_install(){
 
 
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/start.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/alarm_gui.service ${D}${systemd_unitdir}/system
-
+    install -m 0644 ${WORKDIR}/mpc_mediaserver.service ${D}${systemd_unitdir}/system
 }
 
 FILES_${PN} += "/opt/quetzalcoatl"
