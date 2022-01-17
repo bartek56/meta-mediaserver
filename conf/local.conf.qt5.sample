@@ -77,7 +77,7 @@ RPI_EXTRA_CONFIG = "#   -----------------  \n\
 dtparam=audio=on \n\
 hdmi_cvt 800 480 60 6 0 0 0 \n\
 dtoverlay=ads7846,cs=1,penirq=25,penirq_pull=2,speed=50000,keep_vref_on=0,swapxy=0 \n\
-dtparam=pmax=60000,xohms=400,xmin=110,xmax=3900,ymin=330,ymax=3900 \n\
+dtparam=pmax=255,xohms=60,xmin=120,xmax=4000,ymin=440,ymax=3900 \n\
     "
 
 SPLASH = "psplash-mediaserver"
