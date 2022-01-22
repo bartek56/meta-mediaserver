@@ -1,5 +1,5 @@
 [Unit]
-Description=Alarm GUI
+Description=Alarm
 
 [Service]
 EnvironmentFile=/etc/environment

@@ -6,7 +6,7 @@ ExecStartPre=/bin/systemctl stop start.service
 
 ExecStart=/bin/bash /opt/alarm.sh
 
-ExecStartPost=/bin/sleep 0.5
+ExecStartPost=/bin/sleep 0.1
 ExecStartPost=/bin/systemctl start alarm_gui.service
 
 [Install]

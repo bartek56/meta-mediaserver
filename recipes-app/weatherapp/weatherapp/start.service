@@ -1,0 +1,12 @@
+[Unit]
+Description=MediaServer App
+After=pulseaudio.service
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStart=/opt/MediaServerApp -platform eglfs
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
