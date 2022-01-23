@@ -1,8 +1,8 @@
 SUMMARY = "MediaServer startup GUI app"
-SECTION = "examples"
+SECTION = "apps"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtquickcontrols2 systemdlib-qt" 
-RDEPENDS_${PN} = "systemdlib-qt"
+RDEPENDS_${PN} = "qtbase qtquickcontrols2 qtvirtualkeyboard systemdlib-qt qtdeclarative"
 SRC_URI[md5sum] = "5900b09d36848e446e53e19c413ec363"
 SRC_URI[sha256sum] = "b828614be6b8be36493e18b7c239d6264dd78e1f4e325301f2d1722cad6eaf5e"
 

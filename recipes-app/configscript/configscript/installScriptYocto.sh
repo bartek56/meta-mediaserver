@@ -27,6 +27,8 @@ configure_other()
     systemctl enable mysqld.service
     systemctl disable dhcpcd.service
 	echo vm.swappiness=0 | tee -a /etc/sysctl.conf
+    chgrp www-data /etc/mediaserver/alarm.sh
+    chgrp www-data /lib/systemd/system/alarm.timer
 }
 
 install_bootstrap()

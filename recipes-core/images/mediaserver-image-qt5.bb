@@ -5,32 +5,15 @@ inherit sdcard_image-rpi
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
-#gmpc
-
-QT = " \
+IMAGE_INSTALL_append += " \
     qtbase \
     qtbase-mkspecs \
     qtbase-plugins \
     qtbase-tools \
-    qt3d \
-    qtconnectivity \
-    qtquickcontrols \
-    qtquickcontrols2 \
-    qtdeclarative \
-    qtgraphicaleffects \
-    qtmultimedia \
-    qtvirtualkeyboard \
-    qtx11extras \
-    qtwebchannel \
-    qtcharts \
-"
-
-
-IMAGE_INSTALL_append += " \
-    ${QT} \
     quetzalcoatl \
-    mediaserver \
+    weatherapp \
     mediaserver-startup \
+    mediaserver \
 "
 
 IMAGE_FEATURES += " splash"

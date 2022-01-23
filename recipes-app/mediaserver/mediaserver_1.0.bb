@@ -1,13 +1,15 @@
 SUMMARY = "MediaServer GUI app"
-SECTION = "examples"
+SECTION = "apps"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtquickcontrols2 systemdlib-qt"
-RDEPENDS_${PN} = "alarm ntfs-3g qnapi python-wikiquote systemdlib-qt"
-SRC_URI[md5sum] = "5900b09d36848e446e53e19c413ec363"
-SRC_URI[sha256sum] = "b828614be6b8be36493e18b7c239d6264dd78e1f4e325301f2d1722cad6eaf5e"
+RDEPENDS_${PN} = "alarm ntfs-3g qnapi python-wikiquote systemdlib-qt qtbase qtquickcontrols qtquickcontrols2 qtvirtualkeyboard qtdeclarative"
 
 
 SRCREV = "${AUTOREV}"
+#FILESEXTRAPATHS_append = "/home/bartosz/Documents/QTCreator"
+#file://MediaServer
+#git://github.com/bartek56/MediaServer;protocol=https 
+
 SRC_URI = "git://github.com/bartek56/MediaServer;protocol=https \
           file://fstab_manager.sh \
           file://quotes.py \
@@ -16,6 +18,7 @@ SRC_URI = "git://github.com/bartek56/MediaServer;protocol=https \
           file://alarm_gui.service"
 
 
+#S = "${WORKDIR}/MediaServer"
 S = "${WORKDIR}/git"
 
 require recipes-qt/qt5/qt5.inc
