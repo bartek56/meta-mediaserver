@@ -23,8 +23,7 @@ if [[ $? -ne 0 ]]; then
     fi
 fi
 
-#pactl load-module module-null-sink sink_name=${pa_sink} format=s16be channels=2 rate=44100 sink_properties="device.description='RTP Multicast Sink'"
-pactl load-module module-null-sink sink_name=${pa_sink} format=s16be channels=2 rate=44100
+pactl load-module module-null-sink sink_name=${pa_sink} format=s16be channels=2 rate=44100 sink_properties=device.description=RTP_MediaServer
 pactl load-module module-rtp-send source=${pa_sink}.monitor mtu=${pa_rtp_mtu} destination_ip=192.168.1.5
 pactl load-module module-rtp-send source=${pa_sink}.monitor mtu=${pa_rtp_mtu} destination_ip=192.168.1.6
 
