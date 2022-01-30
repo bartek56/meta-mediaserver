@@ -1,9 +1,27 @@
 # meta-mediaserver
 yocto layer for MediaServer project
 
+Support machine: Raspberry Pi 3b, Raspberry Pi 4
+
 Required:.
 - Debian 10 (buster) or Ubuntu 18.04
 - min. 150GB disk space
+
+layer support:
+- [mediaserver](https://github.com/bartek56/MediaServer)
+- [qnapi](https://github.com/QNapi/qnapi)
+- [quetzalcoatl](https://github.com/bartek56/quetzalcoatl)
+- [weatherapp](https://github.com/bartek56/weather-app)
+- [filebrowser](https://github.com/filebrowser/filebrowser)
+- [ampache](https://github.com/ampache/ampache)
+- [transmission](https://github.com/transmission/transmission)
+- [ympd](https://github.com/notandy/ympd)
+- [mpd](https://github.com/MusicPlayerDaemon/MPD)
+- [minidlna](https://github.com/azatoth/minidlna)
+- [vsftpd](https://github.com/djarosz/vsftpd)
+- [tvheadend](https://github.com/tvheadend/tvheadend)
+- [samba](https://github.com/samba-team/samba)
+- [youtubedl](https://github.com/ytdl-org/youtube-dl)
 
 
 1. Create directory and download layers
@@ -63,20 +81,20 @@ Ampache config:
 
 2. go to localhost website, click Ampache icon
 
-Database Name: ampachedb
-MySQL hostname: 127.0.0.1
-MySQL port: [empty]
-MySQL administrative username: root
-MySQL administrative password: mypass
-Create Databse: checked
-Create Database User: (optional)
+Database Name: ampachedb\
+MySQL hostname: 127.0.0.1\
+MySQL port: [empty]\
+MySQL administrative username: root\
+MySQL administrative password: mypass\
+Create Databse: checked\
+Create Database User: (optional)\
 
-next Window:
-Database Name: ampachedb
-MySQL Hostname: 127.0.0.1
-MySQL Port: [empty]
-MySQL Username: root
-MySQL password: mypass
+next Window:\
+Database Name: ampachedb\
+MySQL Hostname: 127.0.0.1\
+MySQL Port: [empty]\
+MySQL Username: root\
+MySQL password: mypass\
 
 
 Issue:
