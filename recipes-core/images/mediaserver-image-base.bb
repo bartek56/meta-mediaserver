@@ -93,6 +93,7 @@ IMAGE_INSTALL_append = " \
     ${NETWORK} \
     php-modphp \
     docker \
+    danfoss-thermostat \
 "
 
 # Include modules in rootfs
