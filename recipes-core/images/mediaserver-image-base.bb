@@ -25,6 +25,8 @@ NETWORK = " \
     mediaserver-web \
     transmission \
     transmission-web \
+    openssh-sftp \
+    openssh-sftp-server \
 "
 
 TOOLS = " \
