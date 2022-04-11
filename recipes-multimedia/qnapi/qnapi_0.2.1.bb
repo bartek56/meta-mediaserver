@@ -7,6 +7,7 @@ RDEPENDS_${PN} += " p7zip"
 
 SRC_URI = "https://github.com/QNapi/qnapi/releases/download/${PV}/qnapi-${PV}.tar.gz \
            file://qnapi.ini \
+           file://downloadSubtitles.py \
            "
 
 do_install_append(){
@@ -30,5 +31,6 @@ FILES_${PN} += "/etc/mediaserver/qnapi.ini \
   /usr/share/icons/hicolor/512x512/apps/qnapi.png \
   /usr/share/icons/hicolor/32x32/apps/qnapi.png \
   /usr/share/icons/hicolor/128x128/apps/qnapi.png \
+  /opt/downloadSubtitles.py \
 "
 
