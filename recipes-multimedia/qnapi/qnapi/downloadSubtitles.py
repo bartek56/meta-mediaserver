@@ -5,7 +5,7 @@ import subprocess
 class DownloadSubtitles():
     def __init__(self, language):
         self.language = language
-        self.qnapiConfigFile = "/home/bartosz/.config/qnapi.ini"
+        self.qnapiConfigFile = "/etc/mediaserver/qnapi.ini"
         self.configQNapi()
         self.downloadSubtitles()
 
@@ -21,7 +21,7 @@ class DownloadSubtitles():
             filesInMovieDir = os.listdir(movieDirFullPath)
             if not self.subtitlesExist(filesInMovieDir):
                 for movie in filesInMovieDir:                
-                    if "mp4" in movie or "mkv" in movie:
+                    if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
                         movieFullPath = os.path.join(movieDirFullPath, movie)
                         if self.qnapi(movieFullPath):
                             fileName = movieFullPath.replace(".mkv","")
