@@ -3,8 +3,8 @@ HOMEPAGE = "github.com/ytdl-org/youtube-dl"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=7246f848faa4e9c9fc0ea91122d6e680"
 
-PYPI_PACKAGE = "metadata_mp3"
-SRCREV = "6508688e88c83bb811653083db9351702cd39a6a"
+PYPI_PACKAGE = "youtube_dl"
+SRCREV = "090acd58c1d810fbef1bac08d70bbfad9c0a7504"
 PYPI_SRC_URI = "git://github.com/ytdl-org/youtube-dl;protocol=https;branch=master"
  
 
