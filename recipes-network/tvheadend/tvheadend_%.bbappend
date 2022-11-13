@@ -1,10 +1,10 @@
 SUMMARY = "TvHeadEnd service"
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://tvheadend.service"
 
-do_install_append() {
+do_install:append() {
         install -d ${D}${systemd_unitdir}/system
         install -m 0644 ${WORKDIR}/tvheadend.service ${D}${systemd_unitdir}/system
 }
 
-FILES_${PN} += "/lib/systemd/system/tvheadend.service"
+FILES:${PN} += "/lib/systemd/system/tvheadend.service"

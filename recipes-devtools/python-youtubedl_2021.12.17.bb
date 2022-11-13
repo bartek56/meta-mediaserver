@@ -7,6 +7,6 @@ SRC_URI[sha256sum] = "bc59e86c5d15d887ac590454511f08ce2c47698d5a82c27bfe27b5d814
 
 PYPI_PACKAGE = "youtube_dl"
 
-FILES_${PN} += "${datadir}/etc/*"
+FILES:${PN} += "${datadir}/etc/*"
 inherit pypi setuptools3
 

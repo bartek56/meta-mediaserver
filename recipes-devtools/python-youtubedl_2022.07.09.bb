@@ -12,10 +12,3 @@ inherit pypi setuptools3
 
 S = "${WORKDIR}/git"
 
-do_install_append(){
-    rm -r ${D}/usr/share/etc/bash_completion.d
-    rm -r ${D}/usr/share/etc/fish/completions
-    rm -r ${D}/usr/share/etc/fish
-    rm -r ${D}//usr/share/etc
-}
-

@@ -26,6 +26,6 @@ do_install() {
     install -m 0755 ${S}/alarm.png ${D}/usr/htdocs
 }
 
-FILES_${PN} += "/usr/htdocs"
+FILES:${PN} += "/usr/htdocs"
 
 

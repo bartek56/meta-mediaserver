@@ -1,5 +1,5 @@
 SUMMARY = "PulseAudio config"
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://pulseaudio.service \
             file://system.pa \ 
             file://daemon.conf "
@@ -15,9 +15,9 @@ PACKAGECONFIG += "bluez5"
 PACKAGECONFIG += "avahi"
 PACKAGECONFIG += "x11"
 PACKAGECONFIG += "autospawn-for-root"
-EXTRA_OECONF_append=" --enable-esound"
+EXTRA_OECONF:append=" --enable-esound"
 
-do_install_append() {
+do_install:append() {
         install -d ${D}${systemd_unitdir}/system
         install -m 0755 ${WORKDIR}/pulseaudio.service ${D}${systemd_unitdir}/system
 
@@ -26,6 +26,4 @@ do_install_append() {
         install -m 0755 ${WORKDIR}/daemon.conf ${D}${sysconfdir}/pulse
 }
 
-FILES_${PN} += "${systemd_system_unitdir}/pulseaudio.service"
-FILES_${PN} += "/usr/libexec/pulse"
-
+FILES:${PN} += "${systemd_system_unitdir}/pulseaudio.service"

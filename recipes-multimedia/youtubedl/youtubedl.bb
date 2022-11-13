@@ -2,7 +2,7 @@ SUMMARY = "Youtube_dl script"
 HOMEPAGE = "https://github.com/bartek56/LinuxEmbedded"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "python3 python-mutagen python-youtubedl metadata-mp3 ffmpeg"
+RDEPENDS:${PN} += "python3 python-mutagen python-youtubedl metadata-mp3 ffmpeg"
 SRC_URI="file://downloadFromYoutube.py \
          file://youtubedl.service \
          file://youtubedl.timer \
@@ -25,7 +25,7 @@ do_install(){
 }
 
 
-FILES_${PN} += "/opt/downloadFromYoutube.py"
-FILES_${PN} += "${systemd_system_unitdir}/youtubedl.service"
-FILES_${PN} += "${systemd_system_unitdir}/youtubedl.timer"
-FILES_${PN} += "${sysconfdir}/mediaserver/youtubedl.ini"
+FILES:${PN} += "/opt/downloadFromYoutube.py"
+FILES:${PN} += "${systemd_system_unitdir}/youtubedl.service"
+FILES:${PN} += "${systemd_system_unitdir}/youtubedl.timer"
+FILES:${PN} += "${sysconfdir}/mediaserver/youtubedl.ini"

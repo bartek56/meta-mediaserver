@@ -1,11 +1,11 @@
 #/bin/bash
-minVolume=30
-maxVolume=70
-defaultVolume=30
-growingVolume=8
-growingSpeed=25
-playlist="alarm"
-theNewestSongs=true
+minVolume=7
+maxVolume=84
+defaultVolume=9
+growingVolume=5
+growingSpeed=50
+playlist="Alarm"
+theNewestSongs=false
 
 
 
@@ -31,7 +31,6 @@ if [ "$theNewestSongs" == true ]; then
 		songs=()
     for songName in $musicList; do
 				songs+=($songName)
-#        mpc --wait listall | grep $songName | mpc add
     done
 
 
@@ -45,7 +44,8 @@ else
     mpc --wait load $playlist
     mpc random on
 fi
-
+#mpc enable "Local Pulse"
+#mpc disable "Client Pulse"
 mpc repeat on
 mpc volume $minVolume
 mpc play

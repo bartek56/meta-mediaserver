@@ -3,10 +3,10 @@ SECTION = "apps"
 LICENSE = "CLOSED"
 
 DEPENDS += "qtbase qtquickcontrols2 qttools-native qtxmlpatterns"
-RDEPENDS_${PN} += "qtbase qtxmlpatterns qtquickcontrols2"
+RDEPENDS:${PN} += "qtbase qtxmlpatterns qtquickcontrols2"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/weather-app;protocol=https \
+SRC_URI = "git://github.com/bartek56/weather-app;branch=master;protocol=https \
           file://weather.service \
         "
 
@@ -25,7 +25,7 @@ do_install() {
 }
 
 
-FILES_${PN} += "/opt/weatherapp"
-FILES_${PN} += "${systemd_system_unitdir}/weather.service"
+FILES:${PN} += "/opt/weatherapp"
+FILES:${PN} += "${systemd_system_unitdir}/weather.service"
 
 

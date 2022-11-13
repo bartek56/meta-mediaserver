@@ -288,4 +288,3 @@ if __name__ == '__main__':
         elif args.mode == "mp3":
             yt.download_mp3(args.link)
     yt.summary()
-

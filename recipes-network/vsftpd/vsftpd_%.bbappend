@@ -1,5 +1,5 @@
 SUMMARY = "Replacement recipe"
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://vsftpd.service \
             file://ftpd.passwd \
             file://vsftpd \
@@ -7,7 +7,7 @@ SRC_URI += "file://vsftpd.service \
             file://bartosz \
 "
 
-RDEPENDS_${PN} += " pam-pwdfile"
+RDEPENDS:${PN} += " pam-pwdfile"
 
 inherit systemd useradd
 
@@ -17,7 +17,7 @@ SYSTEMD_SERVICE_${PN} = "vsftpd.service"
 USERADD_PACKAGES = "${PN}"
 USERADD_PARAM_${PN} = "-d /home/vsftpd -s /bin/false -G nogroup -U vsftpd"
 
-do_install_append() {
+do_install:append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 0644 ${WORKDIR}/vsftpd.service ${D}${systemd_system_unitdir}
 

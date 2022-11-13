@@ -83,4 +83,3 @@ class DownloadSubtitles():
 if __name__ == "__main__":
     DownloadSubtitles("eng")
     DownloadSubtitles("pl")
-
