@@ -9,21 +9,19 @@ HOMEPAGE = "https://github.com/GrahamDumpleton/mod_wsgi"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 
-SRCREV = "217e80b7436035723b80ff02ee349365e8553dfc"
-PV = "4.6.8+git${SRCPV}"
+SRCREV = "7fba9934e8631cdc08d48bbc2983598b4586db80"
+PV = "4.9.4+git${SRCPV}"
 
 S = "${WORKDIR}/git"
 
 SRCNAME = "mod_wsgi"
 SRC_URI = "\
-	git://github.com/GrahamDumpleton/mod_wsgi.git \
-	file://configure.ac-allow-PYTHON-values-to-be-passed-via-en.patch \        
-	"
+	git://github.com/GrahamDumpleton/mod_wsgi.git;branch=master;protocol=https"
 
-inherit autotools-brokensep distutils3-base
+inherit autotools-brokensep setuptools3-base
 
 DEPENDS += "apache2-native apache2 python3"
-RDEPENDS_${PN} = "python3"
+RDEPENDS:${PN} = "python3"
 
 EXTRA_OECONF = "\
 	--with-apxs=${STAGING_BINDIR_CROSS}/apxs \
@@ -42,10 +40,10 @@ EXTRA_OECONF = "\
 
 CFLAGS += " -I${STAGING_INCDIR}/apache2"
 
-FILES_${PN} += "/etc/apache2/"
-FILES_${PN}-dbg += "${libdir}/apache2/modules/.debug"
+FILES:${PN} += "/etc/apache2/"
+FILES:${PN}-dbg += "${libdir}/apache2/modules/.debug"
 
-do_install_append() {
+do_install:append() {
 	mkdir -p ${D}/etc/apache2/modules.d/
 	echo "LoadModule wsgi_module ${libexecdir}/apache2/modules/mod_wsgi.so" > \
 	  ${D}/etc/apache2/modules.d/wsgi.load

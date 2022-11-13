@@ -1,5 +1,5 @@
 SUMMARY = "Replacement recipe"
-FILESEXTRAPATHS_prepend := "${THISDIR}/minidlna:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/minidlna:"
 SRC_URI += "file://minidlna.conf \
             file://minidlna.service \
             file://IMG_20190816_184930.jpg \
@@ -16,7 +16,7 @@ inherit systemd
 SYSTEMD_SERVICE_${PN} = "minidlna.service"
 SYSTEMD_PACKAGES = "${PN}" 
 
-do_install_append() {
+do_install:append() {
     install -m 0755 ${WORKDIR}/minidlna.conf ${D}/etc
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/minidlna.service ${D}${systemd_system_unitdir}
@@ -42,8 +42,7 @@ do_install_append() {
     ln -sf /etc/minidlna.conf ${D}/etc/mediaserver/minidlna.conf
 }
 
-FILES_${PN} += "${systemd_system_unitdir}/minidlna.service"
-FILES_${PN} += "home/Music/*"
-FILES_${PN} += "home/Videos/*"
-FILES_${PN} += "home/Pictures/*"
-
+FILES:${PN} += "${systemd_system_unitdir}/minidlna.service"
+FILES:${PN} += "home/Music/*"
+FILES:${PN} += "home/Videos/*"
+FILES:${PN} += "home/Pictures/*"

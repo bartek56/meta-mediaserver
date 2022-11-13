@@ -3,7 +3,7 @@ HOMEPAGE = "http://www.ampache.org"
 LICENSE = "GPLv2"
 LIC_FILES_CHKSUM = "file://README.md;md5=8d6af10cff762d9e63ac23aa07429b53"
 
-RDEPENDS_${PN} = "apache2 mysql5 php bash perl"
+RDEPENDS:${PN} = "apache2 mysql5 php bash perl"
 
 SRC_URI = "https://github.com/ampache/ampache/releases/download/${PV}/${PN}-${PV}_all.zip"
 
@@ -21,6 +21,4 @@ do_install () {
 	cp -r ${S}/ ${D}/usr/htdocs/ampache/
 }
 
-FILES_${PN} = "/usr/htdocs/ampache"
-
-
+FILES:${PN} = "/usr/htdocs/ampache"

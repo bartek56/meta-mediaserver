@@ -1,5 +1,5 @@
 SUMMARY = "Replacement recipe"
-FILESEXTRAPATHS_prepend := "${THISDIR}/mpd:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/mpd:"
 SRC_URI += "file://mpd.conf"
 
 PACKAGECONFIG += "aac" 
@@ -20,7 +20,7 @@ PACKAGECONFIG += "sndfile"
 PACKAGECONFIG += "upnp" 
 PACKAGECONFIG += "zlib" 
 
-do_install_append() {
+do_install:append() {
     install -d ${D}/etc
     install -m 0755 ${WORKDIR}/mpd.conf ${D}/etc
 
@@ -29,5 +29,5 @@ do_install_append() {
 
 }
 
-FILES_${PN} += "etc/mpd.conf"
+FILES:${PN} += "etc/mpd.conf"
 

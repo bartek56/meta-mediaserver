@@ -3,6 +3,10 @@ set nocompatible              " be iMproved, required
 
 filetype off                  " required
 
+set undodir=~/.vim/tmp/undo     " undo files
+set backupdir=~/.vim/tmp/backup " backups
+set directory=~/.vim/tmp/swap   " swap files
+
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()

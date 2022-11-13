@@ -1,15 +1,15 @@
 SUMMARY = "DHCP client daemon service"
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://dhcpcd.service"
 
 inherit systemd
 
 SYSTEMD_SERVICE_${PN} = "dhcpcd.service"
 
-do_install_append() {
+do_install:append() {
         install -d ${D}${systemd_system_unitdir}
         install -m 0644 ${WORKDIR}/dhcpcd.service ${D}${systemd_unitdir}/system
 }
 
-FILES_${PN} += "${systemd_system_unitdir}/dhcpcd.service"
+FILES:${PN} += "${systemd_system_unitdir}/dhcpcd.service"
 

@@ -2,10 +2,10 @@ SUMMARY = "Youtubedl-web"
 HOMEPAGE = "https://github.com/bartek56/youtubedl-web"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl sudo"
+RDEPENDS:${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl sudo"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/youtubedl-web;protocol=https \
+SRC_URI = "git://github.com/bartek56/youtubedl-web;branch=master;protocol=https \
            file://www-data"
 
 do_install(){
@@ -31,12 +31,12 @@ do_install(){
 }
 
 
-FILES_${PN} += "/opt/youtubedl-web/youtubedl.py"
-FILES_${PN} += "/opt/youtubedl-web/install_bootstrap.sh"
-FILES_${PN} += "/opt/youtubedl-web/youtubedl.wsgi"
-FILES_${PN} += "/opt/youtubedl-web/templates"
-FILES_${PN} += "/opt/youtubedl-web/static"
-FILES_${PN} += "/opt/youtubedl-web/templates/index.html"
-FILES_${PN} += "/opt/youtubedl-web/static/style.css"
-FILES_${PN} += "/var/log/youtubedlweb.log"
+FILES:${PN} += "/opt/youtubedl-web/youtubedl.py"
+FILES:${PN} += "/opt/youtubedl-web/install_bootstrap.sh"
+FILES:${PN} += "/opt/youtubedl-web/youtubedl.wsgi"
+FILES:${PN} += "/opt/youtubedl-web/templates"
+FILES:${PN} += "/opt/youtubedl-web/static"
+FILES:${PN} += "/opt/youtubedl-web/templates/index.html"
+FILES:${PN} += "/opt/youtubedl-web/static/style.css"
+FILES:${PN} += "/var/log/youtubedlweb.log"
 

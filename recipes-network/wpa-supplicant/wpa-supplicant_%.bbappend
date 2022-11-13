@@ -1,5 +1,5 @@
 SUMMARY = "Replacement recipe"
-FILESEXTRAPATHS_prepend := "${THISDIR}/${PN}:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://wpa_supplicant.service \
             file://wpa_supplicant.conf \
             file://10-wired.network \
@@ -12,7 +12,7 @@ SYSTEMD_AUTO_ENABLE = "enable"
 SYSTEMD_SERVICE_${PN} = "wpa_supplicant.service"
 
 
-do_install_append() {
+do_install:append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/wpa_supplicant.service ${D}${systemd_system_unitdir}
 
@@ -33,5 +33,5 @@ do_install_append() {
 
 }
 
-FILES_${PN} += "${systemd_system_unitdir}/wpa_supplicant.service"
+FILES:${PN} += "${systemd_system_unitdir}/wpa_supplicant.service"
 

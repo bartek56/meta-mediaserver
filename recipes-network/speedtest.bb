@@ -12,6 +12,6 @@ do_install(){
     install -m 0644 ${S}/speedtest ${D}${bindir}/
 }
 
-FILES_${PN} += "${bindir}/speedtest"
+FILES:${PN} += "${bindir}/speedtest"
 
 

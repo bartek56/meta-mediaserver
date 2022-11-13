@@ -3,14 +3,12 @@ Description=MPC Qt5
 
 [Service]
 ExecStartPre=/bin/systemctl stop start
-ExecStartPre=/bin/sleep 0.3
+ExecStartPre=/bin/sleep 0.1
 
 EnvironmentFile=/etc/environment
 ExecStart=/opt/quetzalcoatl -platform eglfs
-Restart=always
-RestartSec=2
 
-ExecStartPost=/bin/sleep 0.3
+ExecStartPost=/bin/sleep 0.1
 ExecStopPost=/bin/systemctl start start
 
 [Install]

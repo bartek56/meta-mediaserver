@@ -1,7 +1,7 @@
 SUMMARY = "Alarm"
 LICENSE = "CLOSED"
 
-RDEPENDS_${PN} += "bash mpc"
+RDEPENDS:${PN} += "bash mpc"
 
 SRC_URI="file://alarm.service \
          file://alarm.sh \
@@ -24,7 +24,6 @@ do_install(){
     ln -sf ${systemd_system_unitdir}/alarm_snooze.timer ${D}${sysconfdir}/mediaserver/alarm_snooze.timer
 }
 
-FILES_${PN} += "/opt/alarm.sh"
-FILES_${PN} += "${systemd_system_unitdir}/*.service"
-FILES_${PN} += "${systemd_system_unitdir}/*.timer"
-
+FILES:${PN} += "/opt/alarm.sh"
+FILES:${PN} += "${systemd_system_unitdir}/*.service"
+FILES:${PN} += "${systemd_system_unitdir}/*.timer"

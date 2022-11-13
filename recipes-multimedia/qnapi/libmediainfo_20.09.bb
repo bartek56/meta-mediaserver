@@ -13,7 +13,6 @@ inherit cmake pkgconfig
 
 S = "${WORKDIR}/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/CMake"
 
-do_configure_prepend() {
+do_configure:prepend() {
     find ${WORKDIR}/MediaInfo_DLL_GNU_FromSource/MediaInfoLib/Project/CMake -name CMakeLists.txt | xargs sed -i 's~option(BUILD_ZENLIB "Build bundled ZenLib" OFF)~option(BUILD_ZENLIB "Build bundled ZenLib" ON)~g'
 }
-

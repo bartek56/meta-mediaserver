@@ -5,7 +5,7 @@ inherit sdcard_image-rpi
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
-IMAGE_INSTALL_append += " \
+IMAGE_INSTALL:append = " \
     qtbase \
     qtbase-mkspecs \
     qtbase-plugins \
@@ -16,7 +16,7 @@ IMAGE_INSTALL_append += " \
     mediaserver \
 "
 
-IMAGE_FEATURES += " splash"
+#IMAGE_FEATURES += " splash"
 
-SPLASH = "psplash-mediaserver"
+#SPLASH = "psplash-mediaserver"
 
