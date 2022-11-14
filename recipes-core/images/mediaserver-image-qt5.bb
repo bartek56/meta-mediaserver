@@ -16,7 +16,8 @@ IMAGE_INSTALL:append = " \
     mediaserver \
 "
 
-#IMAGE_FEATURES += " splash"
+IMAGE_FEATURES += " splash"
+IMAGE_INSTALL:append = " psplash"
 
-#SPLASH = "psplash-mediaserver"
+SPLASH = "psplash-mediaserver"
 

@@ -1,10 +1,10 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 
-SPLASH_IMAGES:append_rpi = " file://psplash-mediaserver-img.h;outsuffix=mediaserver" 
+SPLASH_IMAGES:append:rpi = " file://psplash-mediaserver-img.h;outsuffix=mediaserver" 
 SRC_URI += " file://psplash-start.service \
              file://psplash-quit.service "
 
-ALTERNATIVE_PRIORITY_psplash-mediaserver[psplash] = "300"
+ALTERNATIVE_PRIORITY:psplash-mediaserver[psplash] = "300"
 
 inherit systemd
 
