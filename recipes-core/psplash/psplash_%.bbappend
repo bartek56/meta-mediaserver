@@ -9,8 +9,8 @@ ALTERNATIVE_PRIORITY:psplash-mediaserver[psplash] = "300"
 inherit systemd
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "psplash-start.service"
-SYSTEMD_SERVICE_${PN} = "psplash-quit.service"
+SYSTEMD_SERVICE:${PN} = "psplash-start.service"
+SYSTEMD_SERVICE:${PN} = "psplash-quit.service"
 
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
