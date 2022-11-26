@@ -48,7 +48,7 @@ do_install:append() {
     install -m 0644 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver  
 }
 
-INSANE_SKIP_${PN} += " libMediaServerLib.so.1()(64bit)"
+INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"
 FILES:${PN} += "/opt/MediaServerApp"
 FILES:${PN} += "/opt/Alarm"
 FILES:${PN} += "/opt/fstab_manager.sh"

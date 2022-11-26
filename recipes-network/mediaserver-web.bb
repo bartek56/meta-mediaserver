@@ -13,7 +13,6 @@ S = "${WORKDIR}/git"
 
 do_install() {
 	install -d ${D}/usr/htdocs	
-	install -m 0755 ${S}/install_bootstrap.sh ${D}/usr/htdocs
 	install -m 0755 ${S}/ampache.png ${D}/usr/htdocs
 	install -m 0755 ${S}/background.jpg ${D}/usr/htdocs
 	install -m 0755 ${S}/youtubedl.png ${D}/usr/htdocs

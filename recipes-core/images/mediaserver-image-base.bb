@@ -105,7 +105,7 @@ IMAGE_INSTALL += " \
 IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs"
 
 GLIBC_GENERATE_LOCALES = "pl_PL.UTF-8 en_US.UTF-8"
-IMAGE_LINGUAS = "en-us en-gb pl-pl"
+IMAGE_LINGUAS = "pl-pl en-us en-gb"
 #LOCALE_UTF8_ONLY="1"
 
 TOOLCHAIN_HOST_TASK:append = " nativesdk-intltool nativesdk-glib-2.0"

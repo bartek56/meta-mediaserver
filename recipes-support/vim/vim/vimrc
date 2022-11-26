@@ -169,7 +169,6 @@ let g:nerdtree_tabs_open_on_console_startup=1
 let g:nerdtree_tabs_smart_startup_focus=2
 let g:ycm_global_ycm_extra_conf = '~/.vim/bundle/YouCompleteMe/third_party/ycmd/cpp/ycm/.ycm_extra_conf.py'
 
-colorscheme darkblue
 let g:ConqueTerm_PyVersion=3
 set number
 set tabstop=4

@@ -9,6 +9,8 @@ do_install:append () {
 	install -m 0755 ${WORKDIR}/youtubedl-web.conf ${D}/etc/apache2/conf.d
 	sed -i 's~DocumentRoot "/usr/share/apache2/default-site/htdocs"~DocumentRoot "/usr/htdocs"~g' ${D}/${sysconfdir}/${BPN}/httpd.conf	
 	sed -i 's~<Directory "/usr/share/apache2/default-site/htdocs"~<Directory "/usr/htdocs"~g' ${D}/${sysconfdir}/${BPN}/httpd.conf	
+	sed -i 's~User daemon~User www-data~g' ${D}/${sysconfdir}/${BPN}/httpd.conf
+	sed -i 's~Group daemon~Group www-data~g' ${D}/${sysconfdir}/${BPN}/httpd.conf	
 }
 
 FILES:${PN} += "/etc/apache2/conf.d/youtubedl.conf"
