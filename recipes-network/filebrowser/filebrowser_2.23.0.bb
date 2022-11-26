@@ -4,7 +4,7 @@ LICENSE = "CLOSED"
 RDEPENDS:${PN} += "bash"
 
 # independ from version SRC filename is the same. After update bitbake does not download new version. SSTATE_SKIP resolved problem
-SSTATE_SKIP_CREATION = "1"
+# SSTATE_SKIP_CREATION = "1"
 
 
 SRC_URI:arm="https://github.com/filebrowser/filebrowser/releases/download/v${PV}/linux-armv7-filebrowser.tar.gz \
