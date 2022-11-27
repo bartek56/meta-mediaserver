@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 import sys
 import getopt
-import youtube_dl
+import yt_dlp
 import os
 import warnings
 import argparse
@@ -62,7 +62,7 @@ class YoutubeDownloader():
         ydl_opts = {
                 'addmetadata': True,
                 }  
-        results = youtube_dl.YoutubeDL(ydl_opts).extract_info(url,download=False)
+        results = yt_dlp.YoutubeDL(ydl_opts).extract_info(url,download=False)
         if not results:
             warningInfo="ERROR: not extract_info in results"
             print (bcolors.FAIL + warningInfo + bcolors.ENDC)
@@ -101,7 +101,7 @@ class YoutubeDownloader():
                     }],
               'ignoreerrors': True
               }  
-        results = youtube_dl.YoutubeDL(ydl_opts).extract_info(url)
+        results = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
 
         for i in results['entries']:
             if i is None:
@@ -160,7 +160,7 @@ class YoutubeDownloader():
                  }],
               'ignoreerrors': True
               }
-        result = youtube_dl.YoutubeDL(ydl_opts).extract_info(url)
+        result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
 
         songTitle = ""
         artist = ""
@@ -196,7 +196,7 @@ class YoutubeDownloader():
               'outtmpl': path+'/'+'%(title)s_4k.%(ext)s',
               'ignoreerrors': True
               }  
-        result = youtube_dl.YoutubeDL(ydl_opts).extract_info(url)
+        result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
         full_path= "%s/%s_4k.%s"%(path,result['title'],result['ext'])
     
     
@@ -217,7 +217,7 @@ class YoutubeDownloader():
               'outtmpl': path+'/'+'%(title)s_720p.%(ext)s',
               'ignoreerrors': True
               }  
-        result = youtube_dl.YoutubeDL(ydl_opts).extract_info(url)
+        result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
     
         full_path = "%s/%s_720p.%s"%(path,result['title'],result['ext'])
         metadata = {"title": result['title'], 
@@ -239,7 +239,7 @@ class YoutubeDownloader():
               'ignoreerrors': True
               }
     
-        result = youtube_dl.YoutubeDL(ydl_opts).extract_info(url)
+        result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
         full_path = "%s/%s_360p.%s"%(path,result['title'],result['ext'])
     
         metadata = {"title": result['title'], 
