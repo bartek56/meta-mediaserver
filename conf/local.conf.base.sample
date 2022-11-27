@@ -36,12 +36,12 @@
 #
 # This sets the default machine to be qemux86-64 if no other machine is selected:
 #MACHINE ??= "qemux86-64"
-MACHINE ?= "raspberrypi3-64"
-#MACHINE ?= "raspberrypi4-64"
+#MACHINE ?= "raspberrypi3-64"
+MACHINE ?= "raspberrypi4-64"
 
 LICENSE_FLAGS_ACCEPTED="commercial"
 INHERIT += "rm_work"
-hostname_pn-base-files = "MediaServer"
+hostname:pn-base-files = "MediaServer"
 
 IMAGE_FSTYPES = " tar.bz2 ext3 rpi-sdimg"
 

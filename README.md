@@ -4,36 +4,35 @@ yocto layer for MediaServer project
 Support machine: Raspberry Pi 3b, Raspberry Pi 4
 
 Required:.
-- Debian 10 (buster) or Ubuntu 18.04
+- Ubuntu 22.04.1 LTS
 - min. 150GB disk space
 
 layer support:
 - [mediaserver](https://github.com/bartek56/MediaServer)
-- [qnapi](https://github.com/QNapi/qnapi)
 - [quetzalcoatl](https://github.com/bartek56/quetzalcoatl)
-- [weatherapp](https://github.com/bartek56/weather-app)
+- [qnapi](https://github.com/QNapi/qnapi)
 - [filebrowser](https://github.com/filebrowser/filebrowser)
 - [ampache](https://github.com/ampache/ampache)
 - [transmission](https://github.com/transmission/transmission)
-- [ympd](https://github.com/notandy/ympd)
 - [mpd](https://github.com/MusicPlayerDaemon/MPD)
+- [ympd](https://github.com/notandy/ympd)
 - [minidlna](https://github.com/azatoth/minidlna)
-- [vsftpd](https://github.com/djarosz/vsftpd)
 - [tvheadend](https://github.com/tvheadend/tvheadend)
 - [samba](https://github.com/samba-team/samba)
-- [youtubedl](https://github.com/ytdl-org/youtube-dl)
+- [yt_dlt](https://github.com/yt-dlp/yt-dlp)
+- [vsftpd](https://github.com/djarosz/vsftpd)
 
 
 1. Create directory and download layers
 
 - mkdir yocto_mediaserver
 - cd yocto_mediaserver
-- git clone -b hardknott git://git.yoctoproject.org/poky.git
-- git clone -b hardknott git://github.com/meta-qt5/meta-qt5.git
-- git clone -b hardknott git://git.openembedded.org/meta-openembedded
-- git clone -b hardknott git://git.yoctoproject.org/meta-virtualization
-- git clone -b hardknott git://github.com/agherzan/meta-raspberrypi.git
-- git clone -b hardknott git://github.com/bartek56/meta-mediaserver.git
+- git clone -b kirkstone git://git.yoctoproject.org/poky.git
+- git clone -b kirkstone git://github.com/meta-qt5/meta-qt5.git
+- git clone -b kirkstone git://git.openembedded.org/meta-openembedded
+- git clone -b kirkstone git://git.yoctoproject.org/meta-virtualization
+- git clone -b kirkstone git://github.com/agherzan/meta-raspberrypi.git
+- git clone -b kirkstone git://github.com/bartek56/meta-mediaserver.git
 
 
 2. Creating default config 
@@ -68,40 +67,3 @@ without GUI
 
 
 Enjoy !!
-
-
-Ampache config:
-
-1. set password for root user
-
-- mysql -u root
-- - SET PASSWORD FOR 'root'@'localhost' = PASSWORD('mypass');
-- - FLUSH PRIVILEGES;
-- - exit
-
-2. go to localhost website, click Ampache icon
-
-Database Name: ampachedb\
-MySQL hostname: 127.0.0.1\
-MySQL port: [empty]\
-MySQL administrative username: root\
-MySQL administrative password: mypass\
-Create Databse: checked\
-Create Database User: (optional)\
-
-next Window:\
-Database Name: ampachedb\
-MySQL Hostname: 127.0.0.1\
-MySQL Port: [empty]\
-MySQL Username: root\
-MySQL password: mypass\
-
-
-Issue:
-1. Manual config pulseaudio access for bluez5 dbus:
-
-  <policy group="pulse">
-    <allow send_destination="org.bluez"/>
-  </policy>
-
-
