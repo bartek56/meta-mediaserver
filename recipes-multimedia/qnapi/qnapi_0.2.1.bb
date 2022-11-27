@@ -13,6 +13,9 @@ SRC_URI = "https://github.com/QNapi/qnapi/releases/download/${PV}/qnapi-${PV}.ta
 do_install:append(){
         install -d ${D}/etc/mediaserver
         install -m 0755 ${WORKDIR}/qnapi.ini ${D}/etc/mediaserver
+        
+        install -d ${D}/opt
+        install -m 0755 ${WORKDIR}/downloadSubtitles.py ${D}/opt
 }
 
 FILES:${PN} += "${systemd_system_unitdir}/*.service"

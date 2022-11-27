@@ -2,7 +2,7 @@ SUMMARY = "MediaServer GUI app"
 SECTION = "apps"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtquickcontrols2 systemdlib-qt"
-RDEPENDS:${PN} = "alarm ntfs-3g qnapi python-wikiquote systemdlib-qt qtbase qtquickcontrols qtquickcontrols2 qtvirtualkeyboard qtdeclarative"
+RDEPENDS:${PN} = "bash alarm ntfs-3g qnapi python-wikiquote systemdlib-qt qtbase qtquickcontrols qtquickcontrols2 qtvirtualkeyboard qtdeclarative"
 
 
 SRCREV = "${AUTOREV}"
@@ -41,11 +41,11 @@ do_install:append() {
     install -m 0644 ${WORKDIR}/alarm_gui.service ${D}${systemd_unitdir}/system
 
     install -d ${D}/opt
-    install -m 0644 ${WORKDIR}/fstab_manager.sh ${D}/opt
-    install -m 0644 ${WORKDIR}/quotes.py ${D}/opt
+    install -m 0755 ${WORKDIR}/fstab_manager.sh ${D}/opt
+    install -m 0755 ${WORKDIR}/quotes.py ${D}/opt
 
     install -d ${D}/etc/mediaserver
-    install -m 0644 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver  
+    install -m 0755 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver  
 }
 
 INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"

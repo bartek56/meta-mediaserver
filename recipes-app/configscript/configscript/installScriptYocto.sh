@@ -20,6 +20,7 @@ configure_jellyfin()
 
 configure_other()
 {	
+    # if those serial is enable, blutooth not working
     systemctl disable serial-getty@ttyS0.service
     systemctl disable getty@tty1
     systemctl enable psplash-start.service
@@ -30,8 +31,6 @@ configure_other()
     chgrp www-data /etc/mediaserver/alarm.sh
     chgrp www-data /lib/systemd/system/alarm.timer
     amixer sset "Master" 100%
-    #vim
-    
 }
 
 configure_vim()
@@ -58,6 +57,11 @@ install_bootstrap_youtubedl()
         unzip bootstrap-5.0.0-beta1-dist.zip
         mv bootstrap-5.0.0-beta1-dist bootstrap-5.0.0 --force
         rm bootstrap-5.0.0-beta1-dist.zip
+        # clock picker
+        wget https://github.com/weareoutman/clockpicker/archive/gh-pages.zip
+        unzip gh-pages.zip
+        mv clockpicker-gh-pages clockpicker
+        rm gh-pages.zip
     fi
 }
 
