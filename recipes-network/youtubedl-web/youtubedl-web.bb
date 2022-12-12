@@ -16,11 +16,19 @@ do_install(){
     install -d ${D}/opt/youtubedl-web/static
     install -m 0644 ${WORKDIR}/git/static/* ${D}/opt/youtubedl-web/static
 
+    install -d ${D}/opt/youtubedl-web/Common
+    # mail manager is not supported
+    rm -f ${WORKDIR}/git/Common/mailManager.py
+    install -m 0644 ${WORKDIR}/git/Common/* ${D}/opt/youtubedl-web/Common
+
     install -d ${D}/opt/youtubedl-web/templates
     install -m 0644 ${WORKDIR}/git/templates/* ${D}/opt/youtubedl-web/templates
 
     install -d ${D}/etc/sudoers.d
     install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
+    
+    sed -i 's~mailManager = Mail()~#mailManager is not supported~g' ${D}/opt/youtubedl-web/youtubedl.py
+    sed -i 's~from Common.mailManager import Mail~#mailManager is not supported~g' ${D}/opt/youtubedl-web/youtubedl.py
 
 #    install -d ${D}/var/log
 #    printf "" > ${D}/var/log/youtubedlweb.log
@@ -28,11 +36,5 @@ do_install(){
 }
 
 
-FILES:${PN} += "/opt/youtubedl-web/youtubedl.py"
-FILES:${PN} += "/opt/youtubedl-web/youtubedl.wsgi"
-FILES:${PN} += "/opt/youtubedl-web/templates"
-FILES:${PN} += "/opt/youtubedl-web/static"
-FILES:${PN} += "/opt/youtubedl-web/templates/index.html"
-FILES:${PN} += "/opt/youtubedl-web/static/style.css"
+FILES:${PN} += "/opt/youtubedl-web/*"
 FILES:${PN} += "/var/log/youtubedlweb.log"
-
