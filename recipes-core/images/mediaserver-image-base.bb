@@ -11,6 +11,7 @@ NETWORK = " \
     iw \
     rsync \
     wget \
+    python3-wakeonlan \
     wpan-tools \
     screen \
     iptables \
