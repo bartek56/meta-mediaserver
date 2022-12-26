@@ -3,42 +3,69 @@ import subprocess
 
 
 class DownloadSubtitles():
-    def __init__(self, language):
-        self.language = language
+    def __init__(self):
         self.qnapiConfigFile = "/etc/mediaserver/qnapi.ini"
-        self.configQNapi()
-        self.downloadSubtitles()
 
-    def downloadSubtitles(self):
-        videoDirectory = os.path.join(self.lookingForVideoDir(),"movies")
-        filesList = os.listdir(videoDirectory)
-        moviesList = []
-        for x in filesList:
-            if os.path.isdir(os.path.join(videoDirectory,x)):
-                moviesList.append(x)
-        for movieDir in moviesList:
-            movieDirFullPath = os.path.join(videoDirectory, movieDir)
-            filesInMovieDir = os.listdir(movieDirFullPath)
-            if not self.subtitlesExist(filesInMovieDir):
+    def downloadSubtitles(self, languages:list):
+        result = {}
+        for language in languages:
+            self.configQNapi(language)
+            videoDirectory = os.path.join(self.lookingForVideoDir(),"movies")
+            filesList = os.listdir(videoDirectory)
+            moviesList = []
+            for x in filesList:
+                if os.path.isdir(os.path.join(videoDirectory,x)):
+                    moviesList.append(x)
+            for movieDir in moviesList:
+                movieDirFullPath = os.path.join(videoDirectory, movieDir)
+                filesInMovieDir = os.listdir(movieDirFullPath)
+                if not movieDir in result:
+                   result[movieDir] = []
+                if not self.subtitlesExist(filesInMovieDir, language):
+                    for movie in filesInMovieDir:                
+                        if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
+                            movieFullPath = os.path.join(movieDirFullPath, movie)
+                            if self.qnapi(movieFullPath):
+                                result[movie].append(language)
+                                fileName = movieFullPath.replace(".mkv","")
+                                fileName = fileName.replace(".mp4","")
+                                srtOldFile = "%s.srt"%(fileName)
+                                srtNewFile = "%s.%s.srt"%(fileName, language)
+                                os.rename(srtOldFile, srtNewFile)
+                                print("Downloaded:\t",srtNewFile)
+                                result[movieDir].append(language)
+                else:
+                    print(language, "subtitle exists for movie",movieDir)
+                    result[movieDir].append(language)
+                    
+        return result            
+
+    def lookingForSubtitles(self):
+            result = {}
+            videoDirectory = os.path.join(self.lookingForVideoDir(),"movies")
+            filesList = os.listdir(videoDirectory)
+            moviesList = []
+            for x in filesList:
+                if os.path.isdir(os.path.join(videoDirectory,x)):
+                    moviesList.append(x)
+            for movieDir in moviesList:
+                movieDirFullPath = os.path.join(videoDirectory, movieDir)
+                filesInMovieDir = os.listdir(movieDirFullPath)
+                if not movieDir in result:
+                   result[movieDir] = []
                 for movie in filesInMovieDir:                
-                    if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
-                        movieFullPath = os.path.join(movieDirFullPath, movie)
-                        if self.qnapi(movieFullPath):
-                            fileName = movieFullPath.replace(".mkv","")
-                            fileName = fileName.replace(".mp4","")
-                            srtOldFile = "%s.srt"%(fileName)
-                            srtNewFile = "%s.%s.srt"%(fileName, self.language)
-                            os.rename(srtOldFile, srtNewFile)
-                            print("Downloaded:\t",srtNewFile)
-            else:
-                print(self.language, "subtitle exists for movie",movieDir)
+                   if ".srt" in movie:
+                       result[movieDir].append(movie)
+                   
+            return result            
 
-    def configQNapi(self):
+
+    def configQNapi(self, language):
         file = open(self.qnapiConfigFile, "r")
         replacement = ""
         for line in file:
             if "language=" in line:            
-                line = "language=%s\n"%(self.language)
+                line = "language=%s\n"%(language)
             replacement = replacement + line
 
         file.close()
@@ -46,8 +73,8 @@ class DownloadSubtitles():
         fout.write(replacement)
         fout.close()
     
-    def subtitlesExist(self, filesInDir):
-        partName = ".%s.srt"%(self.language)
+    def subtitlesExist(self, filesInDir, language):
+        partName = ".%s.srt"%(language)
         for x in filesInDir:
             if partName in x:
                 return True
@@ -81,5 +108,10 @@ class DownloadSubtitles():
 
 
 if __name__ == "__main__":
-    DownloadSubtitles("eng")
-    DownloadSubtitles("pl")
+    download = DownloadSubtitles()
+    result = download.downloadSubtitles(["eng","pl"])
+    for key, value in result.items():
+        print(key, ": ", value)
+    result = download.lookingForSubtitles()
+    for key,value in result.items():
+        print(key, value)
