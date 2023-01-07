@@ -28,9 +28,15 @@ configure_other()
     systemctl enable mysqld.service
     systemctl disable dhcpcd.service
 	echo vm.swappiness=0 | tee -a /etc/sysctl.conf
+
+    # access for Apache to enable/disable alarm
     chgrp www-data /etc/mediaserver/alarm.sh
     chgrp www-data /lib/systemd/system/alarm.timer
+
     amixer sset "Master" 100%
+
+    # disable HDMI output
+    pactl set-card-profile "alsa_card.platform-bcm2835_audio" off
 }
 
 configure_vim()

@@ -173,6 +173,7 @@ let g:ConqueTerm_PyVersion=3
 set number
 set tabstop=4
 set expandtab
+:imap qq <Esc>
 " Add optional packages.
 "
 " The matchit plugin makes the % command work better, but it is not backwards
