@@ -21,10 +21,10 @@ do_install:append() {
         sed -i 's~load-module module-native-protocol-unix~load-module module-native-protocol-unix auth-anonymous=true~g' ${D}/${sysconfdir}/pulse/system.pa
 
         install -d ${D}${systemd_unitdir}/system
-        install -m 0755 ${WORKDIR}/pulseaudio.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${WORKDIR}/pulseaudio.service ${D}${systemd_unitdir}/system
 
         install -d ${D}${sysconfdir}/pulse/system.pa.d
-        install -m 0755 ${WORKDIR}/system.mediaserver.pa ${D}${sysconfdir}/pulse/system.pa.d
+        install -m 0644 ${WORKDIR}/system.mediaserver.pa ${D}${sysconfdir}/pulse/system.pa.d
 }
 
 FILES:${PN} += "${sysconfdir}/pulse/system.pa.d/system.mediaserver.pa"
