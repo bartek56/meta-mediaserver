@@ -24,7 +24,7 @@ class YoutubeDownloader():
     def __init__(self):
         now = datetime.now()
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-        print("---------  " + dt_string + "  ---------") 
+        print("---------  " + dt_string + "  ---------")
         minidlnaConfigFile = "/etc/mediaserver/minidlna.conf"
 
         self.CONFIG_FILE='/etc/mediaserver/youtubedl.ini'
@@ -32,7 +32,7 @@ class YoutubeDownloader():
         if os.path.isfile(minidlnaConfigFile):
             f = open(minidlnaConfigFile,"r")
             content = f.readlines()
-    
+
             for x in content:
                 if "media_dir=A" in x:
                     parameter = x.split("A,")
@@ -45,7 +45,7 @@ class YoutubeDownloader():
             config = ConfigParser()
             config.read(self.CONFIG_FILE)
             self.PLAYLISTS_PATH = config["GLOBAL"]["path"]
-           
+
         # tests path
         #self.PLAYLISTS_PATH='/tmp/music/Youtube list/'
         #self.CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
@@ -61,20 +61,20 @@ class YoutubeDownloader():
 
         ydl_opts = {
                 'addmetadata': True,
-                }  
+                }
         results = yt_dlp.YoutubeDL(ydl_opts).extract_info(url,download=False)
         if not results:
             warningInfo="ERROR: not extract_info in results"
             print (bcolors.FAIL + warningInfo + bcolors.ENDC)
             return
-   
+
         artistList = []
         playlistIndexList = []
         songsTitleList = []
         for i in results['entries']:
             playlistIndexList.append(i['playlist_index'])
             songsTitleList.append(i['title'])
-       
+
             if "artist" in i:
                 artistList.append(i['artist'])
             else:
@@ -99,8 +99,9 @@ class YoutubeDownloader():
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                     }],
-              'ignoreerrors': True
-              }  
+              'ignoreerrors': True,
+              'quiet':True
+              }
         results = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
 
         for i in results['entries']:
@@ -116,7 +117,7 @@ class YoutubeDownloader():
         for i in results['entries']:
             playlistIndexList.append(i['playlist_index'])
             songsTitleList.append(i['title'])
-       
+
             if "artist" in i:
                 artistList.append(i['artist'])
             else:
@@ -124,9 +125,14 @@ class YoutubeDownloader():
 
         songCounter=0
         for x in range(len(songsTitleList)):
-            metadata_mp3.add_metadata_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songsTitleList[x])
+            songTitle = songsTitleList[x]
+            fileName="%s%s"%(songTitle, ".mp3")
+            if not os.path.isfile(fileName):
+                songTitle = yt_dlp.utils.sanitize_filename(songTitle)
+                print("[WARNING] File doesn't exist. Sanitize is require")
+            metadata_mp3.add_metadata_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songTitle)
             songCounter+=1
-  
+
         info = "[INFO] downloaded  %s songs"%(songCounter)
         print (bcolors.OKGREEN + info + bcolors.ENDC)
         return songCounter
@@ -165,62 +171,66 @@ class YoutubeDownloader():
         songTitle = ""
         artist = ""
         album = ""
-    
+
         if "title" in result:
-            songTitle = result['title'] 
+            songTitle = result['title']
         if "artist" in result:
-            artist = result['artist'] 
+            artist = result['artist']
         if "album" in result:
             album = result['album']
-   
+
+        fileName="%s%s"%(songTitle, ".mp3")
+        if not os.path.isfile(fileName):
+            songTitle = yt_dlp.utils.sanitize_filename(songTitle)
+            print("[WARNING] File doesn't exist. Sanitize is require")
         fullPath =  metadata_mp3.add_metadata_song(path, album, artist, songTitle)
-        
+
         metadata = {"path": fullPath}
         if(artist is not None):
             metadata["artist"] = artist
         metadata["title"] = songTitle
         if(album is not None):
             metadata["album"] = album
-        return metadata 
+        return metadata
 
 
     def download_4k(self, url):
         path=os.getcwd()
-      
+
         info = "[INFO] start download video [high quality] from link %s "%(url)
         print(info)
-    
+
         ydl_opts = {
               'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
               'addmetadata': True,
               'outtmpl': path+'/'+'%(title)s_4k.%(ext)s',
               'ignoreerrors': True
-              }  
+              }
         result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
         full_path= "%s/%s_4k.%s"%(path,result['title'],result['ext'])
-    
-    
-        metadata = {"title": result['title'], 
+
+
+        metadata = {"title": result['title'],
                      "path": full_path }
         return metadata
-    
-    
+
+
     def download_720p(self, url):
         path=os.getcwd()
-       
+
         info = "[INFO] start download video [medium quality] from link %s "%(url)
         print(info)
-    
+
         ydl_opts = {
               'format': 'bestvideo[height=720]/mp4',
               'addmetadata': True,
               'outtmpl': path+'/'+'%(title)s_720p.%(ext)s',
               'ignoreerrors': True
-              }  
+              }
         result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
-    
+
         full_path = "%s/%s_720p.%s"%(path,result['title'],result['ext'])
-        metadata = {"title": result['title'], 
+        metadata = {"title": result['title'],
                      "path": full_path }
         return metadata
 
@@ -228,31 +238,31 @@ class YoutubeDownloader():
 
     def download_360p(self, url):
         path=os.getcwd()
-        
+
         info = "[INFO] start download video [low quality] from link %s "%(url)
         print(info)
-    
+
         ydl_opts = {
               'format': 'worse[height<=360]/mp4',
               'addmetadata': True,
               'outtmpl': path+'/'+'%(title)s_360p.%(ext)s',
               'ignoreerrors': True
               }
-    
+
         result = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
         full_path = "%s/%s_360p.%s"%(path,result['title'],result['ext'])
-    
-        metadata = {"title": result['title'], 
+
+        metadata = {"title": result['title'],
                      "path": full_path }
         return metadata
 
     def summary(self):
         now = datetime.now()
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-        print("---------  " + dt_string + "  ---------") 
+        print("---------  " + dt_string + "  ---------")
         print ("\n")
 
-       
+
 if __name__ == '__main__':
     my_parser = argparse.ArgumentParser()
     my_parser.add_argument('-t','--type',
@@ -271,7 +281,7 @@ if __name__ == '__main__':
 #    playlistName = "imprezka"
 #    update_metadata_from_YTplaylist(url, playlistName)
 
-   
+
     yt = YoutubeDownloader()
 
     if args.mode == None:
