@@ -22,6 +22,7 @@ class bcolors:
 
 class YoutubeDownloader():
     def __init__(self):
+        self.metadataManager = metadata_mp3.MetadataManager()
         now = datetime.now()
         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
         print("---------  " + dt_string + "  ---------")
@@ -49,7 +50,6 @@ class YoutubeDownloader():
         # tests path
         #self.PLAYLISTS_PATH='/tmp/music/Youtube list/'
         #self.CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
-
 
     def update_metadata_from_YTplaylist(self, url, playlistName):
         path=os.path.join(self.PLAYLISTS_PATH, playlistName)
@@ -83,7 +83,6 @@ class YoutubeDownloader():
         for x in range(len(songsTitleList)):
             metadata_mp3.add_metadata_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songsTitleList[x])
 
-
     def download_playlist_mp3(self, url, playlistName):
         path=os.path.join(self.PLAYLISTS_PATH, playlistName)
         if not os.path.exists(path):
@@ -102,6 +101,8 @@ class YoutubeDownloader():
               'ignoreerrors': True,
               'quiet':True
               }
+        info = "[INFO] started download playlist %s"%(playlistName)
+        print (bcolors.OKGREEN + info + bcolors.ENDC)
         results = yt_dlp.YoutubeDL(ydl_opts).extract_info(url)
 
         for i in results['entries']:
@@ -127,16 +128,15 @@ class YoutubeDownloader():
         for x in range(len(songsTitleList)):
             songTitle = songsTitleList[x]
             fileName="%s%s"%(songTitle, ".mp3")
-            if not os.path.isfile(fileName):
-                songTitle = yt_dlp.utils.sanitize_filename(songTitle)
+            if not os.path.isfile(os.path.join(path,fileName)):
                 print("[WARNING] File doesn't exist. Sanitize is require")
-            metadata_mp3.add_metadata_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songTitle)
+                songTitle = yt_dlp.utils.sanitize_filename(songTitle)
+            self.metadataManager.rename_and_add_metadata_to_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songTitle)
             songCounter+=1
 
-        info = "[INFO] downloaded  %s songs"%(songCounter)
+        info = "[INFO] downloaded  %s songs\n"%(songCounter)
         print (bcolors.OKGREEN + info + bcolors.ENDC)
         return songCounter
-
 
     def download_playlists(self):
         songsCounter = 0
@@ -183,7 +183,7 @@ class YoutubeDownloader():
         if not os.path.isfile(fileName):
             songTitle = yt_dlp.utils.sanitize_filename(songTitle)
             print("[WARNING] File doesn't exist. Sanitize is require")
-        fullPath =  metadata_mp3.add_metadata_song(path, album, artist, songTitle)
+        fullPath =  self.metadataManager.rename_and_add_metadata_to_song(path, album, artist, songTitle)
 
         metadata = {"path": fullPath}
         if(artist is not None):
@@ -192,7 +192,6 @@ class YoutubeDownloader():
         if(album is not None):
             metadata["album"] = album
         return metadata
-
 
     def download_4k(self, url):
         path=os.getcwd()
@@ -214,7 +213,6 @@ class YoutubeDownloader():
                      "path": full_path }
         return metadata
 
-
     def download_720p(self, url):
         path=os.getcwd()
 
@@ -233,8 +231,6 @@ class YoutubeDownloader():
         metadata = {"title": result['title'],
                      "path": full_path }
         return metadata
-
-
 
     def download_360p(self, url):
         path=os.getcwd()
