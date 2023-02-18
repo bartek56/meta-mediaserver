@@ -51,13 +51,20 @@ class YoutubeDownloader():
         #self.PLAYLISTS_PATH='/tmp/music/Youtube list/'
         #self.CONFIG_FILE='/etc/mediaserver/youtubedl_test.ini'
 
-    def update_metadata_from_YTplaylist(self, url, playlistName):
+    def update_metadata_from_YTplaylist(self, playlistName):
         path=os.path.join(self.PLAYLISTS_PATH, playlistName)
 
-        albumName="YT "+playlistName
-        if not os.path.exists(path):
-            os.makedirs(path)
-        trackNumber = len([f for f in os.listdir(path) if f.endswith('.mp3')])
+        url = None
+        config = ConfigParser()
+        config.read(self.CONFIG_FILE)
+        for section_name in config.sections():
+            if section_name == playlistName:
+                url = config[section_name]['link']
+                break
+
+        if url is None:
+            print("[ERROR] playlist", playlistName,"not exist in configuration")
+            return
 
         ydl_opts = {
                 'addmetadata': True,
@@ -81,7 +88,16 @@ class YoutubeDownloader():
                 artistList.append("")
 
         for x in range(len(songsTitleList)):
-            metadata_mp3.add_metadata_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songsTitleList[x])
+            songTitle = songsTitleList[x]
+            songName = self.metadataManager.lookingForFileAccordWithYTFilename(path, songTitle, artistList[x])
+            if songName == None:
+                songTitle = yt_dlp.utils.sanitize_filename(songTitle)
+                songName = self.metadataManager.lookingForFileAccordWithYTFilename(path, songTitle, artistList[x])
+            if songName != None:
+                self.metadataManager.rename_and_add_metadata_to_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songName)
+            else:
+                warningInfo="ERROR: song not found: path %s, artist: %s, title: %s, id: %s"%(path, artistList[x], songsTitleList[x], playlistIndexList[x])
+                print (bcolors.FAIL + warningInfo + bcolors.ENDC)
 
     def download_playlist_mp3(self, url, playlistName):
         path=os.path.join(self.PLAYLISTS_PATH, playlistName)
@@ -271,6 +287,11 @@ if __name__ == '__main__':
                        dest='link',
                        help='link to youtube')
 
+    my_parser.add_argument('-u','--update',
+                       action='store',
+                       dest='playlistUpdate',
+                       help='name playlist which you want update')
+
 
     args = my_parser.parse_args()
 #    url="https://www.youtube.com/playlist?list=PL6uhlddQJkfiB-7Td9IIYbYM0DsPjxAt0"
@@ -280,17 +301,23 @@ if __name__ == '__main__':
 
     yt = YoutubeDownloader()
 
-    if args.mode == None:
+    if args.mode is None and args.playlistUpdate is None:
         yt.download_playlists()
     else:
-        if args.link is None:
-            my_parser.error("-l (--link) is require")
-        if args.mode == '360':
-            yt.download_360p(args.link)
-        elif args.mode == "720":
-            yt.download_720p(args.link)
-        elif args.mode == "4k":
-            yt.download_4k(args.link)
-        elif args.mode == "mp3":
-            yt.download_mp3(args.link)
+        if args.mode is not None and args.playlistUpdate is not None:
+            my_parser.error("choose only one purpose")
+        if args.mode is not None:
+            if args.link is None:
+                my_parser.error("-l (--link) is require")
+            if args.mode == '360':
+                yt.download_360p(args.link)
+            elif args.mode == "720":
+                yt.download_720p(args.link)
+            elif args.mode == "4k":
+                yt.download_4k(args.link)
+            elif args.mode == "mp3":
+                yt.download_mp3(args.link)
+        if args.playlistUpdate is not None:
+            yt.update_metadata_from_YTplaylist(args.playlistUpdate)
+
     yt.summary()
