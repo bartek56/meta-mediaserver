@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=single
-ExecStart=/usr/bin/transmission-daemon -f --config-dir /etc/transmission-daemon/  --log-error
+ExecStart=/usr/bin/transmission-daemon -f --config-dir /etc/transmission-daemon/  --log-level=error
 ExecReload=/bin/kill -s HUP $MAINPID
 
 [Install]

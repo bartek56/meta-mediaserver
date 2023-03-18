@@ -16,7 +16,7 @@ NETWORK = " \
     screen \
     iptables \
     wpa-supplicant \
-    iftop \ 
+    iftop \
     vsftpd \
     samba \
     filebrowser \
@@ -24,7 +24,6 @@ NETWORK = " \
     youtubedl-web \
     mediaserver-web \
     transmission \
-    transmission-web \
     openssh-sftp \
     openssh-sftp-server \
 "
@@ -42,7 +41,7 @@ TOOLS = " \
     curl \
     git \
     bash \
-    tzdata \ 
+    tzdata \
     configscript \
     localedef \
     dvb-apps \
