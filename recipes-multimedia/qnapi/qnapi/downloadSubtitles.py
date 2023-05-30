@@ -1,10 +1,32 @@
 import os
 import subprocess
-
+import sys
 
 class DownloadSubtitles():
     def __init__(self):
         self.qnapiConfigFile = "/etc/mediaserver/qnapi.ini"
+
+    def downloadSubtitlesForTvShow(self, languages:list, dirPath):
+        result = {}
+        for language in languages:
+            self.configQNapi(language)
+            videoDirectory = dirPath
+            filesList = os.listdir(videoDirectory)
+            for movie in filesList:
+                if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
+                            movieFullPath = os.path.join(videoDirectory, movie)
+                            if self.qnapi(movieFullPath):
+                                fileName = movieFullPath.replace(".mkv","")
+                                fileName = fileName.replace(".mp4","")
+                                srtOldFile = "%s.srt"%(fileName)
+                                srtNewFile = "%s.%s.srt"%(fileName, language)
+                                os.rename(srtOldFile, srtNewFile)
+                                print("Downloaded:\t",srtNewFile)
+                                if movie not in result.keys():
+                                    result[movie] = []
+                                result[movie].append(language)
+                    
+        return result            
 
     def downloadSubtitles(self, languages:list):
         result = {}
@@ -26,7 +48,6 @@ class DownloadSubtitles():
                         if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
                             movieFullPath = os.path.join(movieDirFullPath, movie)
                             if self.qnapi(movieFullPath):
-                                result[movie].append(language)
                                 fileName = movieFullPath.replace(".mkv","")
                                 fileName = fileName.replace(".mp4","")
                                 srtOldFile = "%s.srt"%(fileName)
@@ -109,9 +130,25 @@ class DownloadSubtitles():
 
 if __name__ == "__main__":
     download = DownloadSubtitles()
-    result = download.downloadSubtitles(["eng","pl"])
-    for key, value in result.items():
-        print(key, ": ", value)
-    result = download.lookingForSubtitles()
-    for key,value in result.items():
-        print(key, value)
+    if len(sys.argv) == 2:
+        pathForTvShows = sys.argv[1]
+        print("Download subtitles for:", pathForTvShows)
+        if os.path.isdir(pathForTvShows):
+            result = download.downloadSubtitlesForTvShow(["eng", "pl"], pathForTvShows)
+            result = sorted(result.items())
+            for key, value in result:
+                print(key, ": ", value)
+        else:
+            print("wrong path")
+    else:
+        result = download.downloadSubtitles(["eng","pl"])
+
+        result2 = download.lookingForSubtitles()
+        result2 = sorted(result2.items())
+        for key,value in result2:
+            print(key, value)
+
+        result = sorted(result.items())
+        for key, value in result:
+            print(key, ": ", value)
+
