@@ -6,7 +6,8 @@ RDEPENDS:${PN} += "apache2 python3 python3-flask python3-flask-socketio metadata
 
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/youtubedl-web;branch=master;protocol=https \
-           file://www-data"
+           file://www-data \
+           file://youtubedl-web.service"
 
 inherit systemd
 
