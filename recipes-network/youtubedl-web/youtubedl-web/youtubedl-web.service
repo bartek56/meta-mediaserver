@@ -1,0 +1,12 @@
+[Unit]
+Description=YouTube downloader
+After=apache2.service
+
+[Service]
+Type=idle
+Environment="LC_ALL=pl_PL.UTF-8"
+ExecStart=/usr/bin/python3 -u /opt/youtubedl-web/youtubedl.py
+StandardOutput=append:/var/log/youtubedl-web.log
+
+[Install]
+WantedBy=multi-user.target

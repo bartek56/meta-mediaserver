@@ -13,3 +13,6 @@ _deps
 #vim temporary
 *~
 [._]*.un~
+
+#python
+__pycache__

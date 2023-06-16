@@ -19,7 +19,7 @@ configure_jellyfin()
 }
 
 configure_other()
-{	
+{
     # if those serial is enable, blutooth not working
     systemctl disable serial-getty@ttyS0.service
     systemctl disable getty@tty1
@@ -32,6 +32,8 @@ configure_other()
     # access for Apache to enable/disable alarm
     chgrp www-data /etc/mediaserver/alarm.sh
     chgrp www-data /lib/systemd/system/alarm.timer
+    chgrp www-data /etc/mediaserver/youtubedl.ini
+    chown 775 /etc/mediaserver/youtubedl.ini
 
     amixer sset "Master" 100%
 
@@ -48,7 +50,7 @@ configure_vim()
     else
         mkdir /home/root/.vim/bundle
         git clone https://github.com/VundleVim/Vundle.vim.git /home/root/.vim/bundle/Vundle.vim
-    fi    
+    fi
 }
 
 install_bootstrap_youtubedl()

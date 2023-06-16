@@ -79,7 +79,6 @@ AUDIO = " \
 MULTIMEDIA = " \
     minidlna \
     tvheadend \
-    ampache \
     nextcloud \
 "
 

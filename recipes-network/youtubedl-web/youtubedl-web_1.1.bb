@@ -2,11 +2,16 @@ SUMMARY = "Youtubedl-web"
 HOMEPAGE = "https://github.com/bartek56/youtubedl-web"
 LICENSE = "CLOSED"
 
-RDEPENDS:${PN} += "apache2 python3 python3-flask metadata-mp3 youtubedl sudo"
+RDEPENDS:${PN} += "apache2 python3 python3-flask python3-flask-socketio metadata-mp3 youtubedl sudo"
 
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/youtubedl-web;branch=master;protocol=https \
            file://www-data"
+
+inherit systemd
+
+SYSTEMD_AUTO_ENABLE = "enable"
+SYSTEMD_SERVICE:${PN} = "youtubedl-web.service"
 
 do_install(){
     install -d ${D}/opt/youtubedl-web
@@ -26,9 +31,12 @@ do_install(){
 
     install -d ${D}/etc/sudoers.d
     install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
-    
+
     sed -i 's~mailManager = Mail()~#mailManager is not supported~g' ${D}/opt/youtubedl-web/youtubedl.py
     sed -i 's~from Common.mailManager import Mail~#mailManager is not supported~g' ${D}/opt/youtubedl-web/youtubedl.py
+
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/youtubedl-web.service ${D}${systemd_system_unitdir}
 
 #    install -d ${D}/var/log
 #    printf "" > ${D}/var/log/youtubedlweb.log
