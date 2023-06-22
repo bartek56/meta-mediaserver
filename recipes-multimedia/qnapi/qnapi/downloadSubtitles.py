@@ -4,32 +4,50 @@ import json
 import shutil
 import sys
 
-class DownloadSubtitles():
-    def __init__(self):
-        self.qnapiConfigFile = "/etc/mediaserver/qnapi.ini"
+class MergeSubtitles():
 
     def mergeSubtitlesLoop(self, videoDirectory):
         filesList = os.listdir(videoDirectory)
         for movie in filesList:
             if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
                 self.mergeSubtitlesToVideoFile(videoDirectory, movie)
+                print("")
 
 
     def mergeSubtitlesToVideoFile(self, videoDirectory, movie):
         ext = movie.split('.')[-1]
         movieName = movie.replace(".%s"%ext,"")
-        print(movieName,"start")
+        print("|------ ",movieName," ------|")
         movieTemp = "%s_temp.%s"%(movieName, ext)
         movieFullPath = os.path.join(videoDirectory, movie)
         movieTempFullPath = os.path.join(videoDirectory, movieTemp)
-        subtitlesName = "%s.pl.%s"%(movieName,"srt")
-        subtitlesNamePath = os.path.join(videoDirectory, subtitlesName)
+        subtitlesPlName = "%s.pl.%s"%(movieName,"srt")
+        subtitlesPlNamePath = os.path.join(videoDirectory, subtitlesPlName)
+        subtitlesEngName = "%s.eng.%s"%(movieName,"srt")
+        subtitlesEngNamePath = os.path.join(videoDirectory, subtitlesEngName)
+        subtitlesPlIsAvailable = os.path.exists(subtitlesPlNamePath)
+        subtitlesEngIsAvailable = os.path.exists(subtitlesEngNamePath)
+
         availableSubtitles = self.getAvailableSubtitlesFromMovie(movieFullPath)
-        if "pl" in availableSubtitles:
+        if not isinstance(availableSubtitles, list):
+            print("error with veryfing number os subtitles after procesing")
+            return
+        if len(availableSubtitles) > 0:
+            availableSubtitlesStr = ""
+            for x in availableSubtitles:
+                availableSubtitlesStr += x
+                availableSubtitlesStr += " "
+
+            print("available subtitles:", availableSubtitlesStr)
+
+        if not isinstance(availableSubtitles, list):
+            print("error with get available subtitles")
+            return
+        if "pol" in availableSubtitles and "eng" in availableSubtitles:
             print("video contains pl and eng subtitles")
             return
-        if not os.path.exists(subtitlesNamePath):
-            print("subtitles doesn't exist: ", subtitlesNamePath)
+        if not subtitlesPlIsAvailable and not subtitlesEngIsAvailable:
+            print("external files with subtitles doesn't exists")
             return
 
         preLen = len(availableSubtitles)
@@ -41,23 +59,64 @@ class DownloadSubtitles():
             print("error with subtitle type")
             return
 
-        if preLen == 0:
-            return
-        print(availableSubtitles)
-        if not self.addPlSubtitlesToMovie(subtitlesNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
-            return
+        if("pol" not in availableSubtitles and "eng" not in availableSubtitles):
+            if subtitlesEngIsAvailable and subtitlesPlIsAvailable:
+                print("merge PL and Eng subtitles")
+                if not self.addEngAndPlSubtitlesToMovie({"eng":subtitlesEngNamePath, "pl": subtitlesPlNamePath},movieFullPath, movieTempFullPath, preLen, subtitleType):
+                    print("failed to add pl and eng subtitles")
+                    return
+            else:
+                print("pol and eng subtitles are not available")
+                if subtitlesPlIsAvailable:
+                    print("add only PL subtitles")
+                    if not self.addPlSubtitlesToMovie(subtitlesPlNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+                        print("error to add PL subtitles")
+                        return
+                elif subtitlesEngIsAvailable:
+                    print("add only Eng subtitles")
+                    if not self.addEngSubtitlesToMovie(subtitlesEngNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+                        print("error to add Eng subtitles")
+                        return
+        elif("pol" not in availableSubtitles and "eng" in availableSubtitles):
+            print("merge only pl subtitles")
+            if not os.path.exists(subtitlesPlNamePath):
+                print("Polish subtitles doesn't exist: ", subtitlesPlNamePath)
+                return
+            if not self.addPlSubtitlesToMovie(subtitlesPlNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+                print("error to add PL subtitles")
+                return
+        elif("pol" in availableSubtitles and "eng" not in availableSubtitles):
+            print("merge only eng subtiles")
+            if not os.path.exists(subtitlesEngNamePath):
+                print("English subtitles doesn't exist: ", subtitlesEngNamePath)
+                return
+            if not self.addEngSubtitlesToMovie(subtitlesEngNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+                print("error to add Eng subtitles")
+                return
+
         availableSubtitles = self.getAvailableSubtitlesFromMovie(movieTempFullPath)
+        if not isinstance(availableSubtitles, list):
+            print("error with veryfing number os subtitles after procesing")
+            return
+
         postLen = len(availableSubtitles)
         if postLen == preLen:
+            print("subtitles were not added")
             return
+
+        if len(availableSubtitles) > 0:
+            availableSubtitlesStr = ""
+            for x in availableSubtitles:
+                availableSubtitlesStr += x
+                availableSubtitlesStr += " "
+
+            print("available subtitles:", availableSubtitlesStr)
 
         os.remove(movieFullPath)
         shutil.copy2(movieTempFullPath, movieFullPath)
         os.remove(movieTempFullPath)
 
-        print(availableSubtitles)
-        print(movieName,"succesfull")
-        print("-----------------------------")
+        print("succesfull")
 
 
     def getAvailableSubtitlesFromMovie(self, movie):
@@ -70,7 +129,7 @@ class DownloadSubtitles():
         subtitlesIndexesOfStream = []
         if "streams" not in result:
             print("error with ffprobe result")
-            return []
+            return -1
 
         streams = result["streams"]
         #print(streams)
@@ -95,7 +154,33 @@ class DownloadSubtitles():
     def addPlSubtitlesToMovie(self, subtitles, movie, movieTemp, indexOfNewSubtitle, subtitleType):
         #ffmpeg -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.mkv -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.pl.srt -map 0 -map 1 -c copy -c:s:1 ass -metadata:s:s:1 language='pl' Manifest\ S02E01\ Fasten\ Your\ Seatbelts_pl.mkv
         metadataArgument = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
-        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s:1", subtitleType, metadataArgument, "language=pl", movieTemp]
+        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s:1", subtitleType, metadataArgument, "language=pol", movieTemp]
+
+        process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process.wait()
+
+        return process.returncode == 0
+
+    def addEngSubtitlesToMovie(self, subtitles, movie, movieTemp, indexOfNewSubtitle, subtitleType):
+        #ffmpeg -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.mkv -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.pl.srt -map 0 -map 1 -c copy -c:s:1 ass -metadata:s:s:1 language='pl' Manifest\ S02E01\ Fasten\ Your\ Seatbelts_pl.mkv
+        metadataArgument = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
+        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s:1", subtitleType, metadataArgument, "language=eng", movieTemp]
+
+        process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process.wait()
+
+        return process.returncode == 0
+
+
+    def addEngAndPlSubtitlesToMovie(self, subtitles:dict, movie, movieTemp, indexOfNewSubtitle, subtitleType):
+        # ffmpeg -y -i Room.2015.1080p.BRRip.x264.AAC-ETRG.mp4 -i Room.2015.1080p.BRRip.x264.AAC-ETRG.eng.srt -i Room.2015.1080p.BRRip.x264.AAC-ETRG.pl.srt 
+        # -map 0 -map 1 -map 2 -c copy -c:s mov_text -c:s mov_text 
+        # -metadata:s:s:0 language='eng' -metadata:s:s:1 language='pol' test_eng_pl.mp4
+        metadataArgumentEng = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
+        metadataArgumentPl = "-metadata:s:s:%s"%(str(indexOfNewSubtitle+1))
+        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles["eng"], '-i', subtitles["pl"],
+                       "-map", "0", "-map", "1", "-map", "2","-c", "copy","-c:s", subtitleType, "-c:s", subtitleType,
+                       metadataArgumentEng, "language=eng", metadataArgumentPl, "language=pol", movieTemp]
 
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
@@ -103,6 +188,10 @@ class DownloadSubtitles():
         #print(debug)
 
         return process.returncode == 0
+
+class DownloadSubtitles():
+    def __init__(self):
+        self.qnapiConfigFile = "/etc/mediaserver/qnapi.ini"
 
     def downloadSubtitlesForTvShow(self, languages:list, dirPath):
         result = {}
@@ -228,6 +317,7 @@ class DownloadSubtitles():
 
 if __name__ == "__main__":
     download = DownloadSubtitles()
+    merge = MergeSubtitles()
 
     if len(sys.argv) == 3:
         pathForTvShows = sys.argv[1]
@@ -243,7 +333,7 @@ if __name__ == "__main__":
                 print(key, ": ", value)
         elif type == "--merge" or type == "-m":
             print("merge subtitles in:", pathForTvShows)
-            download.mergeSubtitlesLoop(pathForTvShows)
+            merge.mergeSubtitlesLoop(pathForTvShows)
 
     else:
         result = download.downloadSubtitles(["eng","pl"])
