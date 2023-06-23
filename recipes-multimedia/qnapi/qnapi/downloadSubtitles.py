@@ -154,20 +154,24 @@ class MergeSubtitles():
     def addPlSubtitlesToMovie(self, subtitles, movie, movieTemp, indexOfNewSubtitle, subtitleType):
         #ffmpeg -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.mkv -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.pl.srt -map 0 -map 1 -c copy -c:s:1 ass -metadata:s:s:1 language='pl' Manifest\ S02E01\ Fasten\ Your\ Seatbelts_pl.mkv
         metadataArgument = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
-        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s:1", subtitleType, metadataArgument, "language=pol", movieTemp]
+        ffmpeg_args = ['ffmpeg', '-hide_banner','-loglevel', 'error', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s", subtitleType, metadataArgument, "language=pol", movieTemp]
 
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
+        debug, error = process.communicate()
+        print(str(error))
 
         return process.returncode == 0
 
     def addEngSubtitlesToMovie(self, subtitles, movie, movieTemp, indexOfNewSubtitle, subtitleType):
         #ffmpeg -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.mkv -i Manifest\ S02E01\ Fasten\ Your\ Seatbelts.pl.srt -map 0 -map 1 -c copy -c:s:1 ass -metadata:s:s:1 language='pl' Manifest\ S02E01\ Fasten\ Your\ Seatbelts_pl.mkv
         metadataArgument = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
-        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s:1", subtitleType, metadataArgument, "language=eng", movieTemp]
+        ffmpeg_args = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', movie, "-i", subtitles, "-map", "0", "-map", "1","-c", "copy","-c:s", subtitleType, metadataArgument, "language=eng", movieTemp]
 
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
+        debug, error = process.communicate()
+        print(str(error))
 
         return process.returncode == 0
 
@@ -178,14 +182,14 @@ class MergeSubtitles():
         # -metadata:s:s:0 language='eng' -metadata:s:s:1 language='pol' test_eng_pl.mp4
         metadataArgumentEng = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
         metadataArgumentPl = "-metadata:s:s:%s"%(str(indexOfNewSubtitle+1))
-        ffmpeg_args = ['ffmpeg', '-y', '-i', movie, "-i", subtitles["eng"], '-i', subtitles["pl"],
+        ffmpeg_args = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', movie, "-i", subtitles["eng"], '-i', subtitles["pl"],
                        "-map", "0", "-map", "1", "-map", "2","-c", "copy","-c:s", subtitleType, "-c:s", subtitleType,
                        metadataArgumentEng, "language=eng", metadataArgumentPl, "language=pol", movieTemp]
 
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
-        #debug, error = process.communicate()
-        #print(debug)
+        debug, error = process.communicate()
+        print(str(error))
 
         return process.returncode == 0
 
