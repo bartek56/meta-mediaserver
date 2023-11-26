@@ -20,7 +20,6 @@ do_install() {
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}/flask_session
     install -m 0644 ${S}/src/flask_session/sessions.py ${D}${PYTHON_SITEPACKAGES_DIR}/flask_session/
     install -m 0644 ${S}/src/flask_session/__init__.py ${D}${PYTHON_SITEPACKAGES_DIR}/flask_session/
-
 }
 
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/flask_session/sessions.py"

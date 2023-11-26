@@ -80,6 +80,7 @@ MULTIMEDIA = " \
     minidlna \
     tvheadend \
     nextcloud \
+    alarm \
 "
 
 DISTRO_FEATURES:append = " bluez5 bluetooth wifi libpam pam"
