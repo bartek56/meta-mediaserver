@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7246f848faa4e9c9fc0ea91122d6e680"
 
 PYPI_SRC_URI = "https://github.com/yt-dlp/yt-dlp/releases/download/${PV}/yt-dlp.tar.gz"
 
-SRC_URI[sha256sum] = "99db0ab54b986aa5c5bb145dc1cf0e516612e61cdb964ee274dddceeceae98a9"
+SRC_URI[sha256sum] = "689aaab448763a9efb339e608346d42aa3d4f776288fc1f4f223142ac23a5abf"
 PYPI_PACKAGE = "yt-dlp"
 
 inherit pypi setuptools3
