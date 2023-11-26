@@ -5,6 +5,12 @@ import shutil
 import sys
 import chardet
 
+# export first subtitles from video file
+# ffmpeg -i Movie.mkv -map 0:s:0 sub1.srt
+
+# export second subtitles from video file
+# ffmpeg -i Movie.mkv -map 0:s:1 subs2.srt
+
 class MergeSubtitles():
     def is_utf8(self, file_path):
         with open(file_path, 'rb') as file:
@@ -207,6 +213,27 @@ class MergeSubtitles():
 
         return process.returncode == 0
 
+    def removeSubtitlesFromMovie(self, file):
+        if self.ffmpegRemoveSubtitlesFromMovie(file) == True:
+            print("Removed subtitles from movie")
+
+    def ffmpegRemoveSubtitlesFromMovie(self, movie:str):
+        #ffmpeg -i Can.You.Ever.Forgive.Me.2018.1080p.BluRay.x265-RARBG.mp4 -map 0 -c copy -sn Can.You.Ever.Forgive.Me.2018.1080p.BluRay.x265-RARBG.withoutSubtitles.mp4
+        newMovie = movie
+        ext = newMovie.split('.')[-1]
+        newMovie = newMovie.replace("."+ext, "_withoutSubtitles."+ext)
+        ffmpeg_args = ['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', movie,
+                       "-map", "0", "-c", "copy","-sn", newMovie]
+
+        process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process.wait()
+        debug, error = process.communicate()
+        if(process.returncode != 0):
+            errorStr = error.decode('UTF-8')
+            print(errorStr)
+
+        return process.returncode == 0
+
 class DownloadSubtitles():
     def __init__(self):
         self.qnapiConfigFile = "/etc/mediaserver/qnapi.ini"
@@ -339,20 +366,31 @@ if __name__ == "__main__":
 
     if len(sys.argv) == 3:
         pathForTvShows = sys.argv[1]
-        if not os.path.isdir(pathForTvShows):
+        if not os.path.isdir(pathForTvShows) and not os.path.isfile(pathForTvShows):
             print("wrong path")
             exit()
         type = sys.argv[2]
-        if type == "--download" or type=="-t":
+        if type == "--download" or type=="-d":
+            if not os.path.isdir(pathForTvShows):
+                print("path is not dir")
+                exit()
             print("Download subtitles for:", pathForTvShows)
             result = download.downloadSubtitlesForTvShow(["eng", "pl"], pathForTvShows)
             result = sorted(result.items())
             for key, value in result:
                 print(key, ": ", value)
         elif type == "--merge" or type == "-m":
+            if not os.path.isdir(pathForTvShows):
+                print("path is not dir")
+                exit()
             print("merge subtitles in:", pathForTvShows)
             merge.mergeSubtitlesLoop(pathForTvShows)
-
+        elif type == "--remove" or type == "-r":
+            if not os.path.isfile(pathForTvShows):
+                print("wrong path for file")
+                exit()
+            print("remove subtitles from movie subtitles in:", pathForTvShows)
+            merge.removeSubtitlesFromMovie(pathForTvShows)
     else:
         result = download.downloadSubtitles(["eng","pl"])
 
