@@ -3,8 +3,25 @@ import subprocess
 import json
 import shutil
 import sys
+import chardet
 
 class MergeSubtitles():
+    def is_utf8(self, file_path):
+        with open(file_path, 'rb') as file:
+            detector = chardet.universaldetector.UniversalDetector()
+            for line in file:
+                detector.feed(line)
+                if detector.done:
+                    break
+            detector.close()
+            result = detector.result
+        ret = result['encoding'].lower() == 'utf-8'
+        if not ret:
+            print("subtitles doesn't contain utf-8 encoding: ", file_path)
+            print("--------------------------------------")
+            print("to resolve this issue change encoding to utf-8. You can use Notepad++ for it")
+            print("--------------------------------------")
+        return ret
 
     def mergeSubtitlesLoop(self, videoDirectory):
         filesList = os.listdir(videoDirectory)
@@ -12,7 +29,6 @@ class MergeSubtitles():
             if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
                 self.mergeSubtitlesToVideoFile(videoDirectory, movie)
                 print("")
-
 
     def mergeSubtitlesToVideoFile(self, videoDirectory, movie):
         ext = movie.split('.')[-1]
@@ -25,20 +41,13 @@ class MergeSubtitles():
         subtitlesPlNamePath = os.path.join(videoDirectory, subtitlesPlName)
         subtitlesEngName = "%s.eng.%s"%(movieName,"srt")
         subtitlesEngNamePath = os.path.join(videoDirectory, subtitlesEngName)
-        subtitlesPlIsAvailable = os.path.exists(subtitlesPlNamePath)
-        subtitlesEngIsAvailable = os.path.exists(subtitlesEngNamePath)
+        subtitlesPlIsAvailable = os.path.exists(subtitlesPlNamePath) and self.is_utf8(subtitlesPlNamePath)
+        subtitlesEngIsAvailable = os.path.exists(subtitlesEngNamePath) and self.is_utf8(subtitlesEngNamePath)
 
         availableSubtitles = self.getAvailableSubtitlesFromMovie(movieFullPath)
         if not isinstance(availableSubtitles, list):
-            print("error with veryfing number os subtitles after procesing")
+            print("error with veryfing number of subtitles before procesing")
             return
-        if len(availableSubtitles) > 0:
-            availableSubtitlesStr = ""
-            for x in availableSubtitles:
-                availableSubtitlesStr += x
-                availableSubtitlesStr += " "
-
-            print("available subtitles:", availableSubtitlesStr)
 
         if not isinstance(availableSubtitles, list):
             print("error with get available subtitles")
@@ -60,6 +69,7 @@ class MergeSubtitles():
             return
 
         if("pol" not in availableSubtitles and "eng" not in availableSubtitles):
+            print("movie doesn't contain pol and eng subtitles")
             if subtitlesEngIsAvailable and subtitlesPlIsAvailable:
                 print("merge PL and Eng subtitles")
                 if not self.addEngAndPlSubtitlesToMovie({"eng":subtitlesEngNamePath, "pl": subtitlesPlNamePath},movieFullPath, movieTempFullPath, preLen, subtitleType):
@@ -78,17 +88,17 @@ class MergeSubtitles():
                         print("error to add Eng subtitles")
                         return
         elif("pol" not in availableSubtitles and "eng" in availableSubtitles):
-            print("merge only pl subtitles")
-            if not os.path.exists(subtitlesPlNamePath):
-                print("Polish subtitles doesn't exist: ", subtitlesPlNamePath)
+            print("movie doesn't contain pol subtitles")
+            if not subtitlesPlIsAvailable:
+                print("Polish subtitles are not available")
                 return
             if not self.addPlSubtitlesToMovie(subtitlesPlNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
                 print("error to add PL subtitles")
                 return
         elif("pol" in availableSubtitles and "eng" not in availableSubtitles):
-            print("merge only eng subtiles")
-            if not os.path.exists(subtitlesEngNamePath):
-                print("English subtitles doesn't exist: ", subtitlesEngNamePath)
+            print("movie doesn't contain eng subtitles")
+            if not subtitlesEngIsAvailable:
+                print("English subtitles are not available")
                 return
             if not self.addEngSubtitlesToMovie(subtitlesEngNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
                 print("error to add Eng subtitles")
@@ -96,12 +106,12 @@ class MergeSubtitles():
 
         availableSubtitles = self.getAvailableSubtitlesFromMovie(movieTempFullPath)
         if not isinstance(availableSubtitles, list):
-            print("error with veryfing number os subtitles after procesing")
+            print("error with veryfing number of subtitles after procesing")
             return
 
         postLen = len(availableSubtitles)
         if postLen == preLen:
-            print("subtitles were not added")
+            print("subtitles have not been added")
             return
 
         if len(availableSubtitles) > 0:
@@ -117,7 +127,6 @@ class MergeSubtitles():
         os.remove(movieTempFullPath)
 
         print("succesfull")
-
 
     def getAvailableSubtitlesFromMovie(self, movie):
         process = subprocess.run(['ffprobe', '-of','json', '-show_entries', 'format:stream', movie], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -159,7 +168,9 @@ class MergeSubtitles():
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
         debug, error = process.communicate()
-        print(str(error))
+        if(process.returncode != 0):
+            errorStr = error.decode('UTF-8')
+            print(errorStr)
 
         return process.returncode == 0
 
@@ -171,14 +182,15 @@ class MergeSubtitles():
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
         debug, error = process.communicate()
-        print(str(error))
+        if(process.returncode != 0):
+            errorStr = error.decode('UTF-8')
+            print(errorStr)
 
         return process.returncode == 0
 
-
     def addEngAndPlSubtitlesToMovie(self, subtitles:dict, movie, movieTemp, indexOfNewSubtitle, subtitleType):
         # ffmpeg -y -i Room.2015.1080p.BRRip.x264.AAC-ETRG.mp4 -i Room.2015.1080p.BRRip.x264.AAC-ETRG.eng.srt -i Room.2015.1080p.BRRip.x264.AAC-ETRG.pl.srt 
-        # -map 0 -map 1 -map 2 -c copy -c:s mov_text -c:s mov_text 
+        # -map 0 -map 1 -map 2 -c copy -c:s mov_text -c:s mov_text
         # -metadata:s:s:0 language='eng' -metadata:s:s:1 language='pol' test_eng_pl.mp4
         metadataArgumentEng = "-metadata:s:s:%s"%(str(indexOfNewSubtitle))
         metadataArgumentPl = "-metadata:s:s:%s"%(str(indexOfNewSubtitle+1))
@@ -189,7 +201,9 @@ class MergeSubtitles():
         process = subprocess.Popen(ffmpeg_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         process.wait()
         debug, error = process.communicate()
-        print(str(error))
+        if(process.returncode != 0):
+            errorStr = error.decode('UTF-8')
+            print(errorStr)
 
         return process.returncode == 0
 
