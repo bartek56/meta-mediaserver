@@ -3,15 +3,15 @@ LICENSE = "CLOSED"
 
 RDEPENDS:${PN} += " bash"
 
-#TODO check by image target which one script should be included
+INSTALL_SCRIPT_NAME = '${@bb.utils.contains("DISTRO_FEATURES", "qt5", "installScriptQt5.sh", "installScriptBase.sh", d)}'
 
-SRC_URI="file://installScriptQt5.sh"
-#SRC_URI="file://installScriptBase.sh"
+SRC_URI="file://${INSTALL_SCRIPT_NAME}"
+
 
 do_install(){
     install -d ${D}/opt
 
-    install -m 0755 ${WORKDIR}/installScriptBase.sh ${D}/opt/installScript.sh
+    install -m 0755 ${WORKDIR}/${INSTALL_SCRIPT_NAME} ${D}/opt/installScript.sh
     install -d ${D}/home/Documents
     install -d ${D}/home/Downloads
 }

@@ -45,7 +45,7 @@ hostname:pn-base-files = "MediaServer"
 
 IMAGE_FSTYPES = " tar.bz2 ext3 rpi-sdimg"
 
-DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio" 
+DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio qt5"
 DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 VIRTUAL-RUNTIME_initscripts = "systemd-compat-units"
@@ -59,6 +59,7 @@ IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455 linux-firmware-rpidis
 
 
 INSANE_SKIP:filebrowser:append = "already-stripped"
+INSANE_SKIP:speedtest:append = "already-stripped"
 SKIP_META_VIRT_SANITY_CHECK = "1"
 
 KERNEL_DEVICETREE:append = " overlays/ads7846.dtbo"
