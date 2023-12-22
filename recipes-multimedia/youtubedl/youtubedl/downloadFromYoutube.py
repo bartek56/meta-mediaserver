@@ -94,7 +94,7 @@ class YoutubeDownloader():
                 songTitle = yt_dlp.utils.sanitize_filename(songTitle)
                 songName = self.metadataManager.lookingForFileAccordWithYTFilename(path, songTitle, artistList[x])
             if songName != None:
-                self.metadataManager.rename_and_add_metadata_to_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songName)
+                self.metadataManager.renameAndAddMetadataToPlaylist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songName)
             else:
                 warningInfo="ERROR: song not found: path %s, artist: %s, title: %s, id: %s"%(path, artistList[x], songsTitleList[x], playlistIndexList[x])
                 print (bcolors.FAIL + warningInfo + bcolors.ENDC)
@@ -147,7 +147,7 @@ class YoutubeDownloader():
             if not os.path.isfile(os.path.join(path,fileName)):
                 print("[WARNING] File doesn't exist. Sanitize is require")
                 songTitle = yt_dlp.utils.sanitize_filename(songTitle)
-            self.metadataManager.rename_and_add_metadata_to_playlist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songTitle)
+            self.metadataManager.renameAndAddMetadataToPlaylist(self.PLAYLISTS_PATH, playlistIndexList[x], playlistName, artistList[x], songTitle)
             songCounter+=1
 
         info = "[INFO] downloaded  %s songs\n"%(songCounter)
@@ -199,7 +199,7 @@ class YoutubeDownloader():
         if not os.path.isfile(fileName):
             songTitle = yt_dlp.utils.sanitize_filename(songTitle)
             print("[WARNING] File doesn't exist. Sanitize is require")
-        fullPath =  self.metadataManager.rename_and_add_metadata_to_song(path, album, artist, songTitle)
+        fullPath =  self.metadataManager.renameAndAddMetadataToSong(path, album, artist, songTitle)
 
         metadata = {"path": fullPath}
         if(artist is not None):
