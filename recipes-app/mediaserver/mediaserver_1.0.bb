@@ -2,17 +2,16 @@ SUMMARY = "MediaServer GUI app"
 SECTION = "apps"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtquickcontrols2 systemdlib-qt"
-RDEPENDS:${PN} = "bash alarm ntfs-3g qnapi python-wikiquote systemdlib-qt qtbase qtquickcontrols qtquickcontrols2 qtvirtualkeyboard qtdeclarative"
+RDEPENDS:${PN} = "bash alarm ntfs-3g qnapi systemdlib-qt qtbase qtquickcontrols qtquickcontrols2 qtvirtualkeyboard qtdeclarative"
 
 
 SRCREV = "${AUTOREV}"
 #FILESEXTRAPATHS:append = "/home/bartosz/Documents/QTCreator"
 #file://MediaServer
-#git://github.com/bartek56/MediaServer;protocol=https 
+#git://github.com/bartek56/MediaServer;protocol=https
 
 SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
           file://fstab_manager.sh \
-          file://quotes.py \
           file://screensaver.conf \
           file://start.service \
           file://alarm_gui.service"
@@ -23,7 +22,7 @@ S = "${WORKDIR}/git"
 
 require recipes-qt/qt5/qt5.inc
 
-inherit qmake5 
+inherit qmake5
 
 do_compile() {
     oe_runmake sub-MediaServerApp
@@ -42,17 +41,15 @@ do_install:append() {
 
     install -d ${D}/opt
     install -m 0755 ${WORKDIR}/fstab_manager.sh ${D}/opt
-    install -m 0755 ${WORKDIR}/quotes.py ${D}/opt
 
     install -d ${D}/etc/mediaserver
-    install -m 0755 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver  
+    install -m 0755 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
 }
 
 INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"
 FILES:${PN} += "/opt/MediaServerApp"
 FILES:${PN} += "/opt/Alarm"
 FILES:${PN} += "/opt/fstab_manager.sh"
-FILES:${PN} += "/opt/quotes.py"
 FILES:${PN} += "${sysconfdir}/mediaserver/screensaver.conf"
 FILES:${PN} += "${systemd_system_unitdir}/start.service"
 FILES:${PN} += "${systemd_system_unitdir}/alarm_gui.service"

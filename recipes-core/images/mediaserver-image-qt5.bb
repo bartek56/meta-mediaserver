@@ -11,7 +11,6 @@ IMAGE_INSTALL:append = " \
     qtbase-plugins \
     qtbase-tools \
     quetzalcoatl \
-    weatherapp \
     mediaserver-startup \
     mediaserver \
 "
