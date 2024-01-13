@@ -19,6 +19,9 @@ do_install(){
     install -m 0644 ${WORKDIR}/git/youtubedl.py ${D}/opt/youtubedl-web
     install -m 0644 ${WORKDIR}/git/youtubedl.wsgi ${D}/opt/youtubedl-web
 
+    install -d ${D}/opt/youtubedl-web/WebAPI
+    install -m 0644 ${WORKDIR}/git/WebAPI/* ${D}/opt/youtubedl-web/WebAPI
+
     install -d ${D}/opt/youtubedl-web/static
     install -m 0644 ${WORKDIR}/git/static/* ${D}/opt/youtubedl-web/static
 
@@ -33,8 +36,12 @@ do_install(){
     install -d ${D}/etc/sudoers.d
     install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
 
-    sed -i 's~mailManager = Mail()~#mailManager is not supported~g' ${D}/opt/youtubedl-web/youtubedl.py
-    sed -i 's~from Common.mailManager import Mail~#mailManager is not supported~g' ${D}/opt/youtubedl-web/youtubedl.py
+    sed -i 's~from Common.mailManager import Mail~from Common.mailManagerEmpty import Mail~g' ${D}/opt/youtubedl-web/youtubedl.py
+
+    # required if flask API was moved to other directory
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/alarm.py
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/mail.py
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/youtubeDownloader.py
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/youtubedl-web.service ${D}${systemd_system_unitdir}
