@@ -4,6 +4,7 @@ import json
 import shutil
 import sys
 import chardet
+import argparse
 
 # export first subtitles from video file
 # ffmpeg -i Movie.mkv -map 0:s:0 sub1.srt
@@ -48,7 +49,7 @@ class MergeSubtitles():
         subtitlesEngName = "%s.eng.%s"%(movieName,"srt")
         subtitlesEngNamePath = os.path.join(videoDirectory, subtitlesEngName)
         subtitlesPlIsAvailable = os.path.exists(subtitlesPlNamePath) and self.is_utf8(subtitlesPlNamePath)
-        subtitlesEngIsAvailable = os.path.exists(subtitlesEngNamePath) and self.is_utf8(subtitlesEngNamePath)
+        subtitlesEngIsAvailable = os.path.exists(subtitlesEngNamePath)
 
         availableSubtitles = self.getAvailableSubtitlesFromMovie(movieFullPath)
         if not isinstance(availableSubtitles, list):
@@ -361,36 +362,42 @@ class DownloadSubtitles():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+                    prog='downloadSubtitles.py',
+                    description='download, remove or merge subtitles for movie',
+                    epilog='')
+    g = parser.add_mutually_exclusive_group()
+    g.add_argument("--merge","-m", metavar="path", help="path for video which subtitles will be merge to video file")
+    g.add_argument("--download", "-d", metavar="path", help="path to movie folder which subtitles will be downloaded")
+    g.add_argument("--remove", "-r", metavar="file", help="movie file which subtitles will be removed")
+    args = parser.parse_args()
+    mergePath = args.merge
+    downloadPath = args.download
+    removePath = args.remove
+
     download = DownloadSubtitles()
     merge = MergeSubtitles()
-
-    if len(sys.argv) == 3:
-        pathForTvShows = sys.argv[1]
-        if not os.path.isdir(pathForTvShows) and not os.path.isfile(pathForTvShows):
-            print("wrong path")
+    if downloadPath is not None:
+        if not os.path.isdir(downloadPath):
+            print("path for download is not dir ", downloadPath)
             exit()
-        type = sys.argv[2]
-        if type == "--download" or type=="-d":
-            if not os.path.isdir(pathForTvShows):
-                print("path is not dir")
-                exit()
-            print("Download subtitles for:", pathForTvShows)
-            result = download.downloadSubtitlesForTvShow(["eng", "pl"], pathForTvShows)
-            result = sorted(result.items())
-            for key, value in result:
-                print(key, ": ", value)
-        elif type == "--merge" or type == "-m":
-            if not os.path.isdir(pathForTvShows):
-                print("path is not dir")
-                exit()
-            print("merge subtitles in:", pathForTvShows)
-            merge.mergeSubtitlesLoop(pathForTvShows)
-        elif type == "--remove" or type == "-r":
-            if not os.path.isfile(pathForTvShows):
-                print("wrong path for file")
-                exit()
-            print("remove subtitles from movie subtitles in:", pathForTvShows)
-            merge.removeSubtitlesFromMovie(pathForTvShows)
+        print("Download subtitles for:", downloadPath)
+        result = download.downloadSubtitlesForTvShow(["eng", "pl"], downloadPath)
+        result = sorted(result.items())
+        for key, value in result:
+            print(key, ": ", value)
+    elif mergePath is not None:
+        if not os.path.isdir(mergePath):
+            print("path for merge is not dir:", mergePath)
+            exit()
+        print("merge subtitles in:", mergePath)
+        merge.mergeSubtitlesLoop(mergePath)
+    elif removePath is not None:
+        if not os.path.isfile(removePath):
+            print("wrong path for remove file")
+            exit()
+        print("remove subtitles from movie subtitles in:", removePath)
+        merge.removeSubtitlesFromMovie(removePath)
     else:
         result = download.downloadSubtitles(["eng","pl"])
 
@@ -402,4 +409,3 @@ if __name__ == "__main__":
         result = sorted(result.items())
         for key, value in result:
             print(key, ": ", value)
-
