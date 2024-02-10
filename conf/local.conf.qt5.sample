@@ -36,16 +36,16 @@
 #
 # This sets the default machine to be qemux86-64 if no other machine is selected:
 #MACHINE ??= "qemux86-64"
-MACHINE ?= "raspberrypi3-64"
-#MACHINE ?= "raspberrypi4-64"
+#MACHINE ?= "raspberrypi3-64"
+MACHINE ?= "raspberrypi4-64"
 
 LICENSE_FLAGS_ACCEPTED="commercial"
 INHERIT += "rm_work"
-hostname_pn-base-files = "MediaServer"
+hostname:pn-base-files = "MediaServer"
 
 IMAGE_FSTYPES = " tar.bz2 ext3 rpi-sdimg"
 
-DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio" 
+DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio qt5"
 DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 VIRTUAL-RUNTIME_initscripts = "systemd-compat-units"
@@ -59,6 +59,7 @@ IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455 linux-firmware-rpidis
 
 
 INSANE_SKIP:filebrowser:append = "already-stripped"
+INSANE_SKIP:speedtest:append = "already-stripped"
 SKIP_META_VIRT_SANITY_CHECK = "1"
 
 KERNEL_DEVICETREE:append = " overlays/ads7846.dtbo"
@@ -80,8 +81,6 @@ hdmi_cvt 800 480 60 6 0 0 0 \n\
 dtoverlay=ads7846,cs=1,penirq=25,penirq_pull=2,speed=50000,keep_vref_on=0,swapxy=0 \n\
 dtparam=pmax=255,xohms=60,xmin=120,xmax=4000,ymin=440,ymax=3900 \n\
     "
-
-#SPLASH = "psplash-mediaserver"
 #IMAGE_INSTALL = "samba"
 
 #
@@ -153,7 +152,7 @@ DISTRO ?= "poky"
 # E.g.: PACKAGE_CLASSES ?= "package_rpm package_deb package_ipk"
 # We default to rpm:
 #PACKAGE_CLASSES ?= "package_rpm"
-PACKAGE_CLASSES ?= "package_ipk"
+PACKAGE_CLASSES = "package_ipk"
 #
 # SDK target architecture
 #

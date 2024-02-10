@@ -13,7 +13,7 @@ SRC_URI += "file://minidlna.conf \
 
 inherit systemd
 
-SYSTEMD_SERVICE_${PN} = "minidlna.service"
+SYSTEMD_SERVICE:${PN} = "minidlna.service"
 SYSTEMD_PACKAGES = "${PN}" 
 
 do_install:append() {

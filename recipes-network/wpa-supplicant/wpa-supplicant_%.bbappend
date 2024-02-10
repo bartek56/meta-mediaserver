@@ -9,7 +9,7 @@ SRC_URI += "file://wpa_supplicant.service \
 inherit systemd
 
 SYSTEMD_AUTO_ENABLE = "enable" 
-SYSTEMD_SERVICE_${PN} = "wpa_supplicant.service"
+SYSTEMD_SERVICE:${PN} = "wpa_supplicant.service"
 
 
 do_install:append() {

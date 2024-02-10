@@ -61,7 +61,13 @@ while true ; do
     volume=${array[1]::-1}
     if [ $(($volume >= $maxVolume)) == 1 ]; then
         start=false
-	echo "MAX VALUE"
+        echo "MAX VALUE"
+        sleep $growingSpeed
+        sleep $growingSpeed
+        sleep $growingSpeed
+        systemctl stop alarm_gui.service
+        mpc stop
+        exit
     fi   
     if [ "$start" == true ]; then
         result=$(mpc volume +$growingVolume)

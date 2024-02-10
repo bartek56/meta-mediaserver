@@ -12,7 +12,7 @@ RDEPENDS:${PN} += " pam-pwdfile"
 inherit systemd useradd
 
 #SYSTEMD_PACKAGES = "${PN}" 
-SYSTEMD_SERVICE_${PN} = "vsftpd.service"
+SYSTEMD_SERVICE:${PN} = "vsftpd.service"
 
 USERADD_PACKAGES = "${PN}"
 USERADD_PARAM_${PN} = "-d /home/vsftpd -s /bin/false -G nogroup -U vsftpd"

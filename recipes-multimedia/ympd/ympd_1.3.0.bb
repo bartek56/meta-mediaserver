@@ -15,7 +15,7 @@ S = "${WORKDIR}/${P}"
 inherit pkgconfig cmake systemd
 
 SYSTEMD_PACKAGES = "${PN}"
-SYSTEMD_SERVICE_${PN} = "${PN}.service"
+SYSTEMD_SERVICE:${PN} = "${PN}.service"
 
 do_compile:prepend() {
     find ${S} -name CMakeLists.txt | xargs sed -i 's/set(CMAKE_C_FLAGS "-std=gnu99 -Wall")/set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS})/g'

@@ -16,13 +16,12 @@ SRC_URI:aarch64="https://github.com/filebrowser/filebrowser/releases/download/v$
 S = "${WORKDIR}"
 
 SHA_CHECKSUM:arm = "87451de51f2b230a095225c450a846da48c4f7589c2524cb8b4693a215ad3dff"
-SHA_CHECKSUM:aarch64 = "b375cbc2e47ae5159d4cebcae82b2e11070e153efd819cf03d08531572ed46f3"
-
+SHA_CHECKSUM:aarch64 = "fe68b8f95f9eba2069fe337c7f062bab6da5673f4153c0716a0834caebf261a6"
 SRC_URI[sha256sum] = "${SHA_CHECKSUM}"
 
 inherit systemd
 
-SYSTEMD_PACKAGES = "${PN}" 
+SYSTEMD_PACKAGES = "${PN}"
 SYSTEMD_SERVICE:${PN} = "filebrowser.service"
 
 do_install(){

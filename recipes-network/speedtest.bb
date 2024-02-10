@@ -9,7 +9,7 @@ SRC_URI[sha256sum] = "073684dc3490508ca01b04c5855e04cfd797fed33f6ea6a6edc26dfbc6
 
 do_install(){
     install -d ${D}${bindir}
-    install -m 0644 ${S}/speedtest ${D}${bindir}/
+    install -m 0755 ${S}/speedtest ${D}${bindir}/
 }
 
 FILES:${PN} += "${bindir}/speedtest"

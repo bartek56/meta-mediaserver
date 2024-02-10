@@ -36,16 +36,17 @@
 #
 # This sets the default machine to be qemux86-64 if no other machine is selected:
 #MACHINE ??= "qemux86-64"
-MACHINE ?= "raspberrypi3-64"
+#MACHINE ?= "raspberrypi3-64"
 #MACHINE ?= "raspberrypi4-64"
+MACHINE ?= "raspberrypi0-2w-64"
 
 LICENSE_FLAGS_ACCEPTED="commercial"
 INHERIT += "rm_work"
-hostname_pn-base-files = "MediaServer"
+hostname:pn-base-files = "MediaServer"
 
 IMAGE_FSTYPES = " tar.bz2 ext3 rpi-sdimg"
 
-DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio" 
+DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio"
 DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
 VIRTUAL-RUNTIME_init_manager = "systemd"
 VIRTUAL-RUNTIME_initscripts = "systemd-compat-units"
@@ -59,6 +60,7 @@ IMAGE_INSTALL:append = " linux-firmware-rpidistro-bcm43455 linux-firmware-rpidis
 
 
 INSANE_SKIP:filebrowser:append = "already-stripped"
+INSANE_SKIP:speedtest:append = "already-stripped"
 SKIP_META_VIRT_SANITY_CHECK = "1"
 
 ENABLE_UART = "1"
@@ -144,7 +146,7 @@ DISTRO ?= "poky"
 # E.g.: PACKAGE_CLASSES ?= "package_rpm package_deb package_ipk"
 # We default to rpm:
 #PACKAGE_CLASSES ?= "package_rpm"
-PACKAGE_CLASSES ?= "package_ipk"
+PACKAGE_CLASSES = "package_ipk"
 #
 # SDK target architecture
 #

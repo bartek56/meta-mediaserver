@@ -2,7 +2,7 @@ include recipes-core/images/core-image-base.bb
 
 inherit sdcard_image-rpi
 
-SUMMARY = "Media Server without GUI"
+SUMMARY = "Base system without multimedia tools"
 LICENSE = "MIT"
 
 
@@ -13,17 +13,10 @@ NETWORK = " \
     wget \
     python3-wakeonlan \
     wpan-tools \
-    screen \
     iptables \
     wpa-supplicant \
     iftop \
-    vsftpd \
-    samba \
-    filebrowser \
     speedtest \
-    youtubedl-web \
-    mediaserver-web \
-    transmission \
     openssh-sftp \
     openssh-sftp-server \
 "
@@ -70,17 +63,7 @@ AUDIO = " \
     pulseaudio \
     mpg123 \
     sox \
-    mpd \
-    mpc \
-    ympd \
     espeak \
-"
-
-MULTIMEDIA = " \
-    minidlna \
-    tvheadend \
-    nextcloud \
-    alarm \
 "
 
 DISTRO_FEATURES:append = " bluez5 bluetooth wifi libpam pam"
@@ -89,12 +72,8 @@ DISTRO_FEATURES += "pam libpam"
 IMAGE_INSTALL:append = " \
     ${TOOLS} \
     ${AUDIO} \
-    ${MULTIMEDIA} \
     ${TEXT_EDITOR} \
     ${NETWORK} \
-    php-modphp \
-    docker \
-    danfoss-thermostat \
 "
 
 # Include modules in rootfs

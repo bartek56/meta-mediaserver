@@ -11,12 +11,12 @@ IMAGE_INSTALL:append = " \
     qtbase-plugins \
     qtbase-tools \
     quetzalcoatl \
-    weatherapp \
     mediaserver-startup \
     mediaserver \
 "
 
-#IMAGE_FEATURES += " splash"
+IMAGE_FEATURES += " splash"
+IMAGE_INSTALL:append = " psplash"
 
-#SPLASH = "psplash-mediaserver"
+SPLASH = "psplash-mediaserver"
 
