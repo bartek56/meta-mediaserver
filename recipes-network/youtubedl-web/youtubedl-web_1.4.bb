@@ -27,7 +27,7 @@ do_install(){
 
     install -d ${D}/opt/youtubedl-web/Common
     # mail manager is not supported
-    rm -f ${WORKDIR}/git/Common/mailManager.py
+    rm -f ${WORKDIR}/git/Common/MailManager.py
     install -m 0644 ${WORKDIR}/git/Common/* ${D}/opt/youtubedl-web/Common
 
     install -d ${D}/opt/youtubedl-web/templates
@@ -36,12 +36,13 @@ do_install(){
     install -d ${D}/etc/sudoers.d
     install -m 0644 ${WORKDIR}/www-data ${D}/etc/sudoers.d
 
-    sed -i 's~from Common.mailManager import Mail~from Common.mailManagerEmpty import Mail~g' ${D}/opt/youtubedl-web/youtubedl.py
+    sed -i 's~from Common.MailManager import Mail~from Common.MailManagerEmpty import Mail~g' ${D}/opt/youtubedl-web/youtubedl.py
 
     # required if flask API was moved to other directory
-    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/alarm.py
-    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/mail.py
-    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/youtubeDownloader.py
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/Alarm.py
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/Mail.py
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/YoutubeDownloader.py
+    sed -i 's~from youtubedl import~from __main__ import~g' ${D}/opt/youtubedl-web/WebAPI/YoutubePlaylists.py
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/youtubedl-web.service ${D}${systemd_system_unitdir}
