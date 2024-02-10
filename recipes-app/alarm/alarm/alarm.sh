@@ -44,8 +44,11 @@ else
     mpc --wait load $playlist
     mpc random on
 fi
-#mpc enable "Local Pulse"
-#mpc disable "Client Pulse"
+numberOfOutputs=$(mpc outputs | wc -l)
+for i in $(seq 1 $numberOfOutputs); do
+    mpc disable ${i}
+done
+mpc enable 1
 mpc repeat on
 mpc volume $minVolume
 mpc play
@@ -76,4 +79,3 @@ while true ; do
 
     sleep $growingSpeed
 done
-
