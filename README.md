@@ -1,7 +1,7 @@
 # meta-mediaserver
 yocto layer for MediaServer project
 
-Support machine: Raspberry Pi 3b, Raspberry Pi 4
+Support machine: Raspberry Pi Zero 2w, Raspberry Pi 3b, Raspberry Pi 4
 
 Required:.
 - Ubuntu 22.04.1 LTS
@@ -35,14 +35,14 @@ layer support:
 - git clone -b kirkstone git://github.com/bartek56/meta-mediaserver.git
 
 
-2. Creating default config 
+2. Creating default config
 
 - source poky/oe-init-build-env build-mediaserver
 
 3. Edit configuration files
 
-File bblayers.conf You can override, but rememebr to change path in this file: 
-- cp ../meta-mediaserver/conf/bblayers.conf.sample conf/bblayers.conf 
+File bblayers.conf You can override, but rememebr to change path in this file:
+- cp ../meta-mediaserver/conf/bblayers.conf.sample conf/bblayers.conf
 
 File local.conf depends on target
 for target with Qt5 Gui
@@ -57,13 +57,16 @@ for target without Qt5 Gui
 with Qt5 GUI:
 - bitbake mediaserver-image-qt5
 
-without GUI
+without GUI:
 - bitbake mediaserver-image-base
+
+core:
+- bitbake mediaserver-image-minimal
 
 5. Configure MediaServer
 
 - cd /opt
-- ./installScriptYocto.sh
+- ./installScript.sh
 
 
 Enjoy !!
