@@ -263,6 +263,7 @@ class DownloadSubtitles():
 
     def downloadSubtitles(self, languages:list):
         result = {}
+        newSubitles = {}
         for language in languages:
             self.configQNapi(language)
             videoDirectory = os.path.join(self.lookingForVideoDir(),"movies")
@@ -274,8 +275,7 @@ class DownloadSubtitles():
             for movieDir in moviesList:
                 movieDirFullPath = os.path.join(videoDirectory, movieDir)
                 filesInMovieDir = os.listdir(movieDirFullPath)
-                if not movieDir in result:
-                   result[movieDir] = []
+
                 if not self.subtitlesExist(filesInMovieDir, language):
                     for movie in filesInMovieDir:
                         if (".mp4" in movie or ".mkv" in movie) and ".part" not in movie:
@@ -286,13 +286,17 @@ class DownloadSubtitles():
                                 srtOldFile = "%s.srt"%(fileName)
                                 srtNewFile = "%s.%s.srt"%(fileName, language)
                                 os.rename(srtOldFile, srtNewFile)
+                                if not movieDir in newSubitles:
+                                    newSubitles[movieDir] = []
+                                newSubitles[movieDir].append(language)
                                 print("Downloaded:\t",srtNewFile)
-                                result[movieDir].append(language)
                 else:
-                    print(language, "subtitle exists for movie",movieDir)
+                    if not movieDir in result:
+                        result[movieDir] = []
                     result[movieDir].append(language)
+                    print(language, "subtitle exists for movie",movieDir)
 
-        return result
+        return result, newSubitles
 
     def lookingForSubtitles(self):
             result = {}
@@ -312,7 +316,6 @@ class DownloadSubtitles():
                        result[movieDir].append(movie)
 
             return result
-
 
     def configQNapi(self, language):
         file = open(self.qnapiConfigFile, "r")
@@ -399,13 +402,20 @@ if __name__ == "__main__":
         print("remove subtitles from movie subtitles in:", removePath)
         merge.removeSubtitlesFromMovie(removePath)
     else:
-        result = download.downloadSubtitles(["eng","pl"])
+        result, newSubtitles = download.downloadSubtitles(["eng","pl"])
 
-        result2 = download.lookingForSubtitles()
-        result2 = sorted(result2.items())
-        for key,value in result2:
-            print(key, value)
+#        result2 = download.lookingForSubtitles()
+#        result2 = sorted(result2.items())
+#        for key,value in result2:
+#            print(key, value)
 
-        result = sorted(result.items())
-        for key, value in result:
+        resultPrint = sorted(result.items())
+        for key, value in resultPrint:
             print(key, ": ", value)
+
+        if len(newSubtitles) > 0:
+            print("New subtitles:")
+            newSubtitlesPrint = sorted(newSubtitles.items())
+            for key, value in newSubtitlesPrint:
+                print(key, ": ", value)
+
