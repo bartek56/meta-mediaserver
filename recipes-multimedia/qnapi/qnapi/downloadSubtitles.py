@@ -290,6 +290,9 @@ class DownloadSubtitles():
                                     newSubitles[movieDir] = []
                                 newSubitles[movieDir].append(language)
                                 print("Downloaded:\t",srtNewFile)
+                            else:
+                                if not movieDir in result:
+                                    result[movieDir] = []
                 else:
                     if not movieDir in result:
                         result[movieDir] = []
@@ -368,11 +371,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
                     prog='downloadSubtitles.py',
                     description='download, remove or merge subtitles for movie',
-                    epilog='')
+                    epilog='script looking for subtitles by qnapi. Downloded files have the same name as movie with subname pl or eng. ' +
+                           'You can merge subtitles to video file. Then subtitles will be visible by player with index pol or eng')
     g = parser.add_mutually_exclusive_group()
     g.add_argument("--merge","-m", metavar="path", help="path for video which subtitles will be merge to video file")
     g.add_argument("--download", "-d", metavar="path", help="path to movie folder which subtitles will be downloaded")
-    g.add_argument("--remove", "-r", metavar="file", help="movie file which subtitles will be removed")
+    g.add_argument("--remove", "-r", metavar="file", help="movie file from which subtitles will be removed")
     args = parser.parse_args()
     mergePath = args.merge
     downloadPath = args.download
@@ -403,19 +407,27 @@ if __name__ == "__main__":
         merge.removeSubtitlesFromMovie(removePath)
     else:
         result, newSubtitles = download.downloadSubtitles(["eng","pl"])
-
-#        result2 = download.lookingForSubtitles()
-#        result2 = sorted(result2.items())
-#        for key,value in result2:
-#            print(key, value)
+        print()
+        print("--------------------------------------------------------")
+        print()
 
         resultPrint = sorted(result.items())
         for key, value in resultPrint:
             print(key, ": ", value)
+        print()
 
         if len(newSubtitles) > 0:
             print("New subtitles:")
             newSubtitlesPrint = sorted(newSubtitles.items())
             for key, value in newSubtitlesPrint:
                 print(key, ": ", value)
+            videosDir = os.path.join(download.lookingForVideoDir(),"movies")
+            for key, value in newSubtitlesPrint:
+                movieDir = os.path.join(videosDir, key)
+                print("movie dir ",movieDir)
+                if os.path.isdir(movieDir):
+                    print("merge subtitles in: ", movieDir)
+                    merge.mergeSubtitlesLoop(movieDir)
+                else:
+                    print("not exist movie with new subtitles")
 
