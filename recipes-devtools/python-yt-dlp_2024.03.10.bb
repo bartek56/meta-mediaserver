@@ -11,7 +11,7 @@ S = "${WORKDIR}/yt-dlp"
 inherit python3-dir
 
 do_compile() {
-    install -d ${D}${PYTHON_SITEPACKAGES_DIR}
+    echo "It's not needed"
 }
 
 do_install() {
