@@ -5,7 +5,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7246f848faa4e9c9fc0ea91122d6e680"
 
 SRC_URI = "https://github.com/yt-dlp/yt-dlp/releases/download/${PV}/yt-dlp.tar.gz"
 
-SRC_URI[sha256sum] = "1db8eade9e860543b655f5f973e26727ac2cc20874dc6fed9a3e78a4a05ee989"
+SRC_URI[sha256sum] = "e08331fb9a36eba56b4efd074b5b25fbf08413e9cb47009a28ecbffe47150310"
+
+do_fetch[nostamp] = "1"
 
 S = "${WORKDIR}/yt-dlp"
 inherit python3-dir
