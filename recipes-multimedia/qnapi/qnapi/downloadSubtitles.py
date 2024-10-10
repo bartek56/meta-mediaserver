@@ -44,12 +44,18 @@ class MergeSubtitles():
         movieTemp = "%s_temp.%s"%(movieName, ext)
         movieFullPath = os.path.join(videoDirectory, movie)
         movieTempFullPath = os.path.join(videoDirectory, movieTemp)
+        subtitlesPolName = "%s.pol.%s"%(movieName,"srt")
+        subtitlesPolNamePath = os.path.join(videoDirectory, subtitlesPolName)
         subtitlesPlName = "%s.pl.%s"%(movieName,"srt")
         subtitlesPlNamePath = os.path.join(videoDirectory, subtitlesPlName)
         subtitlesEngName = "%s.eng.%s"%(movieName,"srt")
         subtitlesEngNamePath = os.path.join(videoDirectory, subtitlesEngName)
+        subtitlesEnName = "%s.en.%s"%(movieName,"srt")
+        subtitlesEnNamePath = os.path.join(videoDirectory, subtitlesEnName)
         subtitlesPlIsAvailable = os.path.exists(subtitlesPlNamePath) and self.is_utf8(subtitlesPlNamePath)
+        subtitlesPolIsAvailable = os.path.exists(subtitlesPolNamePath) and self.is_utf8(subtitlesPolNamePath)
         subtitlesEngIsAvailable = os.path.exists(subtitlesEngNamePath)
+        subtitlesEnIsAvailable = os.path.exists(subtitlesEnNamePath)
 
         availableSubtitles = self.getAvailableSubtitlesFromMovie(movieFullPath)
         if not isinstance(availableSubtitles, list):
@@ -60,9 +66,9 @@ class MergeSubtitles():
             print("error with get available subtitles")
             return
         if "pol" in availableSubtitles and "eng" in availableSubtitles:
-            print("video contains pl and eng subtitles")
+            print("video contains pol and eng subtitles")
             return
-        if not subtitlesPlIsAvailable and not subtitlesEngIsAvailable:
+        if not subtitlesPolIsAvailable and not subtitlesPlIsAvailable and not subtitlesEngIsAvailable and not subtitlesEnIsAvailable:
             print("external files with subtitles doesn't exists")
             return
 
@@ -77,37 +83,69 @@ class MergeSubtitles():
 
         if("pol" not in availableSubtitles and "eng" not in availableSubtitles):
             print("movie doesn't contain pol and eng subtitles")
-            if subtitlesEngIsAvailable and subtitlesPlIsAvailable:
+            if (subtitlesEngIsAvailable or subtitlesEnIsAvailable) and (subtitlesPolIsAvailable or subtitlesPlIsAvailable):
                 print("merge PL and Eng subtitles")
-                if not self.addEngAndPlSubtitlesToMovie({"eng":subtitlesEngNamePath, "pl": subtitlesPlNamePath},movieFullPath, movieTempFullPath, preLen, subtitleType):
+                if subtitlesEngIsAvailable:
+                    subtitlesEngNamePathTemp = subtitlesEngNamePath
+                else:
+                    subtitlesEngNamePathTemp = subtitlesEnNamePath
+                if subtitlesPolIsAvailable:
+                    subtitlesPolNamePathTemp = subtitlesPolNamePath
+                else:
+                    subtitlesPolNamePathTemp = subtitlesPlNamePath
+                print(subtitlesEngNamePathTemp)
+                print(subtitlesPolNamePathTemp)
+                if not self.addEngAndPlSubtitlesToMovie({"eng":subtitlesEngNamePathTemp, "pl": subtitlesPolNamePathTemp},movieFullPath, movieTempFullPath, preLen, subtitleType):
                     print("failed to add pl and eng subtitles")
                     return
             else:
-                print("pol and eng subtitles are not available")
-                if subtitlesPlIsAvailable:
+                if subtitlesPlIsAvailable or subtitlesPolIsAvailable:
                     print("add only PL subtitles")
-                    if not self.addPlSubtitlesToMovie(subtitlesPlNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+                    if subtitlesPolIsAvailable:
+                        subtitlesPolNamePathTemp = subtitlesPolNamePath
+                    else:
+                        subtitlesPolNamePathTemp = subtitlesPlNamePath
+                    print(subtitlesPolNamePathTemp)
+                    if not self.addPlSubtitlesToMovie(subtitlesPolNamePathTemp, movieFullPath, movieTempFullPath, preLen, subtitleType):
                         print("error to add PL subtitles")
                         return
-                elif subtitlesEngIsAvailable:
+                elif subtitlesEngIsAvailable or subtitlesEnIsAvailable:
                     print("add only Eng subtitles")
-                    if not self.addEngSubtitlesToMovie(subtitlesEngNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+                    if subtitlesEngIsAvailable:
+                        subtitlesEngNamePathTemp = subtitlesEngNamePath
+                    else:
+                        subtitlesEngNamePathTemp = subtitlesEnNamePath
+                    print(subtitlesEngNamePathTemp)
+                    if not self.addEngSubtitlesToMovie(subtitlesEngNamePathTemp, movieFullPath, movieTempFullPath, preLen, subtitleType):
                         print("error to add Eng subtitles")
                         return
         elif("pol" not in availableSubtitles and "eng" in availableSubtitles):
             print("movie doesn't contain pol subtitles")
-            if not subtitlesPlIsAvailable:
+            print("add only PL subtitles")
+            if not subtitlesPlIsAvailable and not subtitlesPolIsAvailable:
                 print("Polish subtitles are not available")
                 return
-            if not self.addPlSubtitlesToMovie(subtitlesPlNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+            if subtitlesPolIsAvailable:
+                subtitlesPolNamePathTemp = subtitlesPolNamePath
+            else:
+                subtitlesPolNamePathTemp = subtitlesPlNamePath
+
+            print(subtitlesPolNamePathTemp)
+            if not self.addPlSubtitlesToMovie(subtitlesPolNamePathTemp, movieFullPath, movieTempFullPath, preLen, subtitleType):
                 print("error to add PL subtitles")
                 return
         elif("pol" in availableSubtitles and "eng" not in availableSubtitles):
             print("movie doesn't contain eng subtitles")
-            if not subtitlesEngIsAvailable:
+            print("add only ENG subtitles")
+            if not subtitlesEngIsAvailable and not subtitlesEnIsAvailable:
                 print("English subtitles are not available")
                 return
-            if not self.addEngSubtitlesToMovie(subtitlesEngNamePath, movieFullPath, movieTempFullPath, preLen, subtitleType):
+            if subtitlesEngIsAvailable:
+                subtitlesEngNamePathTemp = subtitlesEngNamePath
+            else:
+                subtitlesEngNamePathTemp = subtitlesEnNamePath
+            print(subtitlesEngNamePathTemp)
+            if not self.addEngSubtitlesToMovie(subtitlesEngNamePathTemp, movieFullPath, movieTempFullPath, preLen, subtitleType):
                 print("error to add Eng subtitles")
                 return
 
@@ -232,8 +270,12 @@ class MergeSubtitles():
         if(process.returncode != 0):
             errorStr = error.decode('UTF-8')
             print(errorStr)
+            return False
+        os.remove(movie)
+        shutil.copy2(newMovie, movie)
+        os.remove(newMovie)
 
-        return process.returncode == 0
+        return True
 
 class DownloadSubtitles():
     def __init__(self):
@@ -372,7 +414,12 @@ if __name__ == "__main__":
                     prog='downloadSubtitles.py',
                     description='download, remove or merge subtitles for movie',
                     epilog='script looking for subtitles by qnapi. Downloded files have the same name as movie with subname pl or eng. ' +
-                           'You can merge subtitles to video file. Then subtitles will be visible by player with index pol or eng')
+                           'You can merge subtitles to video file. Then subtitles will be visible by player with index pol or eng' +
+                           'If You need to export subtitles from file, please use ffmpeg directly by command:' +
+                           'ffmpeg -i Movie.mkv -map 0:s:0 sub1.srt' +
+                           'ffmpeg -i Movie.mkv -map 0:s:1 sub2.srt - second subtitles')
+    # TODO export subtitles from movie
+
     g = parser.add_mutually_exclusive_group()
     g.add_argument("--merge","-m", metavar="path", help="path for video which subtitles will be merge to video file")
     g.add_argument("--download", "-d", metavar="path", help="path to movie folder which subtitles will be downloaded")
@@ -385,14 +432,17 @@ if __name__ == "__main__":
     download = DownloadSubtitles()
     merge = MergeSubtitles()
     if downloadPath is not None:
-        if not os.path.isdir(downloadPath):
-            print("path for download is not dir ", downloadPath)
-            exit()
-        print("Download subtitles for:", downloadPath)
-        result = download.downloadSubtitlesForTvShow(["eng", "pl"], downloadPath)
-        result = sorted(result.items())
-        for key, value in result:
-            print(key, ": ", value)
+        print("qnapi was depracated. You can download subtitles from Jellyfin directly by OpenSubtitles or SubBuzz")
+        exit()
+
+        #if not os.path.isdir(downloadPath):
+        #    print("path for download is not dir ", downloadPath)
+        #    exit()
+        #print("Download subtitles for:", downloadPath)
+        #result = download.downloadSubtitlesForTvShow(["eng", "pl"], downloadPath)
+        #result = sorted(result.items())
+        #for key, value in result:
+        #    print(key, ": ", value)
     elif mergePath is not None:
         if not os.path.isdir(mergePath):
             print("path for merge is not dir:", mergePath)
