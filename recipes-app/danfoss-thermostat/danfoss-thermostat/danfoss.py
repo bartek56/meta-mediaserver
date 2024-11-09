@@ -4,7 +4,7 @@ from libetrv.data_struct import ScheduleMode
 from libetrv.device import eTRVDevice
 
 
-class Danfoss:    
+class Danfoss:
     def __init__(self, address, secret_key):
         self.dev = eTRVDevice(address, secret=secret_key, pin=b'0000')
 
@@ -21,8 +21,8 @@ class Danfoss:
         print("Set point temperature:    {:.1f}°C".format(self.dev.temperature.set_point_temperature))
         print("Schedule mode:",self.dev.settings.schedule_mode)
         print("Battery Level", self.dev.battery)
-    
-    @staticmethod 
+
+    @staticmethod
     def scan():
         for x in eTRVDevice.scan():
             print("Address:", x[0].addr)
@@ -38,8 +38,8 @@ if __name__ == "__main__":
                     help='an integer for the temperature', default=0, nargs="?")
     parser.add_argument('-s','-schedule', dest='schedule', action="store_true",
                     help='set on schedule mode')
-    parser.add_argument('-r','--roomNumber', choices=['0','1','2','3'], dest='roomNumber',            
-                    help='1 - livingroom, 2 - bedroom, 3 - office, every room without argument', default='0')
+    parser.add_argument('-r','--roomNumber', choices=['1','2','3'], dest='roomNumber',
+                    help='1 - livingroom, 2 - bedroom, 3 - office, every room without argument')
 
     args = parser.parse_args()
 
@@ -50,15 +50,15 @@ if __name__ == "__main__":
     LIVINGROOM_ETRV_ADDRESS = "AA:AA:AA:AA:AA:AA"
     OFFICE_KEY = bytes.fromhex("aaaaaaaaaaaaaaaaa")
     OFFICE_ETRV_ADDRESS = "AA:AA:AA:AA:AA:AA"
-    
+
     if args.scan:
         print("SCANNING")
         Danfoss.scan()
     elif args.temperature != 0:
         print("SET TEMPERATURE")
-        if args.roomNumber != '0':
+        if args.roomNumber:
             if args.roomNumber == '1':
-                print("LIVING ROOM")
+                print("LIVINGROOM")
                 livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
                 livingroom.setScheduleMode(ScheduleMode.MANUAL)
                 livingroom.setTemperature(args.temperature)
@@ -71,27 +71,30 @@ if __name__ == "__main__":
                 bedroom.showStatus()
             if args.roomNumber == '3':
                 print("OFFICE")
-                bedroom = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
-                bedroom.setScheduleMode(ScheduleMode.MANUAL)
-                bedroom.setTemperature(args.temperature)
-                bedroom.showStatus() 
+                office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
+                office.setScheduleMode(ScheduleMode.MANUAL)
+                office.setTemperature(args.temperature)
+                office.showStatus()
         else:
             print("all rooms")
+            print("LIVINGROOM")
             livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
             livingroom.setScheduleMode(ScheduleMode.MANUAL)
             livingroom.setTemperature(args.temperature)
             livingroom.showStatus()
+            print("BEDROOM")
             bedroom = Danfoss(BEDROOM_ETRV_ADDRESS, BEDROOM_KEY)
             bedroom.setScheduleMode(ScheduleMode.MANUAL)
             bedroom.setTemperature(args.temperature)
             bedroom.showStatus()
+            print("OFFICE")
             office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
             office.setScheduleMode(ScheduleMode.MANUAL)
             office.setTemperature(args.temperature)
             office.showStatus()
     elif args.schedule != 0:
         print("SET SCHEDULE")
-        if args.roomNumber != '0':
+        if args.roomNumber:
             if args.roomNumber == '1':
                 print("LIVINGROOM")
                 livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
@@ -106,23 +109,43 @@ if __name__ == "__main__":
                 print("OFFICE")
                 office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
                 office.setScheduleMode(ScheduleMode.SCHEDULED)
-                office.showStatus() 
+                office.showStatus()
         else:
             print("all rooms")
+            print("LIVINGROOM")
             livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
             livingroom.setScheduleMode(ScheduleMode.SCHEDULED)
             livingroom.showStatus()
+            print("BEDROOM")
             bedroom = Danfoss(BEDROOM_ETRV_ADDRESS, BEDROOM_KEY)
             bedroom.setScheduleMode(ScheduleMode.SCHEDULED)
             bedroom.showStatus()
+            print("OFFICE")
             office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
             office.setScheduleMode(ScheduleMode.SCHEDULED)
-            office.showStatus() 
+            office.showStatus()
     else:
         print("STATUS")
-        livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
-        livingroom.showStatus()
-        bedroom = Danfoss(BEDROOM_ETRV_ADDRESS, BEDROOM_KEY)
-        bedroom.showStatus()
-        office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
-        office.showStatus()
+        if args.roomNumber:
+            if args.roomNumber == '1':
+                print("LIVINGROOM")
+                livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
+                livingroom.showStatus()
+            if args.roomNumber == '2':
+                print("BEDROOM")
+                bedroom = Danfoss(BEDROOM_ETRV_ADDRESS, BEDROOM_KEY)
+                bedroom.showStatus()
+            if args.roomNumber == '3':
+                print("OFFICE")
+                office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
+                office.showStatus()
+        else:
+            print("LIVINGROOM")
+            livingroom = Danfoss(LIVINGROOM_ETRV_ADDRESS, LIVINGROOM_KEY)
+            livingroom.showStatus()
+            print("BEDROOM")
+            bedroom = Danfoss(BEDROOM_ETRV_ADDRESS, BEDROOM_KEY)
+            bedroom.showStatus()
+            print("OFFICE")
+            office = Danfoss(OFFICE_ETRV_ADDRESS, OFFICE_KEY)
+            office.showStatus()
