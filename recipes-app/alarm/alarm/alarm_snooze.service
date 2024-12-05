@@ -4,7 +4,7 @@ Description=Alarm Snooze
 [Service]
 ExecStartPre=/bin/systemctl stop start.service
 
-ExecStart=/bin/bash /opt/alarm.sh
+ExecStart=/bin/bash /opt/alarm.sh snooze
 
 ExecStartPost=/bin/sleep 0.1
 ExecStartPost=/bin/systemctl start alarm_gui.service

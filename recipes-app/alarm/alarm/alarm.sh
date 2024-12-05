@@ -11,50 +11,84 @@ theNewestSongs=false
 
 set -e
 IFS=$'\n'
-musicDirectoryTemp=$( cat /etc/mpd.conf | grep music_directory | awk '{$1=""}1' )
-musicDirectoryTemp=${musicDirectoryTemp:1}
-musicDirectory="${musicDirectoryTemp//\"}"
-#$(ls /mnt/TOSHIBA\ EXT/muzyka/Youtube\ list/  -lRt -1 | grep .mp3 | sort -k6 -r | awk '{for(i=9; i<=NF; ++i) printf "%s ", $i; print ""}' | head -n 10)
 
-if [ "$theNewestSongs" == true ]; then
+prepareMpdToAlarm() {
+    #$(ls /mnt/kingston/media/muzyka/Youtube\ list/  -lRt -1 | grep .mp3 | sort -k6 -r | awk '{for(i=9; i<=NF; ++i) printf "%s ", $i; print ""}' | head -n 10)
+
+    #mpc enable "Local Pulse"
+    #mpc disable "Client Pulse"
+    #mpc disable "Soundbar"
+    numberOfOutputs=$(mpc outputs | wc -l)
+    for i in $(seq 1 $numberOfOutputs); do
+        mpc disable ${i}
+    done
+    mpc enable 1
+    mpc repeat on
+    mpc volume $minVolume
+}
+
+playTheNewestSong() {
     countSongs=0
     lastDays=0
+    musicDirectoryTemp=$( cat /etc/mpd.conf | grep music_directory | awk '{$1=""}1' )
+    musicDirectoryTemp=${musicDirectoryTemp:1}
+    musicDirectory="${musicDirectoryTemp//\"}"
 
-    while [ $countSongs -le 2 ]; do
- 	      lastDays=$((lastDays + 1))
-	      countSongs=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" | wc -l)
+    while [ $countSongs -le 4 ]; do
+        lastDays=$((lastDays + 1))
+        countSongs=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" | wc -l)
     done
 
     musicList=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" -exec basename '{}' ';' | head -n 10 )
-    
     mpc --wait clear
-		songs=()
+    songs=()
     for songName in $musicList; do
-				songs+=($songName)
+	    songs+=($songName)
     done
 
 
-    # revert list   
+    # revert list
     for ((i=${#songs[@]}-1; i>=0; i-- )); do
         mpc --wait listall | grep ${songs[$i]} | mpc add
     done
-		mpc random off
-else 
+	mpc random off
+    mpc play 1
+
+    # next song on the snooze
+    for (( i=0; i<$1; i++ )) ; {
+        mpc next
+    }
+}
+
+
+# ----------------------------------------------------------------------------
+
+prepareMpdToAlarm
+if [ "$theNewestSongs" == true ]; then
+    # configParam
+    # snooze - it is snooze alarm
+    # start - first time on the alarm
+    configParam=$1
+    numberOfSong=0
+
+    if [[ $configParam == "snooze" ]]; then
+        if [ -f /tmp/alarmConfig ]; then
+            source /tmp/alarmConfig
+        fi
+        numberOfSong=$((numberOfSong+1))
+    fi
+    echo "numberOfSong='$numberOfSong'" > /tmp/alarmConfig
+
+    playTheNewestSong $numberOfSong
+else
     mpc clear
     mpc --wait load $playlist
     mpc random on
+    mpc play
 fi
-numberOfOutputs=$(mpc outputs | wc -l)
-for i in $(seq 1 $numberOfOutputs); do
-    mpc disable ${i}
-done
-mpc enable 1
-mpc repeat on
-mpc volume $minVolume
-mpc play
+
 
 start=true
-
 echo "start"
 sleep $growingSpeed
 
@@ -71,7 +105,7 @@ while true ; do
         systemctl stop alarm_gui.service
         mpc stop
         exit
-    fi   
+    fi
     if [ "$start" == true ]; then
         result=$(mpc volume +$growingVolume)
         echo $result
