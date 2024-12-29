@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7246f848faa4e9c9fc0ea91122d6e680"
 
 SRC_URI = "https://github.com/yt-dlp/yt-dlp/releases/download/${PV}/yt-dlp.tar.gz"
 
-SRC_URI[sha256sum] = "e08331fb9a36eba56b4efd074b5b25fbf08413e9cb47009a28ecbffe47150310"
+SRC_URI[sha256sum] = "ffce6ebd742373eff6dac89b23f706ec7513a0367160eb8b5a550cd706cd883f"
 
 do_fetch[nostamp] = "1"
 

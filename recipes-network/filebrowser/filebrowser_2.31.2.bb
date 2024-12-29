@@ -16,7 +16,8 @@ SRC_URI:aarch64="https://github.com/filebrowser/filebrowser/releases/download/v$
 S = "${WORKDIR}"
 
 SHA_CHECKSUM:arm = "87451de51f2b230a095225c450a846da48c4f7589c2524cb8b4693a215ad3dff"
-SHA_CHECKSUM:aarch64 = "fe68b8f95f9eba2069fe337c7f062bab6da5673f4153c0716a0834caebf261a6"
+SHA_CHECKSUM:aarch64 = "6136f11f85d2cc0a7f4828772d389cad4d6d44f6840c036e3bae204deea147ae"
+
 SRC_URI[sha256sum] = "${SHA_CHECKSUM}"
 
 inherit systemd
