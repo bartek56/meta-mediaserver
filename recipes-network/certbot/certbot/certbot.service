@@ -1,0 +1,18 @@
+[Unit]
+Description=Certbot rnew SSL certificate
+
+
+[Service]
+StandardOutput=append:/var/log/certbot.log
+
+ExecStartPre=/bin/systemctl stop apache2.service
+ExecStartPre=/bin/sleep 1
+
+ExecStart=/usr/bin/certbot renew
+
+ExecStopPost=/bin/systemctl start apache2.service
+
+
+
+[Install]
+WantedBy=multi-user.target

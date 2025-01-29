@@ -1,0 +1,8 @@
+[Unit]
+Description=Renew SSL certificates
+
+[Timer]
+OnCalendar=*-*-* 02:15:00
+
+[Install]
+WantedBy=multi-user.target
