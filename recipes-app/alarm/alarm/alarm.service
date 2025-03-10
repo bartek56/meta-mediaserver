@@ -3,6 +3,8 @@ Description=Alarm
 
 [Service]
 ExecStartPre=/bin/systemctl stop start.service
+ExecStartPre=/bin/systemctl stop mpc_mediaserver.service
+
 Restart=on-failure
 RestartSec=5s
 ExecStart=/bin/bash /opt/alarm.sh start

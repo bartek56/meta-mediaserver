@@ -17,7 +17,7 @@ do_install(){
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/*.service ${D}${systemd_system_unitdir}
     install -m 0775 ${WORKDIR}/*.timer ${D}${systemd_system_unitdir}
-   
+
     install -d ${D}${sysconfdir}/mediaserver
     ln -sf /opt/alarm.sh ${D}${sysconfdir}/mediaserver/alarm.sh
     ln -sf ${systemd_system_unitdir}/alarm.timer ${D}${sysconfdir}/mediaserver/alarm.timer
