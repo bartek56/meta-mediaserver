@@ -5,8 +5,7 @@ Description=Alarm GUI
 EnvironmentFile=/etc/environment
 ExecStart=/opt/Alarm -platform eglfs
 
-ExecStopPost=/bin/sleep 0.2
-ExecStopPost=/bin/systemctl start start.service
+ExecStopPost=/bin/bash /opt/serviceHelper.sh alarm_gui.service stop
 
 
 [Install]

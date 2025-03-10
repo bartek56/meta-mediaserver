@@ -2,14 +2,11 @@
 Description=Alarm Snooze
 
 [Service]
-ExecStartPre=/bin/systemctl stop start.service
-ExecStartPre=/bin/systemctl stop mpc_mediaserver.service
-
+ExecStartPre=/bin/bash /opt/serviceHelper.sh alarm_snooze.service start
 Restart=on-failure
 RestartSec=5s
 ExecStart=/bin/bash /opt/alarm.sh snooze
 
-ExecStartPost=/bin/sleep 0.1
 ExecStartPost=/bin/systemctl start alarm_gui.service
 
 [Install]

@@ -14,7 +14,8 @@ SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
           file://fstab_manager.sh \
           file://screensaver.conf \
           file://start.service \
-          file://alarm_gui.service"
+          file://alarm_gui.service \
+          file://serviceHelper.sh "
 
 
 #S = "${WORKDIR}/MediaServer"
@@ -41,6 +42,7 @@ do_install:append() {
 
     install -d ${D}/opt
     install -m 0755 ${WORKDIR}/fstab_manager.sh ${D}/opt
+    install -m 0755 ${WORKDIR}/serviceHelper.sh ${D}/opt
 
     install -d ${D}/etc/mediaserver
     install -m 0755 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
@@ -50,6 +52,7 @@ INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"
 FILES:${PN} += "/opt/MediaServerApp"
 FILES:${PN} += "/opt/Alarm"
 FILES:${PN} += "/opt/fstab_manager.sh"
+FILES:${PN} += "/opt/serviceHelper.sh"
 FILES:${PN} += "${sysconfdir}/mediaserver/screensaver.conf"
 FILES:${PN} += "${systemd_system_unitdir}/start.service"
 FILES:${PN} += "${systemd_system_unitdir}/alarm_gui.service"

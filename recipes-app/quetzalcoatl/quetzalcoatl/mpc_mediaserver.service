@@ -2,14 +2,12 @@
 Description=MPC Qt5
 
 [Service]
-ExecStartPre=/bin/systemctl stop start.service
-ExecStartPre=/bin/sleep 0.1
+ExecStartPre=/bin/bash /opt/serviceHelper.sh mpc_mediaserver.service start
 
 EnvironmentFile=/etc/environment
 ExecStart=/opt/quetzalcoatl -platform eglfs
 
-ExecStartPost=/bin/sleep 0.1
-ExecStopPost=/bin/bash /opt/serviceHelper.sh
+ExecStopPost=/bin/bash /opt/serviceHelper.sh mpc_mediaserver.service stop
 
 [Install]
 WantedBy=multi-user.target
