@@ -1,0 +1,38 @@
+#!/bin/bash
+
+SOURCE="/mnt/kingston/share"
+BASE_DIR="/home/sftp_users"
+
+if [ ! -d "$SOURCE" ]; then
+    echo "Source dir doesn't exist"
+    exit 1
+fi
+
+echo "Verify users in $BASE_DIR..."
+
+for userdir in "$BASE_DIR"/*; do
+    if [ -d "$userdir" ]; then
+        username=$(basename "$userdir")
+        target="$userdir/share"
+
+        if [ ! -d "$target" ]; then
+            echo "Creating dir: $target"
+            mkdir -p "$target"
+            chown "$username:$username" "$target"
+        fi
+
+        if mountpoint -q "$target"; then
+            echo "Dir is mounted"
+        else
+            echo "Monuting: $SOURCE → $target"
+            mount --bind "$SOURCE" "$target"
+            if [ $? -eq 0 ]; then
+                echo "Sucess"
+            else
+                echo "Failed"
+            fi
+        fi
+    fi
+done
+
+echo "End of mounting"

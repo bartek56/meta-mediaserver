@@ -1,0 +1,12 @@
+[Unit]
+Description=Shared dir mount automatically to /home/users/<user>/share
+After=local-fs.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/mountShared
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
