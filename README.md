@@ -26,8 +26,8 @@ layer support:
 
 1. Create directory and download layers
 
-- mkdir yocto_mediaserver
-- cd yocto_mediaserver
+- mkdir -p yocto_mediaserver/sources
+- cd yocto_mediaserver/sources
 - git clone -b kirkstone https://git.yoctoproject.org/poky
 - git clone -b kirkstone https://github.com/meta-qt5/meta-qt5
 - git clone -b kirkstone https://git.openembedded.org/meta-openembedded
@@ -39,20 +39,20 @@ layer support:
 2. Generate and run Docker image
 
 docker build -t yocto-ubuntu-22.04 meta-mediaserver/conf/docker/
-ln -s meta-mediaserver/conf/docker/docker-compose.yml docker-compose.yml
+ln -s sources/meta-mediaserver/conf/docker/docker-compose.yml docker-compose.yml
 docker compose run --rm yocto
 
 
 3. Edit configuration files
 
-- cp ../meta-mediaserver/conf/yocto_conf/blayers.conf.sample conf/bblayers.conf
+- cp ../sources/meta-mediaserver/conf/yocto_conf/blayers.conf.sample conf/bblayers.conf
 
 File local.conf depends on target
 for target with Qt5 Gui
-- cp ../meta-mediaserver/conf/yocto_conf/local.conf.qt5.sample conf/local.conf
+- cp ../sources/meta-mediaserver/conf/yocto_conf/local.conf.qt5.sample conf/local.conf
 
 for target without Qt5 Gui
-- cp ../meta-mediaserver/conf/yocto_conf/local.conf.base.sample conf/local.conf
+- cp ../sources/meta-mediaserver/conf/yocto_conf/local.conf.base.sample conf/local.conf
 
 
 4. Build MediaServer
