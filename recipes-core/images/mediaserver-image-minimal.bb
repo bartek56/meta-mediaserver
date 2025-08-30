@@ -19,6 +19,7 @@ NETWORK = " \
     speedtest \
     openssh-sftp \
     openssh-sftp-server \
+    sftp-clients \
 "
 
 TOOLS = " \

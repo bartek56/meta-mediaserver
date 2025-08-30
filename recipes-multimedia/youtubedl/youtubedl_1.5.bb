@@ -20,7 +20,9 @@ SYSTEMD_PACKAGES = "${PN}"
 do_install(){
     install -d ${D}/opt/YoutubeDownloader
     install -m 0644 ${WORKDIR}/git/youtubedlWeb/Common/Youtube* ${D}/opt/YoutubeDownloader
+    install -m 0644 ${WORKDIR}/git/youtubedlWeb/Common/Playlist* ${D}/opt/YoutubeDownloader
     sed -i 's~from .Youtube~from Youtube~g' ${D}/opt/YoutubeDownloader/Youtube*
+    sed -i 's~from .Playlist~from Playlist~g' ${D}/opt/YoutubeDownloader/Youtube*
 
     install -d ${D}/${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/youtubedl.service ${D}/${systemd_system_unitdir}

@@ -11,8 +11,7 @@ ExecStartPre=/bin/sleep 1
 ExecStart=/usr/bin/certbot renew
 
 ExecStopPost=/bin/systemctl start apache2.service
-
-
+#ExecStopPost=openssl pkcs12 -export -inkey privkey.pem -in cert.pem -certfile chain.pem -out cert.p12
 
 [Install]
 WantedBy=multi-user.target
