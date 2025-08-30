@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  yocto:
+    image: yocto-ubuntu-22.04
+    container_name: yocto-builder
+    hostname: yocto-builder
+    stdin_open: true
+    tty: true
+    volumes:
+      # Twój główny katalog Yocto
+      - ./:/home/builder/yocto-project
+
+    environment:
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US:en
+      - LC_ALL=en_US.UTF-8
+    working_dir: /home/builder/yocto-project
+    command: bash -c "source poky/oe-init-build-env build-yocto && exec bash"
+
