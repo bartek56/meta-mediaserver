@@ -1,10 +1,10 @@
 #/bin/bash
 minVolume=7
-maxVolume=84
+maxVolume=65
 defaultVolume=9
 growingVolume=5
-growingSpeed=50
-playlist="Alarm"
+growingSpeed=55
+playlist="alarm"
 theNewestSongs=false
 
 
@@ -13,17 +13,13 @@ set -e
 IFS=$'\n'
 
 prepareMpdToAlarm() {
-    #$(ls /mnt/kingston/media/muzyka/Youtube\ list/  -lRt -1 | grep .mp3 | sort -k6 -r | awk '{for(i=9; i<=NF; ++i) printf "%s ", $i; print ""}' | head -n 10)
-
-    #mpc enable "Local Pulse"
-    #mpc disable "Client Pulse"
-    #mpc disable "Soundbar"
+    mpc stop
     numberOfOutputs=$(mpc outputs | wc -l)
     for i in $(seq 1 $numberOfOutputs); do
         mpc disable ${i}
     done
     mpc enable 1
-    mpc repeat on
+    mpc --wait clear
     mpc volume $minVolume
 }
 
@@ -40,12 +36,10 @@ playTheNewestSong() {
     done
 
     musicList=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" -exec basename '{}' ';' | head -n 10 )
-    mpc --wait clear
     songs=()
     for songName in $musicList; do
 	    songs+=($songName)
     done
-
 
     # revert list
     for ((i=${#songs[@]}-1; i>=0; i-- )); do
@@ -63,11 +57,13 @@ playTheNewestSong() {
 
 # ----------------------------------------------------------------------------
 
+
 prepareMpdToAlarm
 if [ "$theNewestSongs" == true ]; then
+    echo "----- load the newest songs"
     # configParam
-    # snooze - it is snooze alarm
-    # start - first time on the alarm
+    #   snooze - it is snooze alarm
+    #   start - first time on the alarm
     configParam=$1
     numberOfSong=0
 
@@ -81,35 +77,44 @@ if [ "$theNewestSongs" == true ]; then
 
     playTheNewestSong $numberOfSong
 else
-    mpc clear
+    echo "----- load playlist $playlist"
     mpc --wait load $playlist
     mpc random on
     mpc play
 fi
 
+echo "----- start"
+status=$(mpc status | head -n1)
+if ! mpc status | grep -q "\[playing\]"; then
+    echo "----- Nic nie jest odtwarzane, dodaję 10 losowych utworów..."
+    mpc listall | shuf -n 10 | mpc add
+    mpc random on
+    mpc play
+fi
 
-start=true
-echo "start"
-sleep $growingSpeed
-
-while true ; do
-    result=$(mpc volume)
-    IFS=':' read -r -a array <<< "$result"
-    volume=${array[1]::-1}
-    if [ $(($volume >= $maxVolume)) == 1 ]; then
-        start=false
-        echo "MAX VALUE"
-        sleep $growingSpeed
-        sleep $growingSpeed
-        sleep $growingSpeed
-        systemctl stop alarm_gui.service
-        mpc stop
-        exit
-    fi
-    if [ "$start" == true ]; then
-        result=$(mpc volume +$growingVolume)
-        echo $result
-    fi
+# ---------------------- Alarm loop
+while :; do
 
     sleep $growingSpeed
+
+    mpc volume +$growingVolume
+    echo ""
+    volume=$(mpc volume | grep -o '[0-9]\+')
+    if [ "$volume" -ge "$maxVolume" ]; then
+        break
+    fi
 done
+
+# keep max value and then stop alarm
+countMaxVolume=1
+while [ $countMaxVolume -lt 11 ]; do
+    echo "----- MAX VALUE $countMaxVolume"
+    sleep $growingSpeed
+    countMaxVolume=$((countMaxVolume + 1))
+done
+
+echo "----- Auto stop alarm"
+systemctl stop alarm_gui.service
+mpc stop
+exit
+
