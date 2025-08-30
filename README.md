@@ -45,7 +45,7 @@ docker compose run --rm yocto
 
 3. Edit configuration files
 
-- cp ../sources/meta-mediaserver/conf/yocto_conf/blayers.conf.sample conf/bblayers.conf
+- cp ../sources/meta-mediaserver/conf/yocto_conf/bblayers.conf.sample conf/bblayers.conf
 
 File local.conf depends on target
 for target with Qt5 Gui

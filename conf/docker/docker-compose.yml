@@ -15,5 +15,5 @@ services:
       - LANGUAGE=en_US:en
       - LC_ALL=en_US.UTF-8
     working_dir: /home/builder/yocto-project
-    command: bash -c "source poky/oe-init-build-env build-yocto && exec bash"
+    command: bash -c "source sources/poky/oe-init-build-env build && exec bash"
 
