@@ -37,9 +37,13 @@ PACKAGES = " \
 S = "${WORKDIR}/git"
 
 do_install:append() {
+    install -d ${D}${bindir}
+    install -m 0644 ${WORKDIR}/bt-snapcast-autoplug.sh ${D}${bindir}
+
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/snapclient.service ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/snapserver.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${WORKDIR}/bt-snapcast-autoplug.service ${D}${systemd_system_unitdir}
 
     install -d ${D}${sysconfdir}
     install -m 0644 ${WORKDIR}/snapserver.conf ${D}${sysconfdir}/
@@ -63,10 +67,12 @@ FILES:${PN}-client-doc = "${mandir}/man1/snapclient*"
 
 FILES:${PN}-server = " \
     ${bindir}/snapserver \
+    ${bindir}/bt-snapcast-autoplug.sh \
     ${sysconfdir}/snapserver.conf \
     ${sysconfdir}/snapserver/certs \
     ${datadir}/snapserver/* \
     ${systemd_system_unitdir}/snapserver.service \
+    ${systemd_system_unitdir}/bt-snapcast-autoplug.service \
 "
 
 FILES:${PN}-server-doc = "${mandir}/man1/snapserver*"
