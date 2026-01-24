@@ -4,7 +4,7 @@ Wants=avahi-daemon.service
 After=connman.service sound.target avahi-daemon.service
 
 [Service]
-ExecStart=/usr/bin/snapclient --logsink=system --hostID "%H" 
+ExecStart=/usr/bin/snapclient --logsink=system --hostID "%H"  -s sysdefault:CARD=Headphones
 Restart=on-failure
 
 [Install]

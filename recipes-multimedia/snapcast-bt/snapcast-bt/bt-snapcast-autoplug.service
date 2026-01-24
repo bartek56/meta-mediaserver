@@ -1,13 +1,14 @@
 [Unit]
 Description=Bluetooth to Snapcast autoplug daemon
+Requires=pulseaudio.service
 After=network.target sound.target bluetooth.target pulseaudio.service
 Wants=bluetooth.target
 
 [Service]
 Type=simple
 
-#Environment="XDG_RUNTIME_DIR=/run/user/0"
-#Environment="PULSE_RUNTIME_PATH=/run/user/0/pulse"
+Environment="XDG_RUNTIME_DIR=/run/user/0"
+Environment="PULSE_RUNTIME_PATH=/run/user/0/pulse"
 
 ExecStart=/usr/bin/bt-snapcast-autoplug.sh
 
@@ -15,7 +16,7 @@ KillMode=control-group
 TimeoutStopSec=3
 
 Restart=always
-RestartSec=2
+RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
