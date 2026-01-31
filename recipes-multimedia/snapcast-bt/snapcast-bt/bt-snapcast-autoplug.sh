@@ -10,10 +10,46 @@ PAREC_PID_FILE="$STATE_DIR/parec.pid"
 INITIALIZATION_TIMEOUT=3
 DEFAULT_GAIN="120%"
 
+SNAPCAST_HOST="localhost"
+SNAPCAST_PORT="1705"
+SNAPCAST_STREAM_MPD="MPD"
+SNAPCAST_STREAM_BLUETOOTH="Bluetooth"
+
 mkdir -p "$STATE_DIR"
 
 log() {
     echo "[BT-SNAPCAST] $1"
+}
+
+snapcast_set_stream() {
+    # usage: snapcast_set_stream Bluetooth|MPD
+    STREAM_NAME="$1"
+
+    if [ -z "$STREAM_NAME" ]; then
+        log "snapcast_set_stream: missing stream name"
+        return 1
+    fi
+
+    # Get server status
+    STATUS_JSON=$(printf '{"id":1,"jsonrpc":"2.0","method":"Server.GetStatus"}\n' \
+        | nc "$SNAPCAST_HOST" "$SNAPCAST_PORT")
+
+    # Extract group_id (first/default group)
+    GROUP_ID=$(echo "$STATUS_JSON" \
+        | sed -n 's/.*"groups":\[{"clients".*"id":"\([^"]*\)","muted".*/\1/p')
+
+    if [ -z "$GROUP_ID" ]; then
+        log "snapcast_set_stream: cannot determine group_id"
+        return 2
+    fi
+
+    # Switch stream
+    printf '{"id":2,"jsonrpc":"2.0","method":"Group.SetStream","params":{"id":"%s","stream_id":"%s"}}\n' \
+        "$GROUP_ID" "$STREAM_NAME" \
+        | nc "$SNAPCAST_HOST" "$SNAPCAST_PORT" >/dev/null
+    log "switched to $STREAM_NAME"
+
+    return 0
 }
 
 start_bt_audio() {
@@ -141,6 +177,7 @@ main_loop() {
                     # jeśli nie mamy aktywnego loopbacka → nowy connect
                     if [ ! -f "$LOOPBACK_ID_FILE" ]; then
                         start_bt_audio "$NAME"
+                        snapcast_set_stream "$SNAPCAST_STREAM_BLUETOOTH"
                     fi
                 fi
             done
@@ -149,6 +186,7 @@ main_loop() {
         # DISCONNECT
         if echo "$line" | grep -q "remove"; then
             stop_bt_audio
+            snapcast_set_stream "$SNAPCAST_STREAM_MPD"
         fi
     done
 }

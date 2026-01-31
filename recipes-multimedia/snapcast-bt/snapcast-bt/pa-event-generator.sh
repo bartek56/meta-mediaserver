@@ -14,7 +14,7 @@ ORIG_MUTE=$(pactl get-sink-mute "$SINK" | awk '{print $2}')
 
 restore_mute() {
     echo "[PA_GEN] exiting .. restore default sink"
-    pactl set-sink-mute "$SINK" "$ORIG_MUTE" >/dev/null 2>&1 || true
+    pactl set-sink-mute "$SINK" off >/dev/null 2>&1 || true
     exit 0
 }
 
@@ -33,9 +33,9 @@ while true; do
         break
     fi
 
-    pactl set-sink-mute "$SINK" toggle
+    pactl set-sink-mute "$SINK" on
     sleep 0.2
-    pactl set-sink-mute "$SINK" "$ORIG_MUTE"
+    pactl set-sink-mute "$SINK" off
 
     sleep "$INTERVAL"
 done
