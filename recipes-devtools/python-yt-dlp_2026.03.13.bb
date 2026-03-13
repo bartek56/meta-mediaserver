@@ -5,7 +5,8 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7246f848faa4e9c9fc0ea91122d6e680"
 
 SRC_URI = "https://github.com/yt-dlp/yt-dlp/releases/download/${PV}/yt-dlp.tar.gz"
 
-SRC_URI[sha256sum] = "a1387bf383a0a29a4ab09c27733f11e6f03db84eae35375d9f4f6dcb420668f7"
+SRC_URI[sha256sum] = "d10140b4afbfba22b13031935e59679ea144191ba472337ca4dd87127003a0da"
+
 
 do_fetch[nostamp] = "1"
 # independ from version SRC filename is the same. After update bitbake does not download new version. SSTATE_SKIP resolved problem
