@@ -44,16 +44,18 @@ do_install:append() {
     install -m 0755 ${WORKDIR}/fstab_manager.sh ${D}/opt
     install -m 0755 ${WORKDIR}/serviceHelper.sh ${D}/opt
 
+    # TODO rename in qmake
+    mv ${D}/opt/Alarm ${D}/opt/AlarmApp
+
     install -d ${D}/etc/mediaserver
     install -m 0755 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
 }
 
 INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"
 FILES:${PN} += "/opt/MediaServerApp"
-FILES:${PN} += "/opt/Alarm"
+FILES:${PN} += "/opt/AlarmApp"
 FILES:${PN} += "/opt/fstab_manager.sh"
 FILES:${PN} += "/opt/serviceHelper.sh"
 FILES:${PN} += "${sysconfdir}/mediaserver/screensaver.conf"
 FILES:${PN} += "${systemd_system_unitdir}/start.service"
 FILES:${PN} += "${systemd_system_unitdir}/alarm_gui.service"
-

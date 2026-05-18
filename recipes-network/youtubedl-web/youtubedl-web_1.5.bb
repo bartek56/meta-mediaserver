@@ -43,7 +43,7 @@ do_install(){
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${WORKDIR}/youtubedl-web.service ${D}${systemd_system_unitdir}
-    
+
     install -d ${D}/etc/apache2/conf.d
     install -m 0755 ${WORKDIR}/youtubedl-web.conf ${D}/etc/apache2/conf.d
 

@@ -6,7 +6,7 @@ ExecStartPre=/bin/bash /opt/serviceHelper.sh alarm.service start
 
 Restart=on-failure
 RestartSec=5s
-ExecStart=/bin/bash /opt/alarm.sh start
+ExecStart=/opt/alarm start
 
 ExecStartPost=/bin/systemctl start alarm_gui.service
 
