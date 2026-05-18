@@ -9,7 +9,7 @@ theNewestSongs=false
 
 
 
-set -e
+set -euo pipefail
 IFS=$'\n'
 
 prepareMpdToAlarm() {
@@ -21,37 +21,58 @@ prepareMpdToAlarm() {
     mpc enable 1
     mpc --wait clear
     mpc volume $minVolume
+    mpc repeat on
+    mpc consume off
 }
+
 
 playTheNewestSong() {
     countSongs=0
     lastDays=0
+    numberOfSong=$1
+    numberOfAllSongs=$((numberOfSong + 4))
     musicDirectoryTemp=$( cat /etc/mpd.conf | grep music_directory | awk '{$1=""}1' )
     musicDirectoryTemp=${musicDirectoryTemp:1}
     musicDirectory="${musicDirectoryTemp//\"}"
 
-    while [ $countSongs -le 4 ]; do
-        lastDays=$((lastDays + 1))
-        countSongs=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" | wc -l)
+
+    while [ $countSongs -le $numberOfAllSongs ] && [ $lastDays -le 500 ]; do
+        lastDays=$((lastDays + 30))
+        countSongs=$(find "$musicDirectory" -type f -mtime -"$lastDays" -name "*.mp3" | wc -l)
     done
 
-    musicList=$(find $musicDirectory -type f -mtime -$lastDays -name "*.mp3" -exec basename '{}' ';' | head -n 10 )
-    songs=()
-    for songName in $musicList; do
-	    songs+=($songName)
-    done
+    musicList=$(find "$musicDirectory" -type f -name "*.mp3" -mtime -"$lastDays" \
+| python3 -c '
+import sys, os
 
-    # revert list
-    for ((i=${#songs[@]}-1; i>=0; i-- )); do
-        mpc --wait listall | grep ${songs[$i]} | mpc add
-    done
+limit = int(sys.argv[1])
+files = []
+
+for line in sys.stdin:
+    path = line.strip()
+    if path:
+        try:
+            files.append((os.path.getmtime(path), path))
+        except:
+            pass
+
+files.sort(reverse=True)
+
+for _, path in files[:limit]:
+    print(path)
+' "$numberOfAllSongs")
+
+    while IFS= read -r song; do
+        [ -n "$song" ] && mpc add "$song"
+    done <<< "$musicList"
+
 	mpc random off
-    mpc play 1
+    mpc --wait play 1
 
     # next song on the snooze
-    for (( i=0; i<$1; i++ )) ; {
-        mpc next
-    }
+    for (( i=0; i<numberOfSong; i++ )); do
+        mpc next || break
+    done
 }
 
 
@@ -80,13 +101,13 @@ else
     echo "----- load playlist $playlist"
     mpc --wait load $playlist
     mpc random on
-    mpc play
+    mpc --wait play
 fi
 
 echo "----- start"
 status=$(mpc status | head -n1)
 if ! mpc status | grep -q "\[playing\]"; then
-    echo "----- Nic nie jest odtwarzane, dodaję 10 losowych utworów..."
+    echo "----- Nic nie jest odtwarzane, dodaj 10 losowych utworow..."
     mpc listall | shuf -n 10 | mpc add
     mpc random on
     mpc play
@@ -117,4 +138,3 @@ echo "----- Auto stop alarm"
 systemctl stop alarm_gui.service
 mpc stop
 exit
-
