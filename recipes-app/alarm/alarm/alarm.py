@@ -2,18 +2,27 @@
 
 import time
 import os
+import configparser
 from mpd import MPDClient
 
 
 # ---------------- CONFIG ----------------
-MIN_VOLUME = 7
-MAX_VOLUME = 69
-DEFAULT_VOLUME = 11
-GROWING_VOLUME = 5
-GROWING_SPEED = 55
+CONFIG_FILE = "/etc/mediaserver/alarm.ini"
 
-PLAYLIST = ""
-THE_NEWEST_SONGS = True
+config = configparser.ConfigParser()
+config.read(CONFIG_FILE)
+
+cfg = config["alarm"]
+
+MIN_VOLUME = cfg.getint("min_volume")
+MAX_VOLUME = cfg.getint("max_volume")
+DEFAULT_VOLUME = cfg.getint("default_volume")
+GROWING_VOLUME = cfg.getint("growing_volume")
+GROWING_SPEED = cfg.getint("growing_speed")
+
+PLAYLIST = cfg.get("playlist")
+THE_NEWEST_SONGS = cfg.getboolean("the_newest_songs")
+
 
 MPD_HOST = "localhost"
 MPD_PORT = 6600
