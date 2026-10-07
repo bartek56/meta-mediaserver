@@ -10,7 +10,7 @@ PYPI_PACKAGE = "yt-dlp"
 
 inherit pypi setuptools3
 
-S = "${WORKDIR}/yt-dlp"
+S = "${UNPACKDIR}/yt-dlp"
 
 FILES:${PN} += "/usr/share/bash-completion/completions/yt-dlp"
 FILES:${PN} += "/usr/share/zsh/site-functions/_yt-dlp"

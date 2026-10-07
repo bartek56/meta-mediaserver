@@ -12,7 +12,6 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=3b83ef96387f14655fc854ddc3c6bd57"
 SRCREV = "7fba9934e8631cdc08d48bbc2983598b4586db80"
 PV = "4.9.4+git${SRCPV}"
 
-S = "${WORKDIR}/git"
 
 SRCNAME = "mod_wsgi"
 SRC_URI = "\

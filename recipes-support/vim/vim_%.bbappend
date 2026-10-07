@@ -7,7 +7,7 @@ do_install:append(){
     install -d ${D}/home/root/.vim/tmp/undo
     install -d ${D}/home/root/.vim/tmp/backup
     install -d ${D}/home/root/.vim/tmp/swap
-    install -m 0700 ${WORKDIR}/vimrc ${D}/home/root/.vimrc
+    install -m 0700 ${UNPACKDIR}/vimrc ${D}/home/root/.vimrc
 }
 FILES:${PN} += "/home/root/.vim/tmp/undo"
 FILES:${PN} += "/home/root/.vim/tmp/backup"

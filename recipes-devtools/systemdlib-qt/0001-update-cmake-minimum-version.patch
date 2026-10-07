@@ -1,0 +1,13 @@
+Upstream-Status: Pending [not submitted upstream]
+
+CMake 4 no longer supports compatibility with versions older than 3.5.
+
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ project(libsystemd-qt)
+ 
+-cmake_minimum_required(VERSION 2.8.8)
++cmake_minimum_required(VERSION 3.5)
+ 
+ set(QTSYSTEMD_MAJOR_VERSION 0)

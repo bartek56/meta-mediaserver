@@ -15,8 +15,8 @@ inherit systemd pypi setuptools3
 
 do_install:append () {
     install -d ${D}${systemd_system_unitdir}
-    cp ${WORKDIR}/certbot.service ${D}${systemd_system_unitdir}
-    cp ${WORKDIR}/certbot.timer ${D}${systemd_system_unitdir}
+    cp ${UNPACKDIR}/certbot.service ${D}${systemd_system_unitdir}
+    cp ${UNPACKDIR}/certbot.timer ${D}${systemd_system_unitdir}
 }
 
 FILES:${PN} += "${systemd_system_unitdir}/certbot.service"

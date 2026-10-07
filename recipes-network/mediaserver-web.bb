@@ -9,7 +9,6 @@ RDEPENDS:${PN} += " bash"
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/MediaServer-Web;branch=main;protocol=https"
 
-S = "${WORKDIR}/git"
 
 do_install() {
 	install -d ${D}/usr/htdocs
@@ -23,5 +22,4 @@ do_install() {
 }
 
 FILES:${PN} += "/usr/htdocs"
-
 

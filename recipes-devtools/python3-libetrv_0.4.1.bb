@@ -1,6 +1,6 @@
 SUMMARY = "libetrv for contol Danfoss Eco Bluetooth LE thermostat"
 HOMEPAGE = "https://github.com/AdamStrojek/libetrv"
-LICENSE = "Apache"
+LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 
 PYPI_SRC_URI = "git://github.com/bartek56/libetrv;protocol=https;branch=master"
@@ -13,4 +13,4 @@ PYPI_PACKAGE = "libetrv"
 
 inherit pypi setuptools3
 
-S = "${WORKDIR}/git"
+S = "${UNPACKDIR}/python3-libetrv-${PV}"

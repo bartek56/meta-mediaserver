@@ -1,5 +1,5 @@
 SUMMARY = "QNapi - download subtitles"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://doc/LICENSE;md5=751419260aa954499f7abaabaa882bbe"
 
 DEPENDS += " qtbase libmediainfo"
@@ -12,10 +12,10 @@ SRC_URI = "https://github.com/QNapi/qnapi/releases/download/${PV}/qnapi-${PV}.ta
 
 do_install:append(){
         install -d ${D}/etc/mediaserver
-        install -m 0755 ${WORKDIR}/qnapi.ini ${D}/etc/mediaserver
+        install -m 0755 ${UNPACKDIR}/qnapi.ini ${D}/etc/mediaserver
         
         install -d ${D}/opt
-        install -m 0755 ${WORKDIR}/downloadSubtitles.py ${D}/opt
+        install -m 0755 ${UNPACKDIR}/downloadSubtitles.py ${D}/opt
 }
 
 FILES:${PN} += "${systemd_system_unitdir}/*.service"
@@ -25,7 +25,7 @@ SRC_URI[sha256sum] = "48241041eb9a92203885b1083e40a57f4f3a1674036b44d6539aade333
 
 inherit qmake5 pkgconfig
 
-S = "${WORKDIR}/qnapi-${PV}"
+S = "${UNPACKDIR}/qnapi-${PV}"
 
 FILES:${PN} += "/etc/mediaserver/qnapi.ini \
   /usr/bin/qnapi \

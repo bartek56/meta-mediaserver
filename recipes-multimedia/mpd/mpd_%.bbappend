@@ -23,7 +23,7 @@ PACKAGECONFIG += "fifo"
 
 do_install:append() {
     install -d ${D}/etc
-    install -m 0755 ${WORKDIR}/mpd.conf ${D}/etc
+    install -m 0755 ${UNPACKDIR}/mpd.conf ${D}/etc
 
     install -d ${D}/etc/mediaserver
     ln -sf /etc/mpd.conf ${D}/etc/mediaserver/mpd.conf
@@ -31,4 +31,3 @@ do_install:append() {
 }
 
 FILES:${PN} += "etc/mpd.conf"
-

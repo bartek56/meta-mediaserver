@@ -37,20 +37,21 @@
 # This sets the default machine to be qemux86-64 if no other machine is selected:
 #MACHINE ??= "qemux86-64"
 #MACHINE ?= "raspberrypi3-64"
-#MACHINE ?= "raspberrypi4-64"
-MACHINE ?= "raspberrypi0-2w-64"
+MACHINE ?= "raspberrypi4-64"
+#MACHINE ?= "raspberrypi0-2w-64"
 
-LICENSE_FLAGS_ACCEPTED="commercial"
+LICENSE_FLAGS_ACCEPTED = "commercial synaptics-killswitch"
+PACKAGECONFIG:remove:pn-ffmpeg = "x264"
+PACKAGECONFIG:remove:pn-x264 = "ffmpeg"
 INHERIT += "rm_work"
 hostname:pn-base-files = "MediaServer"
 
 IMAGE_FSTYPES = " tar.bz2 ext3 rpi-sdimg"
+BOOT_SPACE = "131072"
 
 DISTRO_FEATURES:append = " bluez5 bluetooth wifi systemd pam pulseaudio"
-DISTRO_FEATURES_BACKFILL_CONSIDERED += "sysvinit"
-VIRTUAL-RUNTIME_init_manager = "systemd"
-VIRTUAL-RUNTIME_initscripts = "systemd-compat-units"
-VIRTUAL-RUNTIME_graphical_init_manager = ""
+DISTRO_FEATURES_OPTED_OUT += "sysvinit"
+INIT_MANAGER = "systemd"
 
 DISTRO_FEATURES:remove = "wayland"
 
@@ -180,7 +181,7 @@ PACKAGE_CLASSES = "package_ipk"
 # There are other application targets that can be used here too, see
 # meta/classes/image.bbclass and meta/classes/core-image.bbclass for more details.
 # We default to enabling the debugging tweaks.
-EXTRA_IMAGE_FEATURES ?= "debug-tweaks"
+EXTRA_IMAGE_FEATURES ?= ""
 
 #
 # Additional image features

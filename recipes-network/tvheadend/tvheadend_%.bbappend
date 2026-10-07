@@ -4,7 +4,7 @@ SRC_URI += "file://tvheadend.service"
 
 do_install:append() {
         install -d ${D}${systemd_unitdir}/system
-        install -m 0644 ${WORKDIR}/tvheadend.service ${D}${systemd_unitdir}/system
+        install -m 0644 ${UNPACKDIR}/tvheadend.service ${D}${systemd_unitdir}/system
 }
 
-FILES:${PN} += "/lib/systemd/system/tvheadend.service"
+FILES:${PN} += "${systemd_system_unitdir}/tvheadend.service"

@@ -2,6 +2,8 @@ include recipes-core/images/mediaserver-image-base.bb
 
 inherit sdcard_image-rpi
 
+BOOT_SPACE = "131072"
+
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
@@ -19,4 +21,3 @@ IMAGE_FEATURES += " splash"
 IMAGE_INSTALL:append = " psplash"
 
 SPLASH = "psplash-mediaserver"
-

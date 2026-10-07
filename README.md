@@ -1,75 +1,128 @@
 # meta-mediaserver
-yocto layer for MediaServer project
 
-Support machine: Raspberry Pi Zero 2w, Raspberry Pi 3b, Raspberry Pi 4
+Yocto layer for the MediaServer project, maintained for the Yocto
+Project Wrynose (6.0).
 
-Required:.
-- Ubuntu 22.04.1 LTS or Docker
-- min. 150GB disk space
+## Supported hardware
 
-layer support:
-- [mediaserver](https://github.com/bartek56/MediaServer)
-- [quetzalcoatl](https://github.com/bartek56/quetzalcoatl)
-- [qnapi](https://github.com/QNapi/qnapi)
-- [filebrowser](https://github.com/filebrowser/filebrowser)
-- [ampache](https://github.com/ampache/ampache)
-- [transmission](https://github.com/transmission/transmission)
-- [mpd](https://github.com/MusicPlayerDaemon/MPD)
-- [ympd](https://github.com/notandy/ympd)
-- [minidlna](https://github.com/azatoth/minidlna)
-- [tvheadend](https://github.com/tvheadend/tvheadend)
-- [samba](https://github.com/samba-team/samba)
-- [yt_dlt](https://github.com/yt-dlp/yt-dlp)
-- [vsftpd](https://github.com/djarosz/vsftpd)
+- Raspberry Pi Zero 2 W
+- Raspberry Pi 3B
+- Raspberry Pi 4 / 4B
 
+The default machine is `raspberrypi4-64`. It can be changed in
+`build/conf/local.conf`.
 
+## Requirements
 
-1. Create directory and download layers
+- Docker with Docker Compose
+- at least 150 GB of free disk space
+- Internet access for downloading layers and sources
 
-- mkdir -p yocto_mediaserver/sources
-- cd yocto_mediaserver/sources
-- git clone -b kirkstone https://git.yoctoproject.org/poky
-- git clone -b kirkstone https://github.com/meta-qt5/meta-qt5
-- git clone -b kirkstone https://git.openembedded.org/meta-openembedded
-- git clone -b kirkstone https://git.yoctoproject.org/meta-virtualization
-- git clone -b kirkstone https://github.com/agherzan/meta-raspberrypi
-- git clone -b kirkstone https://github.com/bartek56/meta-mediaserver
+The build container uses Ubuntu 26.04 and the `builder` user.
 
+## Project setup
 
-2. Generate and run Docker image
+Run these commands from the project root:
 
-docker build -t yocto-ubuntu-22.04 meta-mediaserver/conf/docker/
-ln -s sources/meta-mediaserver/conf/docker/docker-compose.yml docker-compose.yml
+```bash
+mkdir -p sources
+git clone -b wrynose https://github.com/bartek56/meta-mediaserver \
+    sources/meta-mediaserver
+bash sources/meta-mediaserver/conf/setup.sh
+docker compose build yocto
+```
+
+The `conf/setup.sh` script downloads the Wrynose layers, BitBake 2.18
+and the required dependency layers. It creates `build/conf/bblayers.conf`
+and `build/conf/local.conf` if they do not already exist.
+
+If the host user UID/GID is not 1000:
+
+```bash
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
+docker compose build yocto
+```
+
+## Running the container
+
+Compose starts a clean Bash shell by default:
+
+```bash
 docker compose run --rm yocto
+```
 
+BitBake commands can be passed directly:
 
-3. Edit configuration files
+```bash
+docker compose run --rm yocto bitbake mediaserver-image-base
+docker compose run --rm yocto bitbake mediaserver-image-qt5
+docker compose run --rm yocto bitbake mediaserver-image-minimal
+```
 
-- cp ../sources/meta-mediaserver/conf/yocto_conf/bblayers.conf.sample conf/bblayers.conf
+The Qt5 variant requires:
 
-File local.conf depends on target
-for target with Qt5 Gui
-- cp ../sources/meta-mediaserver/conf/yocto_conf/local.conf.qt5.sample conf/local.conf
+```bash
+cp sources/meta-mediaserver/conf/yocto_conf/local.conf.qt5.sample \
+    build/conf/local.conf
+```
 
-for target without Qt5 Gui
-- cp ../sources/meta-mediaserver/conf/yocto_conf/local.conf.base.sample conf/local.conf
+The variant without a GUI uses:
 
+```bash
+cp sources/meta-mediaserver/conf/yocto_conf/local.conf.base.sample \
+    build/conf/local.conf
+```
 
-4. Build MediaServer
+Wrynose still supports Qt5 through the `meta-qt5` layer. The MediaServer
+application recipes currently use `cmake_qt5`, `qmake5`, and `qt5.inc`.
+Migrating to Qt6 requires separate application and recipe changes.
 
-with Qt5 GUI:
-- bitbake mediaserver-image-qt5
+## Images and artifacts
 
-without GUI:
-- bitbake mediaserver-image-base
+Images are stored in:
 
-core:
-- bitbake mediaserver-image-minimal
+```
+build/tmp/deploy/images/<machine>/
+```
 
-5. Configure MediaServer
+For Raspberry Pi 4:
 
-- cd /opt
-- ./installScript.sh
+```
+build/tmp/deploy/images/raspberrypi4-64/
+```
 
+`rpi-sdimg` images use a 128 MiB boot partition, which is large enough
+for the Raspberry Pi kernel and overlays.
 
-Enjoy !!
+## Layer contents
+
+The layer integrates MediaServer, Quetzalcoatl, QNapi, File Browser,
+Ampache, Transmission, MPD, ympd, MiniDLNA, Tvheadend, Samba, yt-dlp,
+and vsftpd.
+
+## Troubleshooting
+
+After changing a recipe, a specific task can be forced:
+
+```bash
+docker compose run --rm yocto bitbake <recipe> -c configure -f
+docker compose run --rm yocto bitbake <recipe> -c package_qa -f
+docker compose run --rm yocto bitbake <recipe> -c populate_lic -f
+```
+
+Task logs are stored in:
+
+```
+build/tmp/work/<tune>-poky-linux/<recipe>/<version>/temp/
+```
+
+Common Wrynose failures involve SPDX identifiers, `WORKDIR`/`UNPACKDIR`
+paths, old CMake versions, and build-time paths left in artifacts.
+Do not disable QA without a clear reason; fix the issue in the recipe or
+the source patch.
+
+## Licensing
+
+This layer contains recipes and patches from multiple upstream projects.
+The license for each component is declared in its recipe.

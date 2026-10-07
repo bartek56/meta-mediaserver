@@ -2,6 +2,8 @@ include recipes-core/images/core-image-base.bb
 
 inherit sdcard_image-rpi
 
+BOOT_SPACE = "131072"
+
 SUMMARY = "Media Server without GUI"
 LICENSE = "MIT"
 

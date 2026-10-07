@@ -10,4 +10,4 @@ PYPI_SRC_URI = "git://github.com/bartek56/metadata_mp3;protocol=https;branch=mai
 
 inherit pypi setuptools3
 
-S = "${WORKDIR}/git"
+S = "${UNPACKDIR}/metadata-mp3-${PV}"

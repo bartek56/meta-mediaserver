@@ -17,7 +17,6 @@ SRC_URI = "git://github.com/bartek56/quetzalcoatl;branch=master;protocol=https \
            file://mpc_mediaserver.service \
 "
 
-S = "${WORKDIR}/git"
 
 inherit cmake_qt5 pkgconfig
 
@@ -28,10 +27,9 @@ do_install(){
     cp -r ${S}/app/icons/breeze ${D}/usr/share/icons/
 
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/mpc_mediaserver.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/mpc_mediaserver.service ${D}${systemd_unitdir}/system
 }
 
 FILES:${PN} += "/opt/quetzalcoatl"
 FILES:${PN} += "/usr/share/icons/breeze/*"
 FILES:${PN} += "${systemd_system_unitdir}/mpc_mediaserver.service"
-

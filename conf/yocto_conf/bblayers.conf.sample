@@ -6,19 +6,19 @@ BBPATH = "${TOPDIR}"
 BBFILES ?= ""
 
 BBLAYERS ?= " \
-  /home/builder/yocto-project/sources/poky/meta \
-  /home/builder/yocto-project/sources/poky/meta-poky \
-  /home/builder/yocto-project/sources/poky/meta-yocto-bsp \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-oe \  
-  /home/builder/yocto-project/sources/meta-openembedded/meta-multimedia \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-networking \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-python \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-webserver \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-gnome \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-xfce \
-  /home/builder/yocto-project/sources/meta-openembedded/meta-filesystems \
-  /home/builder/yocto-project/sources/meta-raspberrypi \
-  /home/builder/yocto-project/sources/meta-qt5 \
-  /home/builder/yocto-project/sources/meta-mediaserver \
-  /home/builder/yocto-project/sources/meta-virtualization \
+  ${TOPDIR}/../sources/poky/meta \
+  ${TOPDIR}/../sources/meta-yocto/meta-poky \
+  ${TOPDIR}/../sources/meta-yocto/meta-yocto-bsp \
+  ${TOPDIR}/../sources/meta-openembedded/meta-oe \
+  ${TOPDIR}/../sources/meta-openembedded/meta-multimedia \
+  ${TOPDIR}/../sources/meta-openembedded/meta-networking \
+  ${TOPDIR}/../sources/meta-openembedded/meta-python \
+  ${TOPDIR}/../sources/meta-openembedded/meta-webserver \
+  ${TOPDIR}/../sources/meta-openembedded/meta-gnome \
+  ${TOPDIR}/../sources/meta-openembedded/meta-xfce \
+  ${TOPDIR}/../sources/meta-openembedded/meta-filesystems \
+  ${TOPDIR}/../sources/meta-raspberrypi \
+  ${TOPDIR}/../sources/meta-qt5 \
+  ${TOPDIR}/../sources/meta-mediaserver \
+  ${TOPDIR}/../sources/meta-virtualization \
 "

@@ -13,14 +13,14 @@ SRC_URI = "file://alarm.service \
 
 do_install(){
     install -d ${D}/opt
-    install -m 0775 ${WORKDIR}/alarm.py ${D}/opt/alarm
+    install -m 0775 ${UNPACKDIR}/alarm.py ${D}/opt/alarm
 
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/*.service ${D}${systemd_system_unitdir}
-    install -m 0775 ${WORKDIR}/*.timer ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/*.service ${D}${systemd_system_unitdir}
+    install -m 0775 ${UNPACKDIR}/*.timer ${D}${systemd_system_unitdir}
 
     install -d ${D}${sysconfdir}/mediaserver
-    install -m 0644 ${WORKDIR}/alarm.ini ${D}${sysconfdir}/mediaserver/alarm.ini
+    install -m 0644 ${UNPACKDIR}/alarm.ini ${D}${sysconfdir}/mediaserver/alarm.ini
     ln -sf ${systemd_system_unitdir}/alarm.timer ${D}${sysconfdir}/mediaserver/alarm.timer
     ln -sf ${systemd_system_unitdir}/alarm_snooze.timer ${D}${sysconfdir}/mediaserver/alarm_snooze.timer
 }

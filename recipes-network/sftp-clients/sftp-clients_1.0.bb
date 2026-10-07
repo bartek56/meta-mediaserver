@@ -3,7 +3,7 @@ LICENSE = "CLOSED"
 
 RDEPENDS:${PN} += " bash"
 
-SRC_URI="file://sftpUsers \
+SRC_URI = "file://sftpUsers \
          file://mountShared \
          file://mount_shared.service"
 
@@ -14,13 +14,13 @@ SYSTEMD_SERVICE:${PN} = "mount_shared.service"
 
 do_install(){
     #install -d ${D}${bindir}
-    #install -m 0644 ${WORKDIR}/sftpUsers ${D}${bindir}
+    #install -m 0644 ${UNPACKDIR}/sftpUsers ${D}${bindir}
     install -d ${D}/opt
-    install -m 0644 ${WORKDIR}/sftpUsers ${D}/opt
-    install -m 0644 ${WORKDIR}/mountShared ${D}/opt
+    install -m 0644 ${UNPACKDIR}/sftpUsers ${D}/opt
+    install -m 0644 ${UNPACKDIR}/mountShared ${D}/opt
 
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/mount_shared.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/mount_shared.service ${D}${systemd_unitdir}/system
 
     install -d ${D}/home/sftp_users
 }

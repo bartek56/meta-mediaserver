@@ -18,8 +18,7 @@ SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
           file://serviceHelper.sh "
 
 
-#S = "${WORKDIR}/MediaServer"
-S = "${WORKDIR}/git"
+#S = "${UNPACKDIR}/MediaServer"
 
 require recipes-qt/qt5/qt5.inc
 
@@ -37,18 +36,18 @@ do_install() {
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/start.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/alarm_gui.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/start.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/alarm_gui.service ${D}${systemd_unitdir}/system
 
     install -d ${D}/opt
-    install -m 0755 ${WORKDIR}/fstab_manager.sh ${D}/opt
-    install -m 0755 ${WORKDIR}/serviceHelper.sh ${D}/opt
+    install -m 0755 ${UNPACKDIR}/fstab_manager.sh ${D}/opt
+    install -m 0755 ${UNPACKDIR}/serviceHelper.sh ${D}/opt
 
     # TODO rename in qmake
     mv ${D}/opt/Alarm ${D}/opt/AlarmApp
 
     install -d ${D}/etc/mediaserver
-    install -m 0755 ${WORKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
+    install -m 0755 ${UNPACKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
 }
 
 INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"

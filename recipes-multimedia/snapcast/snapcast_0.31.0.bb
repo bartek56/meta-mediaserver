@@ -34,16 +34,15 @@ PACKAGES = " \
     ${PN}-server-doc \
 "
 
-S = "${WORKDIR}/git"
 
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/snapclient.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/snapserver.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/snapclient.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/snapserver.service ${D}${systemd_system_unitdir}
 
     install -d ${D}${sysconfdir}
-    install -m 0644 ${WORKDIR}/snapserver.conf ${D}${sysconfdir}/
-    install -m 0644 ${WORKDIR}/snapclient.conf ${D}${sysconfdir}/
+    install -m 0644 ${UNPACKDIR}/snapserver.conf ${D}${sysconfdir}/
+    install -m 0644 ${UNPACKDIR}/snapclient.conf ${D}${sysconfdir}/
 
     # Remove unneeded icons
     rm -rf ${D}${datadir}/pixmaps

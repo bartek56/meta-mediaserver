@@ -11,7 +11,6 @@ SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
           file://startup.service "
 
 
-S = "${WORKDIR}/git"
 
 require recipes-qt/qt5/qt5.inc
 
@@ -30,9 +29,8 @@ do_install() {
 
 do_install:append() {
     install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${WORKDIR}/startup.service ${D}${systemd_unitdir}/system
+    install -m 0644 ${UNPACKDIR}/startup.service ${D}${systemd_unitdir}/system
 }
 
 FILES:${PN} += "/opt/MediaServerStartup"
 FILES:${PN} += "${systemd_system_unitdir}/startup.service"
-

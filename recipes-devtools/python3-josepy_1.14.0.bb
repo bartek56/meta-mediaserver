@@ -7,7 +7,7 @@ SRC_URI = "https://github.com/certbot/josepy/archive/refs/tags/v1.14.0.tar.gz"
 
 SRC_URI[sha256sum] = "7d1adcaa68add9bacf4cff03b571f36015edb6bff6458c76f63ed70ae8ac8b62"
 
-S = "${WORKDIR}/josepy-1.14.0"
+S = "${UNPACKDIR}/josepy-1.14.0"
 inherit python3-dir
 
 do_compile() {
