@@ -4,5 +4,5 @@ Description=YouTube downloader
 [Service]
 Type=idle
 Environment="LC_ALL=pl_PL.UTF-8"
-ExecStart=/usr/bin/python3 -u /opt/YoutubeManager.py -c /etc/mediaserver/youtubedl.ini
+ExecStart=/usr/bin/python3 -u /opt/YoutubeDownloader/YoutubeManager.py -c /etc/mediaserver/youtubedl.ini
 StandardOutput=append:/var/log/youtubedl.log

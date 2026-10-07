@@ -2,11 +2,11 @@
 Description=Alarm Snooze
 
 [Service]
-ExecStartPre=/bin/systemctl stop start.service
+ExecStartPre=/bin/bash /opt/serviceHelper.sh alarm_snooze.service start
+Restart=on-failure
+RestartSec=5s
+ExecStart=/opt/alarm snooze
 
-ExecStart=/bin/bash /opt/alarm.sh
-
-ExecStartPost=/bin/sleep 0.1
 ExecStartPost=/bin/systemctl start alarm_gui.service
 
 [Install]

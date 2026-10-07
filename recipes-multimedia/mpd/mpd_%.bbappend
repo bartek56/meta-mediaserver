@@ -19,6 +19,7 @@ PACKAGECONFIG += "smb"
 PACKAGECONFIG += "sndfile" 
 PACKAGECONFIG += "upnp" 
 PACKAGECONFIG += "zlib" 
+PACKAGECONFIG += "fifo" 
 
 do_install:append() {
     install -d ${D}/etc

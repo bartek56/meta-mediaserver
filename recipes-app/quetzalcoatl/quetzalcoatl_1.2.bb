@@ -4,7 +4,7 @@ LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b34f40e0535e51cae4b93caa4dbd99bf"
 
 DEPENDS += "qtbase libmpdclient"
-RDEPENDS:${PN} += "qtbase libmpdclient"
+RDEPENDS:${PN} += "qtbase libmpdclient bash"
 
 
 

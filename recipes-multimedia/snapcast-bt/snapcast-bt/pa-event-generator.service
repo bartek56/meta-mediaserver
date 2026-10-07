@@ -1,0 +1,10 @@
+[Unit]
+Description=PulseAudio event generator
+After=pulseaudio.service
+Requires=pulseaudio.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pa-event-generator.sh
+Restart=always
+RestartSec=1

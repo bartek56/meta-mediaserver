@@ -1,0 +1,24 @@
+# POKY_BBLAYERS_CONF_VERSION is increased each time build/conf/bblayers.conf
+# changes incompatibly
+POKY_BBLAYERS_CONF_VERSION = "2"
+
+BBPATH = "${TOPDIR}"
+BBFILES ?= ""
+
+BBLAYERS ?= " \
+  /home/builder/yocto-project/sources/poky/meta \
+  /home/builder/yocto-project/sources/poky/meta-poky \
+  /home/builder/yocto-project/sources/poky/meta-yocto-bsp \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-oe \  
+  /home/builder/yocto-project/sources/meta-openembedded/meta-multimedia \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-networking \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-python \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-webserver \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-gnome \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-xfce \
+  /home/builder/yocto-project/sources/meta-openembedded/meta-filesystems \
+  /home/builder/yocto-project/sources/meta-raspberrypi \
+  /home/builder/yocto-project/sources/meta-qt5 \
+  /home/builder/yocto-project/sources/meta-mediaserver \
+  /home/builder/yocto-project/sources/meta-virtualization \
+"

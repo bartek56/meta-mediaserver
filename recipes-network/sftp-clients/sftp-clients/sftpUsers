@@ -1,0 +1,92 @@
+#!/bin/bash
+
+set -e
+
+if [ "$(id -u)" -ne 0 ]; then
+    echo "You are not root"
+    exit 1
+fi
+
+BASE_DIR="/home/sftp_users"
+SSH_CONFIG="/etc/ssh/sshd_config"
+MOUNT_SCRIPT="/opt/mountShared"
+
+if [ "$#" -ne 2 ]; then
+    echo "Use: $0 <add|del> <nazwa_użytkownika>"
+    exit 1
+fi
+
+ACTION="$1"
+USER_NAME="$2"
+HOME_DIR="$BASE_DIR/$USER_NAME"
+
+add_user() {
+    if id "$USER_NAME" &>/dev/null; then
+        echo "User $USER_NAME exists"
+    else
+        echo "Creating new user:: $USER_NAME"
+        useradd -m -d "$HOME_DIR" -s /usr/sbin/nologin "$USER_NAME"
+        echo "Set password for user $USER_NAME:"
+        passwd "$USER_NAME"
+    fi
+    chown root:root $HOME_DIR
+    if ! grep -q "Match User $USER_NAME" "$SSH_CONFIG"; then
+        echo "Add ssh config"
+        cat <<EOF >> "$SSH_CONFIG"
+
+Match User $USER_NAME
+    ChrootDirectory $HOME_DIR
+    ForceCommand internal-sftp
+    AllowTcpForwarding no
+    X11Forwarding no
+    PasswordAuthentication yes
+EOF
+        echo "SSH config was added"
+    else
+        echo "SSH config for user $USER_NAME exists"
+    fi
+
+    bash "$MOUNT_SCRIPT"
+}
+
+delete_user() {
+    MOUNT_TARGET="$HOME_DIR/share"
+    if mountpoint -q "$MOUNT_TARGET"; then
+        echo "Unmounting dir $MOUNT_TARGET"
+        if ! umount "$MOUNT_TARGET"; then
+            echo "Unmounting failed! $MOUNT_TARGET"
+            exit 1
+        fi
+        echo "Unmounting success"
+    else
+        echo "Dir $MOUNT_TARGET is not mounted"
+    fi
+
+    echo "Deleting user: $USER_NAME"
+    userdel -r "$USER_NAME" || echo "User doesn't exist"
+    rm -rf $HOME_DIR
+
+    if grep -q "Match User $USER_NAME" "$SSH_CONFIG"; then
+        echo "Deleting ssh configuration for $USER_NAME"
+        sed -i "/^Match User $USER_NAME$/,/^Match User /{/^Match User /!d; /^Match User $USER_NAME$/d}" "$SSH_CONFIG"
+    else
+        echo "SSH configuration for $USER_NAME doesn't exist"
+    fi
+
+    echo "User $USER_NAME was deleted"
+}
+
+
+case "$ACTION" in
+    add)
+        add_user
+        ;;
+    del)
+        delete_user
+        ;;
+    *)
+        echo "Use: $0 <add|del> <user>"
+        exit 1
+        ;;
+esac
+
