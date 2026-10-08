@@ -101,10 +101,10 @@ IMAGE_INSTALL:append = " \
 
 # Include modules in rootfs
 IMAGE_INSTALL += " \
-	kernel-modules \
+    kernel-modules \
 "
 
-IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs"
+IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs allow-empty-password empty-root-password allow-root-login"
 
 GLIBC_GENERATE_LOCALES = "pl_PL.UTF-8 en_US.UTF-8"
 IMAGE_LINGUAS = "pl-pl en-us en-gb"
