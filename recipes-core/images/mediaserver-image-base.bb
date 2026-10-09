@@ -44,6 +44,7 @@ TOOLS = " \
     git \
     bash \
     tzdata \
+    system-configurator \
     configscript \
     localedef \
     dvb-apps \
@@ -94,8 +95,11 @@ IMAGE_INSTALL:append = " \
     ${MULTIMEDIA} \
     ${TEXT_EDITOR} \
     ${NETWORK} \
+    apache2 \
     php-modphp \
     docker \
+    snapcast-client \
+    snapcast-server \
     danfoss-thermostat \
 "
 

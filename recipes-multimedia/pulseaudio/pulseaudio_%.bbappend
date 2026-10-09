@@ -17,6 +17,11 @@ PACKAGECONFIG += "autospawn-for-root"
 EXTRA_OECONF:append = " --enable-esound"
 
 do_install:append() {
+        # The Raspberry Pi bcm2835 ALSA driver can report spurious POLLOUT
+        # wakeups when PulseAudio uses timer scheduling.  This causes audio
+        # dropouts when MPD switches between PulseAudio and Snapcast outputs.
+        sed -i 's/^load-module module-udev-detect$/load-module module-udev-detect tsched=0/' ${D}/${sysconfdir}/pulse/system.pa
+
         #alsamixer access to pulseaudio
         sed -i 's~load-module module-native-protocol-unix~load-module module-native-protocol-unix auth-anonymous=true~g' ${D}/${sysconfdir}/pulse/system.pa
 

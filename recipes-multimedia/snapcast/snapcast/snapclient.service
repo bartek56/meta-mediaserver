@@ -1,10 +1,11 @@
 [Unit]
 Description=Snapcast client
 Wants=avahi-daemon.service
-After=connman.service sound.target avahi-daemon.service
+Requires=pulseaudio.service
+After=connman.service sound.target avahi-daemon.service pulseaudio.service
 
 [Service]
-ExecStart=/usr/bin/snapclient --logsink=system --hostID "%H"  -s sysdefault:CARD=Headphones
+ExecStart=/usr/bin/snapclient --logsink=system --hostID "%H" --player alsa --soundcard sysdefault:CARD=Headphones
 Restart=on-failure
 
 [Install]

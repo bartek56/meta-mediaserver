@@ -56,11 +56,11 @@ configure_vim()
 install_bootstrap_youtubedl()
 {
     printf " ----- Bootstrap for YouTube configuration  ----- \n"
-    bootstrapExist=$(ls /opt/youtubedl-web/static/ | grep bootstrap | wc -l)
+    bootstrapExist=$(ls /opt/youtubedl-web/youtubedlWeb/static| grep bootstrap | wc -l)
     if [ $bootstrapExist -gt 0 ]; then
         printf "Boostrap for youtubedl is installed \n"
     else
-        cd /opt/youtubedl-web/static
+        cd /opt/youtubedl-web/youtubedlWeb/static
         wget https://github.com/twbs/bootstrap/releases/download/v5.0.0-beta1/bootstrap-5.0.0-beta1-dist.zip
         unzip bootstrap-5.0.0-beta1-dist.zip
         mv bootstrap-5.0.0-beta1-dist bootstrap-5.0.0 --force

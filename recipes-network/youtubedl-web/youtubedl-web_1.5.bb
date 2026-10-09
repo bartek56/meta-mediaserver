@@ -2,7 +2,7 @@ SUMMARY = "Youtubedl-web"
 HOMEPAGE = "https://github.com/bartek56/youtubedl-web"
 LICENSE = "CLOSED"
 
-RDEPENDS:${PN} += "bash apache2 python3 python3-flask python3-flask-socketio python3-flask-session metadata-mp3 (= ${PV}) youtubedl sudo"
+RDEPENDS:${PN} += "bash apache2 python3 python3-flask python3-flask-socketio python3-eventlet python3-flask-session metadata-mp3 (= ${PV}) youtubedl sudo"
 
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/youtubedl-web;branch=master;protocol=https \

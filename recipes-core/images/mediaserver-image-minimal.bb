@@ -4,79 +4,49 @@ inherit sdcard_image-rpi
 
 BOOT_SPACE = "131072"
 
-SUMMARY = "Base system without multimedia tools"
+SUMMARY = "Minimal base system with Snapcast client and PulseAudio"
 LICENSE = "MIT"
-
 
 NETWORK = " \
     dhcpcd \
     iw \
-    rsync \
-    wget \
-    python3-wakeonlan \
-    wpan-tools \
-    iptables \
     wpa-supplicant \
-    iftop \
-    speedtest \
-    openssh-sftp \
-    openssh-sftp-server \
-    sftp-clients \
 "
 
 TOOLS = " \
-    bluez5 \
-    i2c-tools \
-    bridge-utils \
-    hostapd \
-    screen \
-    wget \
-    at \
-    minicom \
-    mc \
-    curl \
-    git \
-    bash \
-    tzdata \
+    system-configurator \
     configscript \
-    localedef \
-    dvb-apps \
-    dvb-scan \
-"
-
-TEXT_EDITOR = " \
-    nano \
+    snapcast-client \
     vim \
+    wget \
+    git \
 "
 
-AUDIO = " \
-    alsa-utils \
+# The minimal image is used as a Snapcast/MPD audio endpoint.  MPD on the
+# media server can connect to this device using an audio_output of type
+# "pulse", so the endpoint needs the PulseAudio daemon and its TCP module.
+# Keep this limited to the runtime pieces; the full media-server image adds
+# the remaining PulseAudio modules and multimedia services.
+PULSE_AUDIO = " \
+    pulseaudio \
     pulseaudio-server \
-    pulseaudio-misc \
-    pulseaudio-module-dbus-protocol \
     pulseaudio-module-native-protocol-tcp \
     pulseaudio-module-zeroconf-publish \
-    pulseaudio-module-console-kit \
-    pulseaudio-module-cli \
-    pulseaudio-module-bluez5-device \
-    pulseaudio-module-bluez5-discover \
-    pulseaudio-module-bluetooth-discover \
-    pulseaudio-module-bluetooth-policy \
-    pulseaudio-module-loopback \
-    pulseaudio \
-    mpg123 \
-    sox \
-    espeak \
+"
+
+AUDIO_TOOLS = " \
+    alsa-utils-alsamixer \
+    alsa-utils-speaker-test \
 "
 
 DISTRO_FEATURES:append = " bluez5 bluetooth wifi libpam pam"
 DISTRO_FEATURES += "pam libpam"
 
 IMAGE_INSTALL:append = " \
-    ${TOOLS} \
-    ${AUDIO} \
-    ${TEXT_EDITOR} \
     ${NETWORK} \
+    ${TOOLS} \
+    ${PULSE_AUDIO} \
+    ${AUDIO_TOOLS} \
 "
 
 # Include modules in rootfs
@@ -84,7 +54,8 @@ IMAGE_INSTALL += " \
 	kernel-modules \
 "
 
-IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs"
+IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs allow-empty-password empty-root-password allow-root-login"
+
 
 GLIBC_GENERATE_LOCALES = "pl_PL.UTF-8 en_US.UTF-8"
 IMAGE_LINGUAS = "pl-pl en-us en-gb"
