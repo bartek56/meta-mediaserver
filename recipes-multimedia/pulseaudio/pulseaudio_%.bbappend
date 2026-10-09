@@ -1,7 +1,8 @@
 SUMMARY = "PulseAudio config"
 FILESEXTRAPATHS:prepend := "${THISDIR}/${PN}:"
 SRC_URI += "file://pulseaudio.service \
-            file://system.mediaserver.pa"
+            file://system.mediaserver.pa \
+            file://99-mediaserver-audio-names.rules"
 
 inherit systemd 
 
@@ -30,7 +31,11 @@ do_install:append() {
 
         install -d ${D}${sysconfdir}/pulse/system.pa.d
         install -m 0644 ${UNPACKDIR}/system.mediaserver.pa ${D}${sysconfdir}/pulse/system.pa.d
+
+        install -d ${D}${sysconfdir}/udev/rules.d
+        install -m 0644 ${UNPACKDIR}/99-mediaserver-audio-names.rules ${D}${sysconfdir}/udev/rules.d
 }
 
 FILES:${PN} += "${sysconfdir}/pulse/system.pa.d/system.mediaserver.pa"
+FILES:${PN} += "${sysconfdir}/udev/rules.d/99-mediaserver-audio-names.rules"
 FILES:${PN} += "${systemd_system_unitdir}/pulseaudio.service"

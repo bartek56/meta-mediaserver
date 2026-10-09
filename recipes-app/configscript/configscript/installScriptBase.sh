@@ -12,18 +12,18 @@ configure_other()
     amixer sset "Master" 100%
 
     # disable HDMI output
-    # pactl set-card-profile "alsa_card.platform-bcm2835_audio" off
+    # pactl set-card-profile "alsa_card.hdmi" off
 }
 
 configure_vim()
 {
     printf " ----- VIM configuration  ----- \n"
-    vimExist=$(ls /home/root/.vim/ | grep bundle | wc -l)
+    vimExist=$(ls /root/.vim/ | grep bundle | wc -l)
     if [ $vimExist -gt 0 ]; then
         printf "VIM is configured \n"
     else
-        mkdir /home/root/.vim/bundle
-        git clone https://github.com/VundleVim/Vundle.vim.git /home/root/.vim/bundle/Vundle.vim
+        mkdir /root/.vim/bundle
+        git clone https://github.com/VundleVim/Vundle.vim.git /root/.vim/bundle/Vundle.vim
     fi
 }
 

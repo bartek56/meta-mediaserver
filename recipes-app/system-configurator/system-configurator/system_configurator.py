@@ -492,7 +492,7 @@ class SystemConfigurator:
             self._try(
                 "disabling the PulseAudio HDMI profile",
                 lambda: self.runner.run(
-                    ["pactl", "set-card-profile", "alsa_card.platform-bcm2835_audio", "off"]
+                    ["pactl", "set-card-profile", "alsa_card.hdmi", "off"]
                 ),
                 log,
             )
