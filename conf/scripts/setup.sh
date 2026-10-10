@@ -96,7 +96,7 @@ copy_if_not_exists \
     "$BUILD_CONF/bblayers.conf"
 
 copy_if_not_exists \
-    "$PROJECT_SOURCES/meta-mediaserver/conf/yocto_conf/local.conf.base.sample" \
+    "$PROJECT_SOURCES/meta-mediaserver/conf/yocto_conf/local.conf.sample" \
     "$BUILD_CONF/local.conf"
 
 for multiconfig in "$PROJECT_SOURCES"/meta-mediaserver/conf/yocto_conf/multiconfig/*.conf; do
