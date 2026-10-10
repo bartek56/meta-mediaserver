@@ -63,7 +63,11 @@ INSANE_SKIP:filebrowser:append = "already-stripped"
 INSANE_SKIP:speedtest:append = "already-stripped"
 SKIP_META_VIRT_SANITY_CHECK = "1"
 
-KERNEL_DEVICETREE:append = " overlays/ads7846.dtbo"
+# The selected meta-raspberrypi machines already provide their base DTBs and
+# standard overlays. Do not append overlays/ads7846.dtbo unless the selected
+# kernel actually builds and deploys that file; this BSP does not provide it
+# in its standard overlay list. The firmware overlay below is kept for the
+# product's ADS7846 panel configuration.
 VC4DTBO = "vc4-fkms-v3d"
 
 GPU_MEM_1024 = "256"
@@ -71,6 +75,7 @@ HDMI_GROUP = "2"
 HDMI_MODE = "87"
 HDMI_FORCE_HOTPLUG = "1"
 HDMI_DRIVE = "1"
+HDMI_CVT = "800 480 60 6 0 0 0"
 ENABLE_UART = "1"
 DISABLE_OVERSCAN = "1"
 ENABLE_SPI_BUS = "1"
@@ -78,7 +83,6 @@ DISABLE_RPI_BOOT_LOGO = "1"
 
 RPI_EXTRA_CONFIG = "#   -----------------  \n\
 dtparam=audio=on \n\
-hdmi_cvt 800 480 60 6 0 0 0 \n\
 dtoverlay=ads7846,cs=1,penirq=25,penirq_pull=2,speed=50000,keep_vref_on=0,swapxy=0 \n\
 dtparam=pmax=255,xohms=60,xmin=120,xmax=4000,ymin=440,ymax=3900 \n\
     "

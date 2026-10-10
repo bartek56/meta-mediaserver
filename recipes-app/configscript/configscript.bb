@@ -3,7 +3,7 @@ LICENSE = "CLOSED"
 
 RDEPENDS:${PN} += " bash"
 
-INSTALL_SCRIPT_NAME = '${@bb.utils.contains("DISTRO_FEATURES", "qt5", "installScriptQt5.sh", "installScriptBase.sh", d)}'
+INSTALL_SCRIPT_NAME = '${@bb.utils.contains("DISTRO_FEATURES", "qt5", "installScriptQt5.sh", "installScriptMinimal.sh", d)}'
 
 SRC_URI = "file://${INSTALL_SCRIPT_NAME}"
 

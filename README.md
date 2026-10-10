@@ -9,6 +9,11 @@ Project Wrynose (6.0).
 - Raspberry Pi 3B
 - Raspberry Pi 4 / 4B
 
+The BSP already supplies the 64-bit machine definitions used by the layer:
+`raspberrypi0-2w-64`, `raspberrypi3-64`, and `raspberrypi4-64`. The layer
+does not duplicate those machine files. Select `MACHINE` in the build
+configuration; it is not fixed by an image recipe.
+
 The default machine is `raspberrypi4-64`. It can be changed in
 `build/conf/local.conf`.
 
@@ -60,23 +65,57 @@ docker compose run --rm yocto bitbake mediaserver-image-qt5
 docker compose run --rm yocto bitbake mediaserver-image-minimal
 ```
 
+The three images are independent. `mediaserver-image-minimal` is the
+headless Snapcast/PulseAudio endpoint, `mediaserver-image-base` is the full
+non-Qt server image, and `mediaserver-image-qt5` adds the Qt5 applications and
+MediaServer splash screen. Only the Qt5 image inherits the optional display
+profile marker; no image recipe installs Qt5 implicitly.
+
 The Qt5 variant requires:
 
 ```bash
-cp sources/meta-mediaserver/conf/yocto_conf/local.conf.qt5.sample \
-    build/conf/local.conf
+bitbake -R "$PWD/sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf" \
+    mediaserver-image-qt5
 ```
 
-The variant without a GUI uses:
+The `-R` fragment adds Qt5 and the product HDMI/display profile only for
+this BitBake invocation. It avoids replacing `build/conf/local.conf` and
+keeps the profile away from the `base` and `minimal` images.
+
+The default `build/conf/local.conf` created by `setup.sh` is suitable for the
+non-Qt image:
 
 ```bash
-cp sources/meta-mediaserver/conf/yocto_conf/local.conf.base.sample \
-    build/conf/local.conf
+bitbake mediaserver-image-base
+bitbake mediaserver-image-minimal
 ```
+
+Set `MACHINE = "raspberrypi4-64"` (or another BSP-provided machine) in
+`build/conf/local.conf`. The image target selects the package set; the
+optional `qt5-hdmi.conf` fragment selects Qt5 and the firmware display
+settings for the Qt5 build.
 
 Wrynose still supports Qt5 through the `meta-qt5` layer. The MediaServer
 application recipes currently use `cmake_qt5`, `qmake5`, and `qt5.inc`.
 Migrating to Qt6 requires separate application and recipe changes.
+
+### Raspberry Pi display configuration
+
+The Raspberry Pi BSP's `rpi-config` recipe consumes `HDMI_*`, `HDMI_CVT`,
+`VC4DTBO`, `GPU_MEM_1024`, `ENABLE_UART`, `ENABLE_SPI_BUS`,
+`DISABLE_OVERSCAN`, `DISABLE_RPI_BOOT_LOGO`, and `RPI_EXTRA_CONFIG` while it
+generates `config.txt`. These are therefore kept in `local.conf` or a
+machine configuration, not in an image class. The
+`mediaserver-image-hdmi` class is an explicit image opt-in/documentation
+marker and does not install Qt or alter boot firmware settings.
+
+The ADS7846 touchscreen lines in the Qt5 sample are independent of HDMI.
+`KERNEL_DEVICETREE` should only name overlays that the selected kernel builds;
+the standard Wrynose BSP does not list `overlays/ads7846.dtbo`, so the sample
+uses the firmware `RPI_EXTRA_CONFIG` overlay instead. Validate that the
+panel's firmware overlay is present for the selected Raspberry Pi before
+deploying it. `VC4DTBO` remains machine-dependent: Pi 3/Zero 2 W use FKMS,
+while Pi 4's BSP default is KMS.
 
 ## Images and artifacts
 

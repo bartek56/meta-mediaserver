@@ -12,11 +12,11 @@ SRC_URI = "git://github.com/bartek56/MediaServer-Web;branch=main;protocol=https"
 
 do_install() {
 	install -d ${D}/usr/htdocs
-	install -m 0755 ${S}/*.png ${D}/usr/htdocs
-	install -m 0755 ${S}/*.jpg ${D}/usr/htdocs
 	install -m 0755 ${S}/*.html ${D}/usr/htdocs
 	install -m 0755 ${S}/*.css ${D}/usr/htdocs
-
+	install -m 0755 ${S}/*.png ${D}/usr/htdocs
+	install -m 0755 ${S}/*.jpg ${D}/usr/htdocs
+	install -m 0755 ${S}/*.svg ${D}/usr/htdocs
 	install -d ${D}/usr/htdocs/images
 	install -m 0755 ${S}/images/* ${D}/usr/htdocs/images
 }

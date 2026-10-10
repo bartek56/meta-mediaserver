@@ -4,6 +4,7 @@
 configure_jellyfin()
 {
     printf " ----- Jellyfin configuration  ----- \n"
+    systemctl start docker.service
 
     jellyfinContainerExist=$(docker container ls | grep jellyfin | wc -l)
     if [ $jellyfinContainerExist -gt 0 ]; then
@@ -25,15 +26,15 @@ configure_other()
     systemctl disable getty@tty1
     systemctl enable psplash-start.service
     systemctl enable psplash-quit.service
-    systemctl enable mysqld.service
+    # systemctl enable mysqld.service
     systemctl disable dhcpcd.service
 	echo vm.swappiness=0 | tee -a /etc/sysctl.conf
 
     # access for Apache to enable/disable alarm
     chgrp www-data /etc/mediaserver/alarm.ini
-    #chgrp www-data /lib/systemd/system/alarm.timer
+    chgrp www-data /lib/systemd/system/alarm.timer
     #chgrp www-data /etc/mediaserver/youtubedl.ini
-    chown 775 /etc/mediaserver/youtubedl.ini
+    #chown 775 /etc/mediaserver/youtubedl.ini
 
     amixer sset "Master" 100%
 
@@ -44,6 +45,7 @@ configure_other()
 configure_vim()
 {
     printf " ----- VIM configuration  ----- \n"
+    mkdir -p /root/.vim
     vimExist=$(ls /root/.vim/ | grep bundle | wc -l)
     if [ $vimExist -gt 0 ]; then
         printf "VIM is configured \n"

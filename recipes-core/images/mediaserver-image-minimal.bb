@@ -7,6 +7,11 @@ BOOT_SPACE = "131072"
 SUMMARY = "Minimal base system with Snapcast client and PulseAudio"
 LICENSE = "MIT"
 
+# Deliberately independent from mediaserver-image-common: that class contains
+# the full standard server package set.  This image is a headless Snapcast/
+# MPD endpoint and must not inherit GUI, web-server, Docker, or Qt packages.
+IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
+
 NETWORK = " \
     dhcpcd \
     iw \

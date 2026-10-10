@@ -49,8 +49,11 @@ do_install:append() {
 }
 
 SYSTEMD_PACKAGES = "${PN}-client ${PN}-server"
-SYSTEMD_SERVICE_${PN}-client = "snapclient.service"
-SYSTEMD_SERVICE_${PN}-server = "snapserver.service"
+SYSTEMD_SERVICE:${PN}-client = "snapclient.service"
+SYSTEMD_SERVICE:${PN}-server = "snapserver.service"
+
+SYSTEMD_AUTO_ENABLE:${PN}-client = "enable"
+SYSTEMD_AUTO_ENABLE:${PN}-server = "enable"
 
 FILES:${PN}-client = " \
     ${bindir}/snapclient \

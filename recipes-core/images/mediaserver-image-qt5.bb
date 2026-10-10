@@ -1,8 +1,19 @@
-include recipes-core/images/mediaserver-image-base.bb
+include recipes-core/images/core-image-base.bb
 
-inherit sdcard_image-rpi
+inherit mediaserver-image-common
+inherit mediaserver-image-hdmi
 
-BOOT_SPACE = "131072"
+# The profile flag is intentionally consumed only by this validation. The
+# actual HDMI_* values remain build/rpi-config settings.
+python __anonymous() {
+    if d.getVar("MEDIASERVER_QT5_HDMI_PROFILE") != "1":
+        bb.fatal(
+            "%s requires the Qt5 HDMI profile. "
+            "Build it with: bitbake -R "
+            "\"$PWD/sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf\" "
+            "mediaserver-image-qt5" % d.getVar("PN")
+        )
+}
 
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"

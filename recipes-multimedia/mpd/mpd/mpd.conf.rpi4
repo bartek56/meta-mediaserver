@@ -12,7 +12,7 @@ mixer_type "software"
 audio_output {
     type "pulse"
     name "Local Pulse"
-    sink "alsa_output.hdmi.stereo-fallback"
+    sink "alsa_output.headphones.stereo-fallback"
 }
 
 # if You want only play music from DLNA server, uncomment below and disable db_file

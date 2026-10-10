@@ -1,5 +1,9 @@
 [Match]
 Name=wlan0
+
+[Link]
+RequiredForOnline=no
+
 [Network]
 Address=192.168.1.155/24
 Gateway=192.168.1.1

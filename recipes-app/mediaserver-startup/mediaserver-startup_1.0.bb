@@ -16,11 +16,11 @@ require recipes-qt/qt5/qt5.inc
 
 inherit qmake5 systemd
 
-SYSTEMD_AUTO_ENABLE = "enable" 
+SYSTEMD_AUTO_ENABLE:${PN}  = "enable"
 SYSTEMD_SERVICE:${PN} = "startup.service"
 
 do_compile() {
-    oe_runmake sub-MediaServerStartup 
+    oe_runmake sub-MediaServerStartup
 }
 
 do_install() {
