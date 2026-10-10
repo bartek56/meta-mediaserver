@@ -74,13 +74,27 @@ profile marker; no image recipe installs Qt5 implicitly.
 The Qt5 variant requires:
 
 ```bash
-bitbake -R "$PWD/sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf" \
+docker compose run --rm yocto bitbake \
+    -R conf/yocto_conf/qt5-hdmi.conf \
     mediaserver-image-qt5
 ```
 
 The `-R` fragment adds Qt5 and the product HDMI/display profile only for
 this BitBake invocation. It avoids replacing `build/conf/local.conf` and
 keeps the profile away from the `base` and `minimal` images.
+
+`-R` resolves relative paths through BitBake's `BBPATH`. Since the
+`meta-mediaserver` layer is in `BBPATH`, `conf/yocto_conf/qt5-hdmi.conf`
+resolves to the file in that layer. Do not use
+`sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf` with `-R`: BitBake
+would search for that path below each `BBPATH` entry and fail. An absolute
+container path is also valid:
+
+```bash
+docker compose run --rm yocto bitbake \
+    -R /home/builder/yocto-project/sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf \
+    mediaserver-image-qt5
+```
 
 The default `build/conf/local.conf` created by `setup.sh` is suitable for the
 non-Qt image:
