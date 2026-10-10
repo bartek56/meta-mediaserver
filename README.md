@@ -104,6 +104,45 @@ bitbake mediaserver-image-base
 bitbake mediaserver-image-minimal
 ```
 
+### Multiconfig: all Raspberry Pi machines
+
+The project provides five multiconfigurations. `rpi0-base` targets the Zero
+2 W without Qt5; `rpi3` and `rpi4` each provide `base` and `qt5`. The Qt5
+configurations automatically load the Qt5/HDMI profile, so no `-R` option is
+needed.
+
+Build all base images:
+
+```bash
+docker compose run --rm yocto bitbake \
+    mc:rpi0-base:mediaserver-image-base \
+    mc:rpi3-base:mediaserver-image-base \
+    mc:rpi4-base:mediaserver-image-base
+```
+
+Build all Qt5/HDMI images:
+
+```bash
+docker compose run --rm yocto bitbake \
+    mc:rpi3-qt5:mediaserver-image-qt5 \
+    mc:rpi4-qt5:mediaserver-image-qt5
+```
+
+Build Rpi3 image:
+
+```bash
+docker compose run --rm -e MACHINE=raspberrypi3-64  yocto bitbake mediaserver-image-base
+```
+
+Build Qt5/HDMI image:
+
+```bash
+docker compose run --rm yocto bitbake -R "conf/machine/qt5-hdmi.conf" mediaserver-image-qt5
+```
+
+Each multiconfiguration has its own `TMPDIR`, so the builds do not overwrite
+one another. Shared downloads and sstate remain reusable.
+
 Set `MACHINE = "raspberrypi4-64"` (or another BSP-provided machine) in
 `build/conf/local.conf`. The image target selects the package set; the
 optional `qt5-hdmi.conf` fragment selects Qt5 and the firmware display

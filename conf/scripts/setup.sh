@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(realpath "$SCRIPT_DIR/../../..")"
+PROJECT_DIR="$(realpath "$SCRIPT_DIR/../../../..")"
 PROJECT_SOURCES="$PROJECT_DIR/sources"
 BUILD_CONF="$PROJECT_DIR/build/conf"
 YOCTO_BRANCH="wrynose"
@@ -35,14 +35,43 @@ clone_repo() {
 copy_if_not_exists() {
     local source="$1"
     local destination="$2"
+    local answer
 
-    if [ -f "$destination" ]; then
-        echo "Already exists: $destination"
-    else
+    if [ ! -f "$destination" ]; then
         echo "Copying: $source -> $destination"
         mkdir -p "$(dirname "$destination")"
         cp "$source" "$destination"
+        return
     fi
+
+    if cmp -s "$source" "$destination"; then
+        echo "Already synchronized: $destination"
+        return
+    fi
+
+    echo
+    echo "========================================"
+    echo "Differences detected:"
+    echo "  Source:      $source"
+    echo "  Destination: $destination"
+    echo "========================================"
+
+    diff -u \
+        --label "src: $source" "$source" \
+        --label "dst: $destination" "$destination" || true
+
+    echo
+    read -r -p "Apply destination changes to source? [y/N]: " answer
+
+    case "$answer" in
+        [yY]|[yY][eE][sS])
+            cp "$destination" "$source"
+            echo "Updated source: $source"
+            ;;
+        *)
+            echo "Keeping source unchanged: $source"
+            ;;
+    esac
 }
 
 mkdir -p "$PROJECT_SOURCES"
@@ -69,6 +98,10 @@ copy_if_not_exists \
 copy_if_not_exists \
     "$PROJECT_SOURCES/meta-mediaserver/conf/yocto_conf/local.conf.base.sample" \
     "$BUILD_CONF/local.conf"
+
+for multiconfig in "$PROJECT_SOURCES"/meta-mediaserver/conf/yocto_conf/multiconfig/*.conf; do
+    copy_if_not_exists "$multiconfig" "$BUILD_CONF/multiconfig/$(basename "$multiconfig")"
+done
 
 copy_if_not_exists \
     "$PROJECT_SOURCES/meta-mediaserver/conf/docker/docker-compose.yml" \

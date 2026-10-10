@@ -1,5 +1,9 @@
 # MediaServer build configuration.
 
+# Multiconfig is supported, but the parsing is really long with it.
+# I prefer to use -R conf/yocto_conf/qt5-hdmi.conf and MACHINE param
+# BBMULTICONFIG = "rpi0-base rpi3-base rpi4-base rpi3-qt5 rpi4-qt5"
+
 # Target platform
 MACHINE ?= "raspberrypi4-64"
 # MACHINE ?= "raspberrypi3-64"
