@@ -18,20 +18,18 @@ if [ "$#" -eq 1 ]; then
     PROJECT_DIR="$(realpath "$1")"
 else
     PROJECT_DIR="$(realpath "$SCRIPT_DIR/../../../..")"
-fi
+    if [ ! -d "$PROJECT_DIR/build/conf" ]; then
+        echo "Error: Missing required directory: $PROJECT_DIR/build/conf" >&2
+        exit 1
+    fi
 
-if [ ! -d "$PROJECT_DIR/build/conf" ]; then
-    echo "Error: Missing required directory: $PROJECT_DIR/build/conf" >&2
-    exit 1
-fi
-
-if [ ! -d "$PROJECT_DIR/sources" ]; then
-    echo "Error: Missing required directory: $PROJECT_DIR/sources" >&2
-    exit 1
+    if [ ! -d "$PROJECT_DIR/sources" ]; then
+        echo "Error: Missing required directory: $PROJECT_DIR/sources" >&2
+        exit 1
+    fi
 fi
 
 echo "Project directory: $PROJECT_DIR"
-
 
 
 PROJECT_SOURCES="$PROJECT_DIR/sources"
