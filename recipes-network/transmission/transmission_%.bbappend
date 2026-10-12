@@ -1,5 +1,9 @@
 FILESEXTRAPATHS:prepend := "${THISDIR}/transmission:"
 
+# Transmission 4.1.x installs the Web UI through INSTALL_WEB.  Keep this
+# explicit in the product layer even though the upstream default is ON.
+EXTRA_OECMAKE:append = " -DINSTALL_WEB=ON"
+
 SRC_URI += " \
     file://settings.json \
     file://transmission-daemon.service \

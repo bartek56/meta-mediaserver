@@ -20,7 +20,7 @@ NETWORK = " \
 
 TOOLS = " \
     system-configurator \
-    configscript \
+    configscript-minimal \
     snapcast-client \
     vim \
     wget \

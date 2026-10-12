@@ -1,5 +1,20 @@
 #!/bin/bash
 
+source /opt/installCommon.sh
+
+configure_alarm()
+{
+    chgrp www-data /etc/mediaserver/alarm.ini
+    chgrp www-data /lib/systemd/system/alarm.timer
+}
+
+configure_startGUI()
+{
+    systemctl enable psplash-start.service
+    systemctl enable psplash-quit.service
+    systemctl enable start.service
+    systemctl disable startup.service
+}
 
 configure_jellyfin()
 {
@@ -16,42 +31,6 @@ configure_jellyfin()
         mkdir /etc/Jellyfin/cache
         docker run -d --volume /etc/Jellyfin/config:/config --volume /etc/Jellyfin/cache:/cache --volume /home:/home_media --volume /mnt:/external_media --net=host --restart=unless-stopped jellyfin/jellyfin
         systemctl enable docker.service
-    fi
-}
-
-configure_other()
-{
-    # if those serial is enable, blutooth not working
-    systemctl disable serial-getty@ttyS0.service
-    systemctl disable getty@tty1
-    systemctl enable psplash-start.service
-    systemctl enable psplash-quit.service
-    # systemctl enable mysqld.service
-    systemctl disable dhcpcd.service
-	echo vm.swappiness=0 | tee -a /etc/sysctl.conf
-
-    # access for Apache to enable/disable alarm
-    chgrp www-data /etc/mediaserver/alarm.ini
-    chgrp www-data /lib/systemd/system/alarm.timer
-    #chgrp www-data /etc/mediaserver/youtubedl.ini
-    #chown 775 /etc/mediaserver/youtubedl.ini
-
-    amixer sset "Master" 100%
-
-    # disable HDMI output
-    pactl set-card-profile "alsa_card.hdmi" off
-}
-
-configure_vim()
-{
-    printf " ----- VIM configuration  ----- \n"
-    mkdir -p /root/.vim
-    vimExist=$(ls /root/.vim/ | grep bundle | wc -l)
-    if [ $vimExist -gt 0 ]; then
-        printf "VIM is configured \n"
-    else
-        mkdir /root/.vim/bundle
-        git clone https://github.com/VundleVim/Vundle.vim.git /root/.vim/bundle/Vundle.vim
     fi
 }
 
@@ -97,7 +76,15 @@ install_bootstrap_youtubedl
 install_bootstrap_apache
 configure_jellyfin
 configure_vim
-configure_other
-systemctl enable start.service
-systemctl disable startup.service
+configure_serial_gettys
+# systemctl enable mysqld.service
+disable_dhcpcd
+configure_swappiness
+configure_alarm
+#chgrp www-data /etc/mediaserver/youtubedl.ini
+#chown 775 /etc/mediaserver/youtubedl.ini
+configure_volume
+
+pactl set-card-profile "alsa_card.hdmi" off
+configure_startGUI
 reboot

@@ -24,6 +24,7 @@ SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
 IMAGE_INSTALL:append = " \
+    configscript-qt5 \
     qtbase \
     qtbase-mkspecs \
     qtbase-plugins \

@@ -7,6 +7,7 @@ Documentation=man:transmission-daemon(1)
 
 [Service]
 Type=simple
+Environment=TRANSMISSION_WEB_HOME=/usr/share/transmission/public_html
 ExecStart=/usr/bin/transmission-daemon -f --config-dir /etc/transmission-daemon  --log-level=error
 ExecReload=/bin/kill -s HUP $MAINPID
 

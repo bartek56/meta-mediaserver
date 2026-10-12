@@ -28,6 +28,7 @@ NETWORK = " \
     youtubedl-web \
     mediaserver-web \
     transmission \
+    transmission-web \
     openssh-sftp \
     openssh-sftp-server \
 "
@@ -47,7 +48,6 @@ TOOLS = " \
     bash \
     tzdata \
     system-configurator \
-    configscript \
     localedef \
 "
 
