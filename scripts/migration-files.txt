@@ -1,0 +1,64 @@
+# Format: CLASS /absolute/path
+#
+# Classes:
+# A - safe candidate: service configuration; may be proposed for migration
+#     after content comparison and target backup.
+# B - requires review: version-, service-, or system-dependent configuration;
+#     report only unless explicitly approved.
+# C - sensitive system configuration: network, SSH, access, or device identity;
+#     never overwrite automatically.
+# D - do not migrate automatically: secrets, runtime state, queues, databases,
+#     cache, or application data; handle separately.
+#
+# Only paths listed below are read from either system.
+# To migrate a complete directory, add its path with a trailing slash. Its
+# regular files are then added individually to the report and migration plan.
+
+# MPD and Snapcast
+A /etc/mpd.conf
+A /etc/mediaserver/mpd.conf
+A /etc/snapserver.conf
+A /etc/snapclient.conf
+
+# Jellyfin
+A /etc/Jellyfin/config/
+
+# PulseAudio and audio device names
+A /etc/pulse/system.pa
+A /etc/pulse/system.pa.d/system.mediaserver.pa
+A /etc/udev/rules.d/99-mediaserver-audio-names.rules
+
+# MiniDLNA and Samba
+A /etc/minidlna.conf
+A /etc/mediaserver/minidlna.conf
+A /etc/mediaserver/smb.conf
+A /etc/samba/smb.conf
+
+# Transmission
+B /etc/transmission-daemon/settings.json
+D /etc/transmission-daemon/queue.json
+
+# Network configuration
+A /etc/wpa_supplicant.conf
+A /etc/systemd/network/10-wired.network
+A /etc/systemd/network/20-wireless.network
+A /etc/systemd/system/systemd-networkd-wait-online.service.d/10-mediaserver-any.conf
+
+# SSH, FTP and device identity — reported, never copied automatically
+A /etc/vsftpd.conf
+A /etc/vsftpd/vsftpd
+A /etc/vsftpd_user_conf/bartosz
+C /etc/sshd_config
+C /etc/ssh/sshd_config
+A /etc/hostname
+A /etc/hosts
+A /etc/resolv.conf
+
+# MediaServer applications
+A /etc/mediaserver/alarm.ini
+A /etc/mediaserver/qnapi.ini
+A /etc/mediaserver/youtubedl.ini
+A /etc/mediaserver/screensaver.conf
+B /etc/php-fpm.conf
+
+

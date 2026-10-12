@@ -2,17 +2,18 @@ SUMMARY = "Snpcast"
 DESCRIPTION = "Snapcast is a multiroom client-server audio player"
 LICENSE = "GPLv3"
 
-
 SRC_URI = " \
     git://github.com/badaix/snapcast.git;protocol=https;branch=master \
     file://snapclient.service \
     file://snapserver.service \
     file://snapserver.conf \
-    file://snapclient.conf \
+    file://${SNAPCLIENT_CONFIG} \
 "
 LIC_FILES_CHKSUM = "file://../git/LICENSE;md5=7702f203b58979ebbc31bfaeb44f219c"
 
 SRCREV = "9c9ebaead8b1a5f7db9ff834f5c5692b8eb4ee43"
+
+SNAPCLIENT_CONFIG = "${@bb.utils.contains('MEDIASERVER_QT5_HDMI_PROFILE', '1', 'snapclient.conf.qt5', 'snapclient.conf', d)}"
 
 DEPENDS += " \
     avahi \
@@ -42,7 +43,7 @@ do_install:append() {
 
     install -d ${D}${sysconfdir}
     install -m 0644 ${UNPACKDIR}/snapserver.conf ${D}${sysconfdir}/
-    install -m 0644 ${UNPACKDIR}/snapclient.conf ${D}${sysconfdir}/
+    install -m 0644 ${UNPACKDIR}/${SNAPCLIENT_CONFIG} ${D}${sysconfdir}/snapclient.conf
 
     # Remove unneeded icons
     rm -rf ${D}${datadir}/pixmaps

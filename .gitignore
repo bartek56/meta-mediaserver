@@ -18,3 +18,5 @@ _deps
 __pycache__
 
 .vscode
+
+reports/

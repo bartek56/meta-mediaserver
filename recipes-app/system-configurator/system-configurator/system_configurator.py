@@ -126,6 +126,7 @@ class SystemConfigurator:
         ("vsftpd.service", "FTP server"),
         ("filebrowser.service", "File Browser"),
         ("transmission-daemon.service", "Transmission"),
+        ("jellyfin.service", "Jellyfin"),
         ("apache2.service", "Apache"),
         ("youtubedl-web.service", "YouTube DL Web"),
     )
@@ -134,6 +135,7 @@ class SystemConfigurator:
         "v5.0.0-beta1/bootstrap-5.0.0-beta1-dist.zip"
     )
     CLOCKPICKER_URL = "https://github.com/weareoutman/clockpicker/archive/gh-pages.zip"
+    JELLYFIN_IMAGE = "jellyfin/jellyfin:12"
 
     def __init__(self, runner: Optional[CommandRunner] = None, variant: str = "qt5") -> None:
         self.runner = runner or CommandRunner()
@@ -267,15 +269,11 @@ class SystemConfigurator:
         if step == "vim":
             return (Path("/home/root/.vim/bundle/Vundle.vim").exists()) == desired
         if step == "jellyfin":
-            docker = shutil.which("docker") or "docker"
             try:
-                result = self.runner.run(
-                    [docker, "inspect", "-f", "{{.State.Running}}", "jellyfin"],
-                    check=False,
-                )
+                result = self.runner.run(["systemctl", "is-active", "jellyfin.service"], check=False)
             except CommandError:
                 return not desired
-            running = result.returncode == 0 and (result.stdout or "").strip().lower() == "true"
+            running = result.returncode == 0 and (result.stdout or "").strip() == "active"
             return running == desired
         return False
 
@@ -457,6 +455,7 @@ class SystemConfigurator:
             }
             desired.update({service: options["webserver"] for service in self.WEB_SERVICES})
             desired["docker.service"] = options["jellyfin"]
+            desired["jellyfin.service"] = options["jellyfin"]
             desired.update({service: False for service in self.COMMON_DISABLED})
             for service, enabled in desired.items():
                 self._service(service, enabled, log)
@@ -473,6 +472,7 @@ class SystemConfigurator:
         }
         desired.update({service: options["webserver"] for service in self.WEB_SERVICES})
         desired["docker.service"] = options["jellyfin"]
+        desired["jellyfin.service"] = options["jellyfin"]
         desired.update({service: False for service in self.COMMON_DISABLED})
         for service, enabled in desired.items():
             self._service(service, enabled, log)
@@ -558,44 +558,33 @@ class SystemConfigurator:
             log(f"WARNING: checking the Jellyfin container: {exc}")
             return
         if inspect.returncode == 0:
-            self._try("starting the Jellyfin container", lambda: self.runner.run([docker, "start", "jellyfin"]), log)
+            self._try(
+                "starting the Jellyfin service",
+                lambda: self.runner.run(["systemctl", "enable", "--now", "jellyfin.service"]),
+                log,
+            )
             return
 
         def create() -> None:
             Path("/etc/Jellyfin/config").mkdir(parents=True, exist_ok=True)
             Path("/etc/Jellyfin/cache").mkdir(parents=True, exist_ok=True)
-            self.runner.run([docker, "pull", "jellyfin/jellyfin"])
-            self.runner.run(
-                [
-                    docker,
-                    "run",
-                    "-d",
-                    "--name",
-                    "jellyfin",
-                    "--volume",
-                    "/etc/Jellyfin/config:/config",
-                    "--volume",
-                    "/etc/Jellyfin/cache:/cache",
-                    "--volume",
-                    "/home:/home_media",
-                    "--volume",
-                    "/mnt:/external_media",
-                    "--net=host",
-                    "--restart=unless-stopped",
-                    "jellyfin/jellyfin",
-                ]
-            )
+            image = self.runner.run([docker, "image", "inspect", self.JELLYFIN_IMAGE], check=False)
+            if image.returncode != 0:
+                self.runner.run([docker, "pull", self.JELLYFIN_IMAGE])
 
-        self._try("creating the Jellyfin container", create, log)
+        self._try("preparing the Jellyfin container", create, log)
+        self._try(
+            "starting the Jellyfin service",
+            lambda: self.runner.run(["systemctl", "enable", "--now", "jellyfin.service"]),
+            log,
+        )
 
     def _stop_jellyfin(self, log: LOG) -> None:
-        docker = shutil.which("docker") or "docker"
-        try:
-            inspect = self.runner.run([docker, "container", "inspect", "jellyfin"], check=False)
-        except CommandError:
-            return
-        if inspect.returncode == 0:
-            self._try("stopping the unused Jellyfin container", lambda: self.runner.run([docker, "stop", "jellyfin"]), log)
+        self._try(
+            "stopping the unused Jellyfin service",
+            lambda: self.runner.run(["systemctl", "disable", "--now", "jellyfin.service"]),
+            log,
+        )
 
     def _install_bootstrap_assets(self, log: LOG) -> None:
         destinations = [

@@ -1,0 +1,18 @@
+[Unit]
+Description=Jellyfin Media Server container
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/mediaserver/jellyfin.conf
+ExecStartPre=-@DOCKER@ rm -f jellyfin
+ExecStart=@DOCKER@ run --rm --name jellyfin --volume /etc/Jellyfin/config:/config --volume /etc/Jellyfin/cache:/cache --volume ${JELLYFIN_MEDIA_HOME}:/home_media --volume ${JELLYFIN_MEDIA_EXTERNAL}:/external_media --net=host @JELLYFIN_IMAGE@
+ExecStop=@DOCKER@ stop --time=10 jellyfin
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target

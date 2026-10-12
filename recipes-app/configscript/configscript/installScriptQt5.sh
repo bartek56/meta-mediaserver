@@ -16,24 +16,6 @@ configure_startGUI()
     systemctl disable startup.service
 }
 
-configure_jellyfin()
-{
-    printf " ----- Jellyfin configuration  ----- \n"
-    systemctl start docker.service
-
-    jellyfinContainerExist=$(docker container ls | grep jellyfin | wc -l)
-    if [ $jellyfinContainerExist -gt 0 ]; then
-    printf "Jellyfin is configured \n"
-    else
-        docker pull jellyfin/jellyfin
-        mkdir /etc/Jellyfin
-        mkdir /etc/Jellyfin/config
-        mkdir /etc/Jellyfin/cache
-        docker run -d --volume /etc/Jellyfin/config:/config --volume /etc/Jellyfin/cache:/cache --volume /home:/home_media --volume /mnt:/external_media --net=host --restart=unless-stopped jellyfin/jellyfin
-        systemctl enable docker.service
-    fi
-}
-
 install_bootstrap_youtubedl()
 {
     printf " ----- Bootstrap for YouTube configuration  ----- \n"
@@ -74,7 +56,6 @@ set -e
 
 install_bootstrap_youtubedl
 install_bootstrap_apache
-configure_jellyfin
 configure_vim
 configure_serial_gettys
 # systemctl enable mysqld.service
@@ -87,4 +68,3 @@ configure_volume
 
 pactl set-card-profile "alsa_card.hdmi" off
 configure_startGUI
-reboot

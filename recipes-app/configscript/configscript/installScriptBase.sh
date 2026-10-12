@@ -9,4 +9,3 @@ systemctl enable mysqld.service
 disable_dhcpcd
 configure_swappiness
 configure_volume
-reboot

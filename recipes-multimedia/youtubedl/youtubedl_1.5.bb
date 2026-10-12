@@ -32,12 +32,14 @@ do_install(){
     install -m 0644 ${UNPACKDIR}/youtubedl.service ${D}/${systemd_system_unitdir}
     install -m 0644 ${UNPACKDIR}/youtubedl.timer ${D}/${systemd_system_unitdir}
 
-    #install -d ${D}/${sysconfdir}/mediaserver
-    #install -m 0777 ${UNPACKDIR}/youtubedl.ini ${D}/${sysconfdir}/mediaserver
+    install -d ${D}${sysconfdir}/mediaserver
+    install -m 0644 ${UNPACKDIR}/youtubedl.ini ${D}${sysconfdir}/mediaserver/youtubedl.ini
 }
 
 
 FILES:${PN} += "/opt/YoutubeDownloader/*"
 FILES:${PN} += "${systemd_system_unitdir}/youtubedl.service"
 FILES:${PN} += "${systemd_system_unitdir}/youtubedl.timer"
-#FILES:${PN} += "${sysconfdir}/mediaserver/youtubedl.ini"
+FILES:${PN} += "${sysconfdir}/mediaserver/youtubedl.ini"
+
+CONFFILES:${PN} += "${sysconfdir}/mediaserver/youtubedl.ini"

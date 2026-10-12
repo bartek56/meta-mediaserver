@@ -25,6 +25,7 @@ LICENSE = "MIT"
 
 IMAGE_INSTALL:append = " \
     configscript-qt5 \
+    jellyfin \
     qtbase \
     qtbase-mkspecs \
     qtbase-plugins \

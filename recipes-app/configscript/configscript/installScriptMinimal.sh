@@ -8,4 +8,3 @@ configure_serial_gettys
 disable_dhcpcd
 configure_swappiness
 configure_volume
-reboot
