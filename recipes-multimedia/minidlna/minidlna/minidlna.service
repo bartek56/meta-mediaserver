@@ -1,10 +1,10 @@
 [Unit]
 Description=minidlna server
+Requires=local-fs.target
 After=network.target local-fs.target
 
 [Service]
-Type=forking
-ExecStart=/usr/sbin/minidlnad
+ExecStart=/usr/sbin/minidlnad -S
 PIDFile=/var/run/minidlna/minidlna.pid
 
 [Install]

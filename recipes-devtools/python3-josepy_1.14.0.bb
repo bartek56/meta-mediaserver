@@ -3,11 +3,9 @@ HOMEPAGE = "https://pypi.org/project/josepy"
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=d2c2a5517cd7fd190a1aa6dfa23abb7a"
 RDEPENDS:${PN} += " python3 bash"
-SRC_URI = "https://github.com/certbot/josepy/archive/refs/tags/v1.14.0.tar.gz"
+SRC_URI = "git://github.com/certbot/josepy.git;protocol=https;tag=v1.14.0;nobranch=1"
+SRCREV = "a6861675bc943026e8c0d5c550e17eba23289547"
 
-SRC_URI[sha256sum] = "7d1adcaa68add9bacf4cff03b571f36015edb6bff6458c76f63ed70ae8ac8b62"
-
-S = "${UNPACKDIR}/josepy-1.14.0"
 inherit python3-dir
 
 do_compile() {

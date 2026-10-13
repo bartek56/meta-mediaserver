@@ -267,7 +267,7 @@ class SystemConfigurator:
             service = "start.service" if desired else "startup.service"
             return service_matches(service, True)
         if step == "vim":
-            return (Path("/home/root/.vim/bundle/Vundle.vim").exists()) == desired
+            return (Path("/root/.vim/bundle/Vundle.vim").exists()) == desired
         if step == "jellyfin":
             try:
                 result = self.runner.run(["systemctl", "is-active", "jellyfin.service"], check=False)
@@ -536,7 +536,7 @@ class SystemConfigurator:
         path.write_text("\n".join(output) + "\n", encoding="utf-8")
 
     def _configure_vim(self, log: LOG) -> None:
-        target = Path("/home/root/.vim/bundle/Vundle.vim")
+        target = Path("/root/.vim/bundle/Vundle.vim")
         if target.exists():
             log("OK: VIM/Vundle is already configured")
             return

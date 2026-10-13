@@ -8,6 +8,7 @@ RDEPENDS:${PN} = " \
     jellyfin \
     snapcast-client \
     snapcast-server \
+    snapcast-bt \
     minidlna \
     mpd \
     mpc \

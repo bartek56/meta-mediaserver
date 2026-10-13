@@ -65,7 +65,7 @@ configure_swappiness
 configure_alarm
 #chgrp www-data /etc/mediaserver/youtubedl.ini
 #chown 775 /etc/mediaserver/youtubedl.ini
-configure_volume
-
 pactl set-card-profile "alsa_card.hdmi" off
+
+configure_volume
 configure_startGUI

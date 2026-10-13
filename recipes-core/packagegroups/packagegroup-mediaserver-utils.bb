@@ -10,6 +10,7 @@ RDEPENDS:${PN} = " \
     bridge-utils \
     hostapd \
     screen \
+    certbot \
     at \
     minicom \
     mc \

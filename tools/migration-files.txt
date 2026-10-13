@@ -1,14 +1,13 @@
 # Format: CLASS /absolute/path
 #
 # Classes:
-# A - safe candidate: service configuration; may be proposed for migration
-#     after content comparison and target backup.
-# B - requires review: version-, service-, or system-dependent configuration;
-#     report only unless explicitly approved.
-# C - sensitive system configuration: network, SSH, access, or device identity;
-#     never overwrite automatically.
-# D - do not migrate automatically: secrets, runtime state, queues, databases,
-#     cache, or application data; handle separately.
+# A - directory/file may be migrated after comparison and backup.
+#     For a directory, the migration unit is the whole tar.gz archive.
+# B - directory/file is validated and reported, but never copied automatically.
+# C - directory/file is validated and reported, but never copied automatically;
+#     typically network, SSH, access, or device identity.
+# D - for a directory, verify every contained file and write the separate
+#     directory-files.tsv report; never copy. For a file, report only.
 #
 # Only paths listed below are read from either system.
 # To migrate a complete directory, add its path with a trailing slash. Its
@@ -19,9 +18,6 @@ A /etc/mpd.conf
 A /etc/mediaserver/mpd.conf
 A /etc/snapserver.conf
 A /etc/snapclient.conf
-
-# Jellyfin - too much files, TODO
-# A /etc/jellyfin/config/
 
 # PulseAudio and audio device names
 A /etc/pulse/system.pa
@@ -36,7 +32,7 @@ A /etc/samba/smb.conf
 
 # Transmission
 B /etc/transmission-daemon/settings.json
-D /etc/transmission-daemon/queue.json
+C /etc/transmission-daemon/queue.json
 
 # Network configuration
 A /etc/wpa_supplicant.conf
@@ -56,6 +52,7 @@ A /etc/resolv.conf
 
 # MediaServer applications
 A /etc/mediaserver/alarm.ini
+A /lib/systemd/system/alarm.timer
 A /etc/mediaserver/qnapi.ini
 A /etc/mediaserver/youtubedl.ini
 A /etc/mediaserver/screensaver.conf
@@ -65,4 +62,25 @@ B /etc/php-fpm.conf
 # system
 A /etc/fstab
 
+
+# services
+A /lib/systemd/system/certbot.service
+A /lib/systemd/system/certbot.timer
+A /jellyfin-tunnel.service
+A /lib/systemd/system/ssh-tunnel-msi.service
+A /lib/systemd/system/filebrowser-tunnel.service
+A /lib/systemd/system/ssh-tunnel.service
+A /lib/systemd/system/website-tunnel.service
+
+
+D /lib/systemd/system/
+
+# copy all https certs
+A /etc/letsencrypt/accounts/
+A /etc/letsencrypt/live/
+A /etc/letsencrypt/renewal/
+A /etc/letsencrypt/renewal-hooks/
+
+# Jellyfin - too much files, TODO
+# D /etc/jellyfin/config/
 

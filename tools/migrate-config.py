@@ -6,6 +6,7 @@ import argparse
 import csv
 import difflib
 import hashlib
+import html
 import os
 import shlex
 import shutil
@@ -23,7 +24,7 @@ MIGRATION_SERVICES = (
     "mpd", "snapserver", "snapclient", "minidlna", "pulseaudio",
     "transmission-daemon", "smbd", "jellyfin",
 )
-FIELDS = ("path", "type", "mode", "uid", "gid", "size", "sha256", "class", "decision")
+FIELDS = ("path", "type", "mode", "uid", "gid", "size", "sha256", "link_target", "class", "decision")
 VERBOSE = True
 
 
@@ -143,6 +144,13 @@ def expanded_manifest(root: Path, manifest: list[tuple[str, str]]) -> list[tuple
                         relative = "/" + str(child.relative_to(root)).replace(os.sep, "/")
                         if safe_path(relative) and relative not in known:
                             expanded.append((relative, cls)); known.add(relative)
+                        try:
+                            resolved = child.resolve(strict=True)
+                            resolved_relative = "/" + str(resolved.relative_to(root)).replace(os.sep, "/")
+                            if resolved.is_file() and safe_path(resolved_relative) and resolved_relative not in known:
+                                expanded.append((resolved_relative, cls)); known.add(resolved_relative)
+                        except (OSError, ValueError):
+                            pass
             log(f"{root}: expanded manifest directory {path}")
             continue
         if candidate.exists() or candidate.is_symlink():
@@ -175,7 +183,7 @@ def path_list(root: Path, manifest: list[tuple[str, str]]) -> list[Path]:
 
 def digest(path: Path) -> str:
     if path.is_symlink():
-        return "SYMLINK"
+        return "SYMLINK:" + os.readlink(path)
     result = hashlib.sha256()
     with path.open("rb") as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
@@ -200,9 +208,11 @@ def inventory(root: Path, side: str, report: Path, manifest: list[tuple[str, str
             info = file_path.lstat()
             kind = "symbolic link" if stat.S_ISLNK(info.st_mode) else "regular file"
             cls, reason, decision = classify(relative, manifest_map)
+            link_target = os.readlink(file_path) if stat.S_ISLNK(info.st_mode) else ""
             record = {"path": relative, "type": kind, "mode": oct(info.st_mode & 0o7777)[2:],
                       "uid": str(info.st_uid), "gid": str(info.st_gid), "size": str(info.st_size),
-                      "sha256": digest(file_path), "class": cls, "decision": f"{reason}; {decision}"}
+                      "sha256": digest(file_path), "link_target": link_target,
+                      "class": cls, "decision": f"{reason}; {decision}"}
             writer.writerow(record)
             records.append(record)
             if index % 100 == 0:
@@ -211,6 +221,10 @@ def inventory(root: Path, side: str, report: Path, manifest: list[tuple[str, str
                 target = report / side / "files" / relative.lstrip("/")
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(file_path, target)
+            elif kind == "symbolic link" and cls != "D":
+                target = report / side / "files" / relative.lstrip("/")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(os.readlink(file_path))
     return records
 
 
@@ -260,6 +274,12 @@ def remote_inventory(args: argparse.Namespace, side: str, report: Path, manifest
             f"case \"$link_target\" in /*) if [ -f \"$link_target\" ]; then set -- \"$@\" \"$link_target\"; fi;; esac; "
             f"fi; fi"
         )
+        if path.endswith("/"):
+            command_parts.append(
+                f"for link in $(find {quoted} -type l 2>/dev/null); do "
+                f"resolved=$(readlink -f \"$link\" 2>/dev/null || true); "
+                f"[ -f \"$resolved\" ] && set -- \"$@\" \"$link\" \"$resolved\"; done"
+            )
     # Compress on the remote host before sending the archive.  This matters
     # for directory entries (for example Jellyfin), where an uncompressed tar
     # can otherwise transfer hundreds of megabytes over SSH.
@@ -293,6 +313,93 @@ def write_comparison(source: list[dict[str, str]], target: list[dict[str, str]],
             writer.writerow((path, status, (sm.get(path) or tm[path])["class"], reason))
 
 
+def directory_fingerprint(records: list[dict[str, str]], directory: str) -> tuple[int, int, str]:
+    prefix = directory.rstrip("/") + "/"
+    members = [record for record in records if record["path"].startswith(prefix)]
+    total_size = sum(int(record["size"]) for record in members if record["type"] == "regular file")
+    tree_hash = hashlib.sha256()
+    for record in sorted(members, key=lambda item: item["path"]):
+        tree_hash.update("\0".join((record["path"][len(prefix):], record["type"], record["size"], record["sha256"])).encode())
+        tree_hash.update(b"\n")
+    return len(members), total_size, tree_hash.hexdigest()
+
+
+def write_directory_comparison(source: list[dict[str, str]], target: list[dict[str, str]],
+                               report: Path, manifest: list[tuple[str, str]]) -> None:
+    directories = sorted({path.rstrip("/"): cls for path, cls in manifest if path.endswith("/")}.items())
+    if not directories:
+        return
+    output = report / "directory-comparison.tsv"
+    detail_output = report / "directory-files.tsv"
+    with output.open("w", newline="") as stream:
+        writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+        writer.writerow(("directory", "class", "status", "source_files", "target_files", "source_bytes", "target_bytes",
+                         "source_tree_sha256", "target_tree_sha256"))
+        with detail_output.open("w", newline="") as detail_stream:
+            detail_writer = csv.writer(detail_stream, delimiter="\t", lineterminator="\n")
+            detail_writer.writerow(("directory", "path", "status", "source_sha256", "target_sha256", "source_size", "target_size"))
+            for directory, cls in directories:
+                source_members = {x["path"]: x for x in source if x["path"].startswith(directory + "/")}
+                target_members = {x["path"]: x for x in target if x["path"].startswith(directory + "/")}
+                for path in sorted(set(source_members) | set(target_members)):
+                    left, right = source_members.get(path), target_members.get(path)
+                    if left is None:
+                        status = "missing-on-source"
+                    elif right is None:
+                        status = "missing-on-target"
+                    elif (left["type"], left["size"], left["sha256"]) == (right["type"], right["size"], right["sha256"]):
+                        status = "identical"
+                    else:
+                        status = "different"
+                    detail_writer.writerow((directory, path, status, left["sha256"] if left else "MISSING",
+                                             right["sha256"] if right else "MISSING", left["size"] if left else "MISSING",
+                                             right["size"] if right else "MISSING"))
+                source_count, source_size, source_hash = directory_fingerprint(source, directory)
+                target_count, target_size, target_hash = directory_fingerprint(target, directory)
+                if not source_count and target_count:
+                    status = "missing-on-source"
+                elif source_count and not target_count:
+                    status = "missing-on-target"
+                elif (source_count, source_size, source_hash) == (target_count, target_size, target_hash):
+                    status = "identical"
+                else:
+                    status = "different"
+                writer.writerow((directory, cls, status, source_count, target_count, source_size, target_size,
+                                 source_hash, target_hash))
+                log(f"directory check {directory}: {status} (source files={source_count}, target files={target_count})")
+
+
+def write_html_report(report: Path) -> None:
+    tables = ("migration-plan.tsv", "directory-comparison.tsv", "directory-files.tsv", "comparison.tsv")
+    sections = []
+    for filename in tables:
+        path = report / filename
+        if not path.exists():
+            continue
+        with path.open(newline="") as stream:
+            rows = list(csv.reader(stream, delimiter="\t"))
+        if not rows:
+            continue
+        header, body = rows[0], rows[1:]
+        table = [f"<h2>{html.escape(filename)}</h2><table><thead><tr>"]
+        table.extend(f"<th>{html.escape(cell)}</th>" for cell in header)
+        table.append("</tr></thead><tbody>")
+        for row in body:
+            table.append("<tr>")
+            table.extend(f"<td>{html.escape(cell)}</td>" for cell in row)
+            table.append("</tr>")
+        table.append("</tbody></table>")
+        sections.append("".join(table))
+    content = "".join(sections)
+    (report / "migration-report.html").write_text(
+        "<!doctype html><meta charset='utf-8'><title>Configuration migration report</title>"
+        "<style>body{font:14px sans-serif;margin:2em}table{border-collapse:collapse;margin-bottom:2em}"
+        "th,td{border:1px solid #bbb;padding:5px;text-align:left;white-space:nowrap}"
+        "th{background:#eee;position:sticky;top:0}tr:hover{background:#ffffcc}</style>" + content,
+        encoding="utf-8",
+    )
+
+
 def backup_scope(path: str, manifest: list[tuple[str, str]]) -> str:
     directories = [entry.rstrip("/") for entry, _ in manifest if entry.endswith("/") and path.startswith(entry)]
     return max(directories, key=len) if directories else path
@@ -302,12 +409,20 @@ def make_plan(source: list[dict[str, str]], target: list[dict[str, str]], report
     sm, tm = {x["path"]: x for x in source}, {x["path"]: x for x in target}
     plan = []
     for path, record in sorted(sm.items()):
+        # Symlinks are inventory data only.  Their link target may be outside
+        # the selected manifest and there is no regular-file snapshot to use
+        # safely for an executable copy operation.
+        if record["type"] not in {"regular file", "symbolic link"}:
+            continue
         if record["class"] == "A" and path not in tm:
-            plan.append({"path": path, "action": "copy-new-file", "class": "A", "reason": "missing on target", "source_sha256": record["sha256"], "target_sha256": "MISSING", "backup_scope": backup_scope(path, manifest)})
+            action = "copy-symlink" if record["type"] == "symbolic link" else "copy-new-file"
+            plan.append({"path": path, "action": action, "class": "A", "reason": "missing on target", "source_sha256": record["sha256"], "target_sha256": "MISSING", "backup_scope": backup_scope(path, manifest)})
         elif record["class"] == "A" and path in tm and record["sha256"] != tm[path]["sha256"]:
-            plan.append({"path": path, "action": "copy-after-backup", "class": "A", "reason": "textual candidate", "source_sha256": record["sha256"], "target_sha256": tm[path]["sha256"], "backup_scope": backup_scope(path, manifest)})
-        elif record["class"] != "A":
-            plan.append({"path": path, "action": "do-not-migrate", "class": record["class"], "reason": record["decision"], "source_sha256": record["sha256"], "target_sha256": tm.get(path, {}).get("sha256", "MISSING"), "backup_scope": backup_scope(path, manifest)})
+            action = "copy-symlink" if record["type"] == "symbolic link" else "copy-after-backup"
+            plan.append({"path": path, "action": action, "class": "A", "reason": "textual candidate", "source_sha256": record["sha256"], "target_sha256": tm[path]["sha256"], "backup_scope": backup_scope(path, manifest)})
+        # Classes B, C and D are validation/reporting only.  They must not be
+        # placed in migration-plan.tsv because that file is executable input
+        # for --apply.
     with (report / "migration-plan.tsv").open("w", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=("path", "action", "class", "reason", "source_sha256", "target_sha256", "backup_scope"), delimiter="\t", lineterminator="\n")
         writer.writeheader(); writer.writerows(plan)
@@ -316,7 +431,7 @@ def make_plan(source: list[dict[str, str]], target: list[dict[str, str]], report
 
 def make_diffs(plan: list[dict[str, str]], report: Path) -> None:
     for item in plan:
-        if item["action"] not in {"copy-after-backup", "copy-new-file"}:
+        if item["action"] not in {"copy-after-backup", "copy-new-file", "copy-symlink"}:
             continue
         path = item["path"]
         source = report / "source" / "files" / path.lstrip("/")
@@ -330,7 +445,7 @@ def make_diffs(plan: list[dict[str, str]], report: Path) -> None:
 def remote_hash(args: argparse.Namespace, target: str) -> str | None:
     quoted = shlex.quote(target)
     result = subprocess.run(
-        ["ssh", "-o", "BatchMode=yes", "-p", str(args.target_port), *( ["-i", args.target_identity] if args.target_identity else []), "--", f"{args.target_user}@{args.target_host}", f"test ! -L {quoted} && sha256sum -- {quoted} | awk '{{print $1}}'"],
+        ["ssh", "-o", "BatchMode=yes", "-p", str(args.target_port), *( ["-i", args.target_identity] if args.target_identity else []), "--", f"{args.target_user}@{args.target_host}", f"if [ -L {quoted} ]; then printf 'SYMLINK:%s\\n' \"$(readlink {quoted})\"; else sha256sum -- {quoted} | awk '{{print $1}}'; fi"],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=False,
     )
     if result.returncode:
@@ -396,25 +511,30 @@ def apply_plan_files(args: argparse.Namespace, report: Path) -> None:
             if not item.get("backup_scope"):
                 fail(f"plan has no backup_scope: {path}; regenerate the plan")
             source = report / "source" / "files" / path.lstrip("/")
-            data = source.read_bytes()
-            checksum = hashlib.sha256(data).hexdigest()
+            is_symlink = item["action"] == "copy-symlink"
+            data = None if is_symlink else source.read_bytes()
+            checksum = digest(source) if is_symlink else hashlib.sha256(data).hexdigest()
             if checksum != item["source_sha256"]:
                 fail(f"source snapshot changed since plan: {path}")
             log(f"apply {path}: checking target before write")
             if not args.target_host:
                 target = args.target_root / path.lstrip("/")
                 target.parent.mkdir(parents=True, exist_ok=True)
-                actual_before = digest(target) if target.exists() and not target.is_symlink() else "MISSING"
+                actual_before = digest(target) if target.exists() or target.is_symlink() else "MISSING"
                 if actual_before != item["target_sha256"]:
                     fail(f"target changed since plan: {path} (expected {item['target_sha256']}, got {actual_before})")
                 scope = item["backup_scope"]
                 if scope not in backed_up:
                     backed_up[scope] = backup_scope_local(args, report, scope)
-                with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".migrate-config.", delete=False) as temporary:
-                    temporary.write(data); temporary_path = Path(temporary.name)
-                if hashlib.sha256(temporary_path.read_bytes()).hexdigest() != checksum:
-                    fail(f"local temporary copy verification failed: {path}")
-                os.replace(temporary_path, target)
+                if is_symlink:
+                    target.unlink(missing_ok=True)
+                    target.symlink_to(os.readlink(source))
+                else:
+                    with tempfile.NamedTemporaryFile(dir=target.parent, prefix=".migrate-config.", delete=False) as temporary:
+                        temporary.write(data); temporary_path = Path(temporary.name)
+                    if hashlib.sha256(temporary_path.read_bytes()).hexdigest() != checksum:
+                        fail(f"local temporary copy verification failed: {path}")
+                    os.replace(temporary_path, target)
                 actual_after = digest(target)
                 result_writer.writerow((path, "applied", item["target_sha256"], actual_before, actual_after, backed_up[scope])); result_stream.flush()
                 log(f"apply {path}: applied, verified sha256={actual_after}, backup-scope={scope}")
@@ -428,8 +548,12 @@ def apply_plan_files(args: argparse.Namespace, report: Path) -> None:
             if scope not in backed_up:
                 backed_up[scope] = backup_scope_remote(args, report, scope)
             parent = shlex.quote(str(Path(target).parent)); temporary = shlex.quote(str(Path(target).parent / f".migrate-config.{os.getpid()}.tmp"))
-            command = f"test ! -L {quoted}; mkdir -p {parent}; cat > {temporary}; test $(sha256sum -- {temporary} | awk '{{print $1}}') = {checksum}; mv -f -- {temporary} {quoted}"
-            ssh_command(args.target_host, args.target_user, args.target_port, args.target_identity, command, data)
+            if is_symlink:
+                command = f"mkdir -p {parent}; rm -f -- {quoted}; ln -s -- {shlex.quote(os.readlink(source))} {quoted}"
+                ssh_command(args.target_host, args.target_user, args.target_port, args.target_identity, command)
+            else:
+                command = f"test ! -L {quoted}; mkdir -p {parent}; cat > {temporary}; test $(sha256sum -- {temporary} | awk '{{print $1}}') = {checksum}; mv -f -- {temporary} {quoted}"
+                ssh_command(args.target_host, args.target_user, args.target_port, args.target_identity, command, data)
             actual_after = remote_hash(args, target)
             if actual_after != checksum:
                 fail(f"remote write verification failed: {path}")
@@ -511,7 +635,10 @@ def main() -> int:
         log(f"target: local {args.target_root}")
         source = inventory(args.source_root, "source", report, manifest); target = inventory(args.target_root, "target", report, manifest)
     log(f"inventory complete: source={len(source)} target={len(target)}")
-    write_comparison(source, target, report); plan = make_plan(source, target, report, manifest); make_diffs(plan, report)
+    write_comparison(source, target, report)
+    write_directory_comparison(source, target, report, manifest)
+    plan = make_plan(source, target, report, manifest); make_diffs(plan, report)
+    write_html_report(report)
     log(f"comparison complete: {len(plan)} plan entries")
     (report / "migration-report.md").write_text(f"# Configuration migration report\n\nGenerated: {datetime.now(timezone.utc).isoformat()}\n\nSecrets and runtime data are excluded.\n")
     if args.mode == "dry-run":
