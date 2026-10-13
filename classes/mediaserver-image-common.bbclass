@@ -1,8 +1,4 @@
-# Common image policy for the standard and Qt5 MediaServer images.
-#
-# The minimal image intentionally does not inherit this class: the package set
-# below is the existing product "base" image and would make a headless audio
-# endpoint larger than necessary.
+# Common image policy for all MediaServer images.
 inherit sdcard_image-rpi
 
 # Keep the boot partition size used by the existing product images.  This is
@@ -10,99 +6,11 @@ inherit sdcard_image-rpi
 BOOT_SPACE = "131072"
 IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
 
-NETWORK = " \
-    dhcpcd \
-    iw \
-    rsync \
-    wget \
-    python3-wakeonlan \
-    wpan-tools \
-    screen \
-    iptables \
-    wpa-supplicant \
-    iftop \
-    vsftpd \
-    samba \
-    filebrowser \
-    speedtest \
-    youtubedl-web \
-    mediaserver-web \
-    transmission \
-    transmission-web \
-    openssh-sftp \
-    openssh-sftp-server \
-"
-
-TOOLS = " \
-    bluez5 \
-    i2c-tools \
-    bridge-utils \
-    hostapd \
-    screen \
-    wget \
-    at \
-    minicom \
-    mc \
-    curl \
-    git \
-    bash \
-    tzdata \
-    system-configurator \
-    localedef \
-"
-
-TEXT_EDITOR = " \
-    nano \
-    vim \
-"
-
-AUDIO = " \
-    alsa-utils \
-    pulseaudio-server \
-    pulseaudio-misc \
-    pulseaudio-module-dbus-protocol \
-    pulseaudio-module-native-protocol-tcp \
-    pulseaudio-module-zeroconf-publish \
-    pulseaudio-module-console-kit \
-    pulseaudio-module-cli \
-    pulseaudio-module-bluez5-device \
-    pulseaudio-module-bluez5-discover \
-    pulseaudio-module-bluetooth-discover \
-    pulseaudio-module-bluetooth-policy \
-    pulseaudio-module-loopback \
-    pulseaudio \
-    mpg123 \
-    sox \
-    mpd \
-    mpc \
-    ympd \
-    espeak \
-"
-
-MULTIMEDIA = " \
-    minidlna \
-    alarm \
-"
-
-# These are product image requirements shared by the old base image and the
-# old Qt5 image (Qt itself is added only by mediaserver-image-qt5.bb).
+# Package selection belongs to the MediaServer packagegroups and image
+# recipes. This class only carries policy shared by those images.
+# These are product image requirements shared by all MediaServer images.
 DISTRO_FEATURES:append = " bluez5 bluetooth wifi libpam pam"
 DISTRO_FEATURES += "pam libpam"
-
-IMAGE_INSTALL:append = " \
-    ${TOOLS} \
-    ${AUDIO} \
-    ${MULTIMEDIA} \
-    ${TEXT_EDITOR} \
-    ${NETWORK} \
-    apache2 \
-    php-modphp \
-    docker \
-    snapcast-client \
-    snapcast-server \
-    danfoss-thermostat \
-    kernel-modules \
-"
 
 IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs allow-empty-password empty-root-password allow-root-login"
 

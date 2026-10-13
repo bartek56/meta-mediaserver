@@ -1,16 +1,12 @@
 include recipes-core/images/core-image-base.bb
 
-inherit sdcard_image-rpi
-
-BOOT_SPACE = "131072"
+inherit mediaserver-image-common
 
 SUMMARY = "Minimal base system with Snapcast client and PulseAudio"
 LICENSE = "MIT"
 
-# Deliberately independent from mediaserver-image-common: that class contains
-# the full standard server package set.  This image is a headless Snapcast/
-# MPD endpoint and must not inherit GUI, web-server, Docker, or Qt packages.
-IMAGE_FSTYPES ?= "tar.bz2 ext3 rpi-sdimg"
+# This image is a headless Snapcast/MPD endpoint and does not install the
+# standard server packagegroups, web-server, Docker, or Qt packages.
 
 NETWORK = " \
     dhcpcd \
@@ -44,9 +40,6 @@ AUDIO_TOOLS = " \
     alsa-utils-speaker-test \
 "
 
-DISTRO_FEATURES:append = " bluez5 bluetooth wifi libpam pam"
-DISTRO_FEATURES += "pam libpam"
-
 IMAGE_INSTALL:append = " \
     ${NETWORK} \
     ${TOOLS} \
@@ -58,16 +51,3 @@ IMAGE_INSTALL:append = " \
 IMAGE_INSTALL += " \
 	kernel-modules \
 "
-
-IMAGE_FEATURES += " package-management ssh-server-openssh hwcodecs allow-empty-password empty-root-password allow-root-login"
-
-
-GLIBC_GENERATE_LOCALES = "pl_PL.UTF-8 en_US.UTF-8"
-IMAGE_LINGUAS = "pl-pl en-us en-gb"
-#LOCALE_UTF8_ONLY="1"
-
-TOOLCHAIN_HOST_TASK:append = " nativesdk-intltool nativesdk-glib-2.0"
-TOOLCHAIN_HOST_TASK:remove_task-populate-sdk-ext = " nativesdk-intltool nativesdk-glib-2.0"
-
-QB_MEM = '${@bb.utils.contains("DISTRO_FEATURES", "opengl", "-m 512", "-m 256", d)}'
-QB_MEM_qemumips = "-m 256"

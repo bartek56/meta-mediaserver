@@ -77,7 +77,8 @@ def classify(path: str, manifest: dict[str, str]) -> tuple[str, str, str]:
     return cls, descriptions[cls], decisions[cls]
 
 
-def ssh_command(host: str, user: str, port: int, identity: str, command: str, data: bytes | None = None) -> bytes:
+def ssh_command(host: str, user: str, port: int, identity: str, command: str,
+                data: bytes | None = None, output_file: Path | None = None) -> bytes:
     destination = f"{user}@{host}" if user else host
     args = ["ssh", "-o", "BatchMode=yes", "-o", "RequestTTY=no", "-o", "ClearAllForwardings=yes", "-p", str(port)]
     if identity:
@@ -95,21 +96,29 @@ def ssh_command(host: str, user: str, port: int, identity: str, command: str, da
         output_parts = []
         output_size = 0
         last_report = time.monotonic()
-        while process.stdout is not None:
-            chunk = process.stdout.read(1024 * 1024)
-            if not chunk:
-                break
-            output_parts.append(chunk)
-            output_size += len(chunk)
-            if time.monotonic() - last_report >= 1:
-                log(f"SSH progress: {destination} stdout={output_size} bytes")
-                last_report = time.monotonic()
+        destination_stream = output_file.open("wb") if output_file else None
+        try:
+            while process.stdout is not None:
+                chunk = process.stdout.read(1024 * 1024)
+                if not chunk:
+                    break
+                if destination_stream:
+                    destination_stream.write(chunk)
+                else:
+                    output_parts.append(chunk)
+                output_size += len(chunk)
+                if time.monotonic() - last_report >= 1:
+                    log(f"SSH progress: {destination} stdout={output_size} bytes")
+                    last_report = time.monotonic()
+        finally:
+            if destination_stream:
+                destination_stream.close()
         process.wait()
         error_stream.seek(0)
         stderr = error_stream.read()
     stdout = b"".join(output_parts)
     elapsed = time.monotonic() - started
-    log(f"SSH end: {destination}  exit={process.returncode} stdout={len(stdout)} bytes elapsed={elapsed:.1f}s")
+    log(f"SSH end: {destination}  exit={process.returncode} stdout={output_size} bytes elapsed={elapsed:.1f}s")
     if process.returncode:
         raise RuntimeError(f"SSH command failed on {destination}: {stderr.decode(errors='replace').strip()}")
     return stdout
@@ -205,9 +214,13 @@ def inventory(root: Path, side: str, report: Path, manifest: list[tuple[str, str
     return records
 
 
-def safe_extract(data: bytes, destination: Path) -> None:
-    log(f"extracting remote archive: {len(data)} bytes -> {destination}")
-    with tarfile.open(fileobj=__import__("io").BytesIO(data), mode="r:") as archive:
+def safe_extract(data: bytes | Path, destination: Path) -> None:
+    archive_size = len(data) if isinstance(data, bytes) else data.stat().st_size
+    log(f"extracting remote archive: {archive_size} bytes -> {destination}")
+    # ``r:*`` auto-detects the uncompressed and gzip archives produced by
+    # different BusyBox tar versions.
+    archive_args = {"fileobj": __import__("io").BytesIO(data)} if isinstance(data, bytes) else {"name": str(data)}
+    with tarfile.open(mode="r:*", **archive_args) as archive:
         for member in archive.getmembers():
             name = "/" + member.name.lstrip("/")
             if not safe_path(name) or member.name.startswith("/"):
@@ -231,19 +244,37 @@ def safe_extract(data: bytes, destination: Path) -> None:
 def remote_inventory(args: argparse.Namespace, side: str, report: Path, manifest: list[tuple[str, str]]) -> list[dict[str, str]]:
     host, user, port, identity = ((args.source_host, args.source_user, args.source_port, args.source_identity)
                                    if side == "source" else (args.target_host, args.target_user, args.target_port, args.target_identity))
-    # BusyBox tar commonly lacks GNU tar's --null option. The allowlisted
-    # paths contain neither whitespace nor newlines, so newline-delimited -T
-    # input is portable across the supported Yocto userspaces.
+    # BusyBox tar on the target does not provide GNU tar's -T/--null options.
+    # Build an explicit, shell-quoted argument list instead. Directory entries
+    # remain recursive tar inputs; no unlisted path is added.
     log(f"{side}: preparing remote inventory; {len(manifest)} explicit files")
-    names = ("\n".join(path for path, _ in manifest) + "\n").encode()
     for index, (path, cls) in enumerate(manifest, 1):
         log(f"{side}: manifest[{index}] {cls} {path}")
-    command = "while IFS= read -r p; do if [ -e \"$p\" ] || [ -L \"$p\" ]; then printf '%s\\n' \"$p\"; if [ -L \"$p\" ]; then q=$(readlink -f \"$p\" 2>/dev/null || true); case \"$q\" in /*) if [ -f \"$q\" ]; then printf '%s\\n' \"$q\"; fi;; esac; fi; fi; done | tar -C / -cf - -T -"
-    archive = ssh_command(host, user, port, identity, command, names)
+    command_parts = ["set --"]
+    for path, _ in manifest:
+        quoted = shlex.quote(path)
+        command_parts.append(
+            f"if [ -e {quoted} ] || [ -L {quoted} ]; then "
+            f"set -- \"$@\" {quoted}; "
+            f"if [ -L {quoted} ]; then link_target=$(readlink -f {quoted} 2>/dev/null || true); "
+            f"case \"$link_target\" in /*) if [ -f \"$link_target\" ]; then set -- \"$@\" \"$link_target\"; fi;; esac; "
+            f"fi; fi"
+        )
+    # Compress on the remote host before sending the archive.  This matters
+    # for directory entries (for example Jellyfin), where an uncompressed tar
+    # can otherwise transfer hundreds of megabytes over SSH.
+    command_parts.append("exec tar -C / -czf - \"$@\"")
+    command = "; ".join(command_parts)
     root = report / side / "root"
     root.mkdir(parents=True)
-    safe_extract(archive, root)
-    records = inventory(root, side, report, manifest)
+    with tempfile.NamedTemporaryFile(prefix=f"migrate-{side}-", suffix=".tar.gz", delete=False) as temporary:
+        archive_path = Path(temporary.name)
+    try:
+        ssh_command(host, user, port, identity, command, output_file=archive_path)
+        safe_extract(archive_path, root)
+        records = inventory(root, side, report, manifest)
+    finally:
+        archive_path.unlink(missing_ok=True)
     shutil.rmtree(root)
     log(f"{side}: removed temporary extraction directory {root}")
     return records
@@ -332,10 +363,16 @@ def backup_scope_remote(args: argparse.Namespace, report: Path, scope: str) -> s
     ).returncode == 0
     if not exists:
         return "none"
-    archive = ssh_command(args.target_host, args.target_user, args.target_port, args.target_identity, f"tar -C / -cf - -- {shlex.quote(scope.lstrip('/'))}")
     backup = report / "backup"
     backup.mkdir(parents=True, exist_ok=True)
-    safe_extract(archive, backup)
+    with tempfile.NamedTemporaryFile(prefix="migrate-backup-", suffix=".tar.gz", delete=False) as temporary:
+        archive_path = Path(temporary.name)
+    try:
+        ssh_command(args.target_host, args.target_user, args.target_port, args.target_identity,
+                    f"tar -C / -czf - -- {shlex.quote(scope.lstrip('/'))}", output_file=archive_path)
+        safe_extract(archive_path, backup)
+    finally:
+        archive_path.unlink(missing_ok=True)
     log(f"backup created: {scope} -> {backup}")
     return str(backup / scope.lstrip("/"))
 

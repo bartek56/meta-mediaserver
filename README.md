@@ -158,9 +158,9 @@ The Raspberry Pi BSP's `rpi-config` recipe consumes `HDMI_*`, `HDMI_CVT`,
 `VC4DTBO`, `GPU_MEM_1024`, `ENABLE_UART`, `ENABLE_SPI_BUS`,
 `DISABLE_OVERSCAN`, `DISABLE_RPI_BOOT_LOGO`, and `RPI_EXTRA_CONFIG` while it
 generates `config.txt`. These are therefore kept in `local.conf` or a
-machine configuration, not in an image class. The
-`mediaserver-image-hdmi` class is an explicit image opt-in/documentation
-marker and does not install Qt or alter boot firmware settings.
+machine configuration, not in an image class. The Qt5 image still requires
+the `conf/machine/qt5-hdmi.conf` profile when it is built, but the profile
+settings are consumed by the Raspberry Pi BSP rather than by an image class.
 
 The ADS7846 touchscreen lines in the Qt5 sample are independent of HDMI.
 `KERNEL_DEVICETREE` should only name overlays that the selected kernel builds;
@@ -192,6 +192,11 @@ for the Raspberry Pi kernel and overlays.
 The layer integrates MediaServer, Quetzalcoatl, QNapi, File Browser,
 Ampache, Transmission, MPD, ympd, MiniDLNA, Tvheadend, Samba, yt-dlp,
 and vsftpd.
+
+Detailed runtime documentation is available in
+[`docs/MEDIASERVER.md`](docs/MEDIASERVER.md). Configuration migration is
+covered separately in [`docs/CONFIG_MIGRATION.md`](docs/CONFIG_MIGRATION.md)
+and [`docs/YOCTO_CONFIG_MAP.md`](docs/YOCTO_CONFIG_MAP.md).
 
 ## Troubleshooting
 

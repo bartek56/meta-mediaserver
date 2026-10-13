@@ -17,7 +17,7 @@ if [ "$#" -eq 1 ]; then
 
     PROJECT_DIR="$(realpath "$1")"
 else
-    PROJECT_DIR="$(realpath "$SCRIPT_DIR/../../../..")"
+    PROJECT_DIR="$(realpath "$SCRIPT_DIR/../../..")"
     if [ ! -d "$PROJECT_DIR/build/conf" ]; then
         echo "Error: Missing required directory: $PROJECT_DIR/build/conf" >&2
         exit 1
@@ -291,12 +291,12 @@ for multiconfig in "$PROJECT_SOURCES"/meta-mediaserver/conf/yocto_conf/multiconf
 done
 
 copy_if_not_exists \
-    "$PROJECT_SOURCES/meta-mediaserver/conf/docker/docker-compose.yml" \
+    "$PROJECT_SOURCES/meta-mediaserver/tools/docker/docker-compose.yml" \
     "$PROJECT_DIR/docker-compose.yml"
 
 
 copy_if_not_exists \
-    "$PROJECT_SOURCES/meta-mediaserver/conf/scripts/code-workspace" \
+    "$PROJECT_SOURCES/meta-mediaserver/tools/code-workspace" \
     "$PROJECT_DIR/mediaserver.code-workspace"
 
 

@@ -20,8 +20,8 @@ A /etc/mediaserver/mpd.conf
 A /etc/snapserver.conf
 A /etc/snapclient.conf
 
-# Jellyfin
-A /etc/Jellyfin/config/
+# Jellyfin - too much files, TODO
+# A /etc/jellyfin/config/
 
 # PulseAudio and audio device names
 A /etc/pulse/system.pa
@@ -60,5 +60,9 @@ A /etc/mediaserver/qnapi.ini
 A /etc/mediaserver/youtubedl.ini
 A /etc/mediaserver/screensaver.conf
 B /etc/php-fpm.conf
+
+
+# system
+A /etc/fstab
 
 

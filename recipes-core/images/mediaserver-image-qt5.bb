@@ -1,7 +1,6 @@
 include recipes-core/images/core-image-base.bb
 
 inherit mediaserver-image-common
-inherit mediaserver-image-hdmi
 
 # The profile flag is intentionally consumed only by this validation. The
 # actual HDMI_* values remain build/rpi-config settings. This check belongs to
@@ -23,9 +22,10 @@ do_rootfs[vardeps] += "MEDIASERVER_QT5_HDMI_PROFILE"
 SUMMARY = "Media Server with Qt5"
 LICENSE = "MIT"
 
+require recipes-core/images/mediaserver-image-base.inc
+
 IMAGE_INSTALL:append = " \
     configscript-qt5 \
-    jellyfin \
     qtbase \
     qtbase-mkspecs \
     qtbase-plugins \

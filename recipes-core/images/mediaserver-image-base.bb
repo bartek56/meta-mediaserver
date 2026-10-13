@@ -5,5 +5,7 @@ inherit mediaserver-image-common
 SUMMARY = "Media Server without GUI"
 LICENSE = "MIT"
 
-IMAGE_INSTALL:append = " configscript transmission-web"
+require recipes-core/images/mediaserver-image-base.inc
+
+IMAGE_INSTALL:append = " configscript"
 

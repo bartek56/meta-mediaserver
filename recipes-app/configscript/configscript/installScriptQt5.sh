@@ -56,6 +56,7 @@ set -e
 
 install_bootstrap_youtubedl
 install_bootstrap_apache
+configure_snapweb
 configure_vim
 configure_serial_gettys
 # systemctl enable mysqld.service

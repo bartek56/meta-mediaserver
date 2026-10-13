@@ -22,8 +22,8 @@ SYSTEMD_SERVICE:${PN} = "jellyfin.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 do_install() {
-    install -d ${D}${sysconfdir}/Jellyfin/config
-    install -d ${D}${sysconfdir}/Jellyfin/cache
+    install -d ${D}${sysconfdir}/jellyfin/config
+    install -d ${D}${sysconfdir}/jellyfin/cache
 
     install -d ${D}${sysconfdir}/mediaserver
     install -m 0644 ${S}/jellyfin.conf \
@@ -39,8 +39,8 @@ do_install() {
 CONFFILES:${PN} += "${sysconfdir}/mediaserver/jellyfin.conf"
 
 FILES:${PN} += " \
-    ${sysconfdir}/Jellyfin/config \
-    ${sysconfdir}/Jellyfin/cache \
+    ${sysconfdir}/jellyfin/config \
+    ${sysconfdir}/jellyfin/cache \
     ${sysconfdir}/mediaserver/jellyfin.conf \
     ${systemd_system_unitdir}/jellyfin.service \
 "

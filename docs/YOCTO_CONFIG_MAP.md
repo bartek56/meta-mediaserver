@@ -1,26 +1,34 @@
-# Mapa konfiguracji dostarczanej przez Yocto
+# Yocto configuration map
 
-Mapa została przygotowana z analizy warstwy `meta-mediaserver`. Ścieżki
-docelowe wynikają z `do_install()` i plików jednostek; wpisy z `/var` nie są
-traktowane jako konfiguracja do automatycznego kopiowania.
+This map summarizes configuration currently supplied by `meta-mediaserver`.
+The recipes and installed files are authoritative if this document and the
+tree diverge.
 
-| Obszar | Przepis / źródło | Typ | Migracja |
-|---|---|---|---|
-| MPD | `recipes-multimedia/mpd/mpd_%.bbappend`, `mpd.conf*` | konfiguracja zależna od maszyny | porównać model audio i wersję MPD; preferować recepturę |
-| PulseAudio | `recipes-multimedia/pulseaudio/pulseaudio_%.bbappend` | reguły ALSA, usługa, PA policy | przenieść tylko wspólne wejścia; wyjścia audio zweryfikować na Pi |
-| Snapcast | `recipes-multimedia/snapcast/snapcast_0.35.0.bb`, `snap*.conf` | konfiguracja usługi | porównać wersję i adres serwera; bez sekretów |
-| MiniDLNA | `recipes-multimedia/minidlna/minidlna_%.bbappend` | konfiguracja + katalogi mediów | receptura jest źródłem; media to dane użytkownika |
-| Samba | `recipes-network/samba/samba_%.bbappend`, `smb.conf` | konfiguracja usługi | nie kopiować udziałów/uprawnień bez przeglądu |
-| Transmission | `recipes-network/transmission/transmission_%.bbappend`, `settings.json` | konfiguracja + stan kolejki | ustawienia porównać z nową wersją; kolejka osobno |
-| Sieć | `recipes-network/wpa-supplicant/*`, `dhcpcd_%.bbappend` | sieć i systemd | klasa C; nie nadpisywać automatycznie |
-| SSH | obraz ma `ssh-server-openssh`; systemowy `/etc/ssh` | tożsamość i dostęp | kluczy hosta nie kopiować; klasa C/D |
-| Usługi systemd | większość `recipes-*/**/*.bb`, `systemd_system_unitdir` | jednostki | porównać z obrazem, nie migrować runtime |
-| MediaServer | `recipes-app/mediaserver*`, `configscript*`, `system-configurator*` | aplikacje i first boot | przenieść dane wejściowe, nie wygenerowany stan |
-| PHP/Apache/FTP | `recipes-network/apache2`, `php`, `vsftpd` | usługi sieciowe i dane dostępu | ręczna decyzja, sekrety wykluczone |
-| Dane aplikacji | `/var/lib`, `/var/cache`, `/var/log` | runtime/bazy/kolejki | osobny projekt migracji danych |
+| Area | Recipe or source | Type | Migration |
+| --- | --- | --- | --- |
+| MPD | `recipes-multimedia/mpd/mpd_%.bbappend`, `mpd.conf*` | Machine-dependent audio configuration | Compare the target audio model and MPD version; prefer the recipe. |
+| PulseAudio | `recipes-multimedia/pulseaudio/pulseaudio_%.bbappend` | ALSA rules, service, and PulseAudio policy | Keep common policy only; verify target outputs. |
+| Snapcast | `recipes-multimedia/snapcast/snapcast_0.35.0.bb`, `snap*.conf` | Client/server configuration | Compare version, server address, stream names, and sound card. |
+| Bluetooth switching | `recipes-multimedia/snapcast-bt/` | PulseAudio event watcher and Snapcast stream switcher | Revalidate Bluetooth source names and Snapcast group layout. |
+| YouTube downloader | `recipes-multimedia/youtubedl/` | Timer, playlist configuration, and downloader code | Recreate configuration; migrate downloaded media separately. |
+| YouTube DL Web | `recipes-network/youtubedl-web/` | Flask application, Apache proxy, and service | Review web access, sudo policy, and application data manually. |
+| Alarm | `recipes-app/alarm/` | MPD alarm script, timers, and settings | Recreate `alarm.ini`; runtime state in `/tmp` is not persistent. |
+| MiniDLNA | `recipes-multimedia/minidlna/` | Media server configuration and media roots | Recipe is the source; media is user data. |
+| Samba | `recipes-network/samba/` | File-sharing configuration | Review shares, accounts, and permissions. |
+| Transmission | `recipes-network/transmission/` | Service configuration and queue | Compare with the new version; migrate queue/data separately. |
+| Network | `wpa-supplicant`, `dhcpcd`, and machine configuration | Connectivity and systemd units | Manual review; do not overwrite target identity. |
+| SSH | Image features and target `/etc/ssh` | Access and host identity | Do not copy host keys automatically. |
+| Systemd units | Most `recipes-*/**/*.bb` | Installed service units | Compare with the image; do not migrate runtime state. |
+| MediaServer | `recipes-app/mediaserver*`, `configscript*`, `system-configurator*` | Applications and first-boot configuration | Migrate user input, not generated state. |
+| PHP/Apache/FTP | `recipes-network/apache2`, `php`, `vsftpd` | Network services and access data | Manual decision; secrets are excluded. |
+| Runtime data | `/var/lib`, `/var/cache`, `/var/log` | Databases, queues, downloads, and logs | Separate data migration. |
 
-Wspólne konfiguracje obrazu są składane w
-`classes/mediaserver-image-common.bbclass`; wariant Qt5/HDMI jest opisany w
-`classes/mediaserver-image-hdmi.bbclass` i fragmentach `conf/yocto_conf`.
-Ustawienia Raspberry Pi, HDMI i urządzeń nie powinny być kopiowane ze starego
-egzemplarza bez sprawdzenia `MACHINE` i sprzętu.
+Shared image policy is assembled in `classes/mediaserver-image-common.bbclass`.
+Package selection and common `IMAGE_INSTALL` settings are defined in
+`recipes-core/packagegroups/` and `recipes-core/images/mediaserver-image-base.inc`.
+The Qt5/HDMI variant is described by the files under `conf/yocto_conf/` and
+the `conf/machine/qt5-hdmi.conf` profile.
+
+Raspberry Pi, HDMI, display, and audio-device settings are machine-specific.
+They should not be copied from an old device without checking the selected
+`MACHINE`, BSP version, kernel overlays, and physical hardware.
