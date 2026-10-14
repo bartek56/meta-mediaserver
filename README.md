@@ -187,6 +187,44 @@ build/tmp/deploy/images/raspberrypi4-64/
 `rpi-sdimg` images use a 128 MiB boot partition, which is large enough
 for the Raspberry Pi kernel and overlays.
 
+### Mounting an image on Ubuntu
+
+The helper mounts the selected image read-only, including both its root and
+boot partitions. The default machine is `raspberrypi4-64`:
+
+```bash
+sudo ./tools/mount-image.sh mount mediaserver-image-base
+sudo ./tools/mount-image.sh unmount mediaserver-image-base
+```
+
+Podgląd ścieżek i operacji bez roota, loop device oraz montowania:
+
+```bash
+./tools/mount-image.sh mount --dry-run mediaserver-image-base
+```
+
+Domyślnie obraz jest montowany tylko do odczytu. Aby przygotować system,
+użyj jawnej opcji `--read-write`. Skrypt utworzy wtedy obok oryginału kopię z
+dopiskiem `-migrated` i zamontuje właśnie tę kopię:
+
+```bash
+sudo ./tools/mount-image.sh mount --read-write mediaserver-image-qt5
+```
+
+Oryginalny obraz pozostaje niezmodyfikowany, a kopia `-migrated.rpi-sdimg`
+jest zachowywana po wymontowaniu.
+
+For another supported machine, pass `--machine`, for example:
+
+```bash
+sudo ./tools/mount-image.sh mount --machine raspberrypi3-64 mediaserver-image-qt5
+```
+
+The root filesystem is mounted at `/mnt/mediaserver-image/<target>` and the
+boot partition at its `boot/` subdirectory. Mounting is read-only; unmounting
+checks the recorded loop device and both partition mount sources before
+detaching the loop device.
+
 ## Layer contents
 
 The layer integrates MediaServer, Quetzalcoatl, QNapi, File Browser,

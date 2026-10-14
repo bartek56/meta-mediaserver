@@ -78,6 +78,7 @@ D /lib/systemd/system/
 # copy all https certs
 A /etc/letsencrypt/accounts/
 A /etc/letsencrypt/live/
+A /etc/letsencrypt/archive/
 A /etc/letsencrypt/renewal/
 A /etc/letsencrypt/renewal-hooks/
 

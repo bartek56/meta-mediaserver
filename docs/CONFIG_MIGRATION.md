@@ -28,6 +28,11 @@ The source-side operation is read-only: the script uses `tar -T -` and streams
 the result over SSH. It does not use `sudo`, `su`, `scp`, `rsync`, package
 installation, service restarts, or write commands on the source.
 
+When `--target-root` points to a local mounted image, the script stays running
+as the invoking user but uses narrowly scoped `sudo` helpers for target
+inventory reads and for the local `--apply` phase. No `sudo` is used for the
+SSH source operations.
+
 ## Modes and example
 
 `--inventory`/`--report` create a snapshot, `--plan` creates a migration plan,
@@ -39,7 +44,7 @@ is backed up before replacement. The script does not perform a global rollback
 or restart services that were not active before migration.
 
 ```bash
-scripts/migrate-config.py --plan \
+python3 tools/migrate-config.py --plan \
   --source-host old-pi --source-user root \
   --target-host new-pi --target-user admin
 ```

@@ -7,6 +7,7 @@ import csv
 import difflib
 import hashlib
 import html
+import json
 import os
 import shlex
 import shutil
@@ -20,6 +21,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_MANIFEST = Path(__file__).with_name("migration-files.txt")
+VERSION_FILES = (
+    "/etc/mediaserver/build-info",
+    "/etc/mediaserver/build-layers",
+)
 MIGRATION_SERVICES = (
     "mpd", "snapserver", "snapclient", "minidlna", "pulseaudio",
     "transmission-daemon", "smbd", "jellyfin",
@@ -81,7 +86,7 @@ def classify(path: str, manifest: dict[str, str]) -> tuple[str, str, str]:
 def ssh_command(host: str, user: str, port: int, identity: str, command: str,
                 data: bytes | None = None, output_file: Path | None = None) -> bytes:
     destination = f"{user}@{host}" if user else host
-    args = ["ssh", "-o", "BatchMode=yes", "-o", "RequestTTY=no", "-o", "ClearAllForwardings=yes", "-p", str(port)]
+    args = ["ssh", "-o", "RequestTTY=no", "-o", "ClearAllForwardings=yes", "-p", str(port)]
     if identity:
         args += ["-i", identity]
     args += ["--", destination, command]
@@ -90,7 +95,12 @@ def ssh_command(host: str, user: str, port: int, identity: str, command: str,
         log(f"SSH stdin: {len(data)} bytes")
     started = time.monotonic()
     with tempfile.TemporaryFile() as error_stream:
-        process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=error_stream)
+        process = subprocess.Popen(
+            args,
+            stdin=subprocess.PIPE if data is not None else None,
+            stdout=subprocess.PIPE,
+            stderr=error_stream,
+        )
         if data is not None and process.stdin is not None:
             process.stdin.write(data)
             process.stdin.close()
@@ -125,14 +135,56 @@ def ssh_command(host: str, user: str, port: int, identity: str, command: str,
     return stdout
 
 
+def read_version(args: argparse.Namespace, side: str, version_file: str) -> bytes:
+    if side == "source":
+        host, user, port, identity, root = args.source_host, args.source_user, args.source_port, args.source_identity, args.source_root
+    else:
+        host, user, port, identity, root = args.target_host, args.target_user, args.target_port, args.target_identity, args.target_root
+    if host:
+        return ssh_command(host, user, port, identity, f"cat -- {shlex.quote(version_file)}")
+    path = root / version_file.lstrip("/")
+    if side == "target":
+        result = subprocess.run(["sudo", "cat", "--", str(path)], stdout=subprocess.PIPE,
+                                check=False)
+        if result.returncode:
+            raise OSError(f"sudo cat failed: {path}")
+        return result.stdout
+    return path.read_bytes()
+
+
+def save_versions(args: argparse.Namespace, report: Path) -> None:
+    records = []
+    for side in ("source", "target"):
+        for version_file in VERSION_FILES:
+            try:
+                data = read_version(args, side, version_file)
+            except (OSError, RuntimeError) as error:
+                fail(f"{side} has no valid {version_file}: {error}")
+            suffix = Path(version_file).name
+            path = report / f"{side}-{suffix}"
+            path.write_bytes(data)
+            identity = hashlib.sha256(data).hexdigest()
+            records.append((side, version_file, identity, path.name))
+            log(f"{side}: {version_file} saved ({identity})")
+    with (report / "version-comparison.tsv").open("w", newline="") as stream:
+        writer = csv.writer(stream, delimiter="\t", lineterminator="\n")
+        writer.writerow(("side", "path", "sha256", "snapshot"))
+        writer.writerows(records)
+
+
 def expanded_manifest(root: Path, manifest: list[tuple[str, str]]) -> list[tuple[str, str]]:
     expanded = []
     known = {path for path, _ in expanded}
     for path, cls in manifest:
         candidate = root / path.lstrip("/")
         if candidate.is_dir() and not candidate.is_symlink():
+            skip_hidden = path.rstrip("/") == "/home"
             for directory, directories, files in os.walk(candidate, followlinks=False):
-                directories[:] = [name for name in directories if not (Path(directory) / name).is_symlink()]
+                directories[:] = [name for name in directories
+                                  if not (Path(directory) / name).is_symlink()
+                                  and not (skip_hidden and name.startswith("."))]
+                if skip_hidden:
+                    files[:] = [name for name in files if not name.startswith(".")]
                 for name in files:
                     child = Path(directory) / name
                     relative = "/" + str(child.relative_to(root)).replace(os.sep, "/")
@@ -209,23 +261,48 @@ def inventory(root: Path, side: str, report: Path, manifest: list[tuple[str, str
             kind = "symbolic link" if stat.S_ISLNK(info.st_mode) else "regular file"
             cls, reason, decision = classify(relative, manifest_map)
             link_target = os.readlink(file_path) if stat.S_ISLNK(info.st_mode) else ""
+            try:
+                file_digest = digest(file_path)
+            except PermissionError as error:
+                if cls == "A":
+                    raise PermissionError(f"cannot read class A file {file_path}; run with access to the rootfs (for example sudo): {error}") from error
+                file_digest = "UNREADABLE"
+                log(f"{side}: cannot read {relative}; recorded as UNREADABLE because class is {cls}")
             record = {"path": relative, "type": kind, "mode": oct(info.st_mode & 0o7777)[2:],
                       "uid": str(info.st_uid), "gid": str(info.st_gid), "size": str(info.st_size),
-                      "sha256": digest(file_path), "link_target": link_target,
+                      "sha256": file_digest, "link_target": link_target,
                       "class": cls, "decision": f"{reason}; {decision}"}
             writer.writerow(record)
             records.append(record)
             if index % 100 == 0:
                 log(f"{side}: analyzed {index}/{len(files)} entries")
-            if kind == "regular file" and cls != "D":
-                target = report / side / "files" / relative.lstrip("/")
-                target.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(file_path, target)
-            elif kind == "symbolic link" and cls != "D":
-                target = report / side / "files" / relative.lstrip("/")
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.symlink_to(os.readlink(file_path))
     return records
+
+
+def create_analysis_archive(root: Path, records: list[dict[str, str]], report: Path, filename: str) -> Path:
+    archive_path = report / filename
+    with tarfile.open(archive_path, mode="w:gz") as archive:
+        for record in records:
+            if record["class"] != "A" or record["type"] not in {"regular file", "symbolic link"}:
+                continue
+            path = root / record["path"].lstrip("/")
+            if path.exists() or path.is_symlink():
+                archive.add(path, arcname=record["path"].lstrip("/"), recursive=False)
+    log(f"analysis archive created: {archive_path} ({archive_path.stat().st_size} bytes)")
+    return archive_path
+
+
+def create_migration_archive(report: Path, plan: list[dict[str, str]]) -> Path:
+    source_archive = report / "source-analysis.tar.gz"
+    archive_path = report / "source-migration.tar.gz"
+    planned = {item["path"].lstrip("/") for item in plan
+               if item["action"] in {"copy-after-backup", "copy-new-file", "copy-symlink"}}
+    with tarfile.open(source_archive, mode="r:*") as source, tarfile.open(archive_path, mode="w:gz") as output:
+        for member in source.getmembers():
+            if member.name in planned:
+                output.addfile(member, source.extractfile(member) if member.isfile() else None)
+    log(f"migration archive created: {archive_path} ({archive_path.stat().st_size} bytes, files={len(planned)})")
+    return archive_path
 
 
 def safe_extract(data: bytes | Path, destination: Path) -> None:
@@ -267,16 +344,28 @@ def remote_inventory(args: argparse.Namespace, side: str, report: Path, manifest
     command_parts = ["set --"]
     for path, _ in manifest:
         quoted = shlex.quote(path)
-        command_parts.append(
-            f"if [ -e {quoted} ] || [ -L {quoted} ]; then "
-            f"set -- \"$@\" {quoted}; "
-            f"if [ -L {quoted} ]; then link_target=$(readlink -f {quoted} 2>/dev/null || true); "
-            f"case \"$link_target\" in /*) if [ -f \"$link_target\" ]; then set -- \"$@\" \"$link_target\"; fi;; esac; "
-            f"fi; fi"
-        )
-        if path.endswith("/"):
+        if path.rstrip("/") == "/home":
             command_parts.append(
-                f"for link in $(find {quoted} -type l 2>/dev/null); do "
+                "for entry in $(find /home -type f ! -path '*/.*' 2>/dev/null); do "
+                "set -- \"$@\" \"$entry\"; done; "
+                "for entry in $(find /home -type l ! -path '*/.*' 2>/dev/null); do "
+                "set -- \"$@\" \"$entry\"; "
+                "link_target=$(readlink -f \"$entry\" 2>/dev/null || true); "
+                "case \"$link_target\" in /*) case \"$link_target\" in */.*) ;; *) "
+                "[ -f \"$link_target\" ] && set -- \"$@\" \"$link_target\" ;; esac;; esac; done"
+            )
+        else:
+            command_parts.append(
+                f"if [ -e {quoted} ] || [ -L {quoted} ]; then "
+                f"set -- \"$@\" {quoted}; "
+                f"if [ -L {quoted} ]; then link_target=$(readlink -f {quoted} 2>/dev/null || true); "
+                f"case \"$link_target\" in /*) if [ -f \"$link_target\" ]; then set -- \"$@\" \"$link_target\"; fi;; esac; "
+                f"fi; fi"
+            )
+        if path.endswith("/"):
+            find_filter = " ! -path '*/.*'" if path.rstrip("/") == "/home" else ""
+            command_parts.append(
+                f"for link in $(find {quoted} -type l{find_filter} 2>/dev/null); do "
                 f"resolved=$(readlink -f \"$link\" 2>/dev/null || true); "
                 f"[ -f \"$resolved\" ] && set -- \"$@\" \"$link\" \"$resolved\"; done"
             )
@@ -285,19 +374,67 @@ def remote_inventory(args: argparse.Namespace, side: str, report: Path, manifest
     # can otherwise transfer hundreds of megabytes over SSH.
     command_parts.append("exec tar -C / -czf - \"$@\"")
     command = "; ".join(command_parts)
-    root = report / side / "root"
-    root.mkdir(parents=True)
     with tempfile.NamedTemporaryFile(prefix=f"migrate-{side}-", suffix=".tar.gz", delete=False) as temporary:
         archive_path = Path(temporary.name)
+    temporary_root = tempfile.TemporaryDirectory(prefix=f"migrate-{side}-root-")
+    root = Path(temporary_root.name)
     try:
         ssh_command(host, user, port, identity, command, output_file=archive_path)
         safe_extract(archive_path, root)
         records = inventory(root, side, report, manifest)
+        create_analysis_archive(root, records, report, f"{side}-analysis.tar.gz")
     finally:
         archive_path.unlink(missing_ok=True)
-    shutil.rmtree(root)
+        temporary_root.cleanup()
     log(f"{side}: removed temporary extraction directory {root}")
     return records
+
+
+def collect_inventory(args: argparse.Namespace, side: str, report: Path,
+                      manifest: list[tuple[str, str]]) -> list[dict[str, str]]:
+    host = args.source_host if side == "source" else args.target_host
+    root = args.source_root if side == "source" else args.target_root
+    if host:
+        log(f"{side}: inventory source SSH {host}")
+        return remote_inventory(args, side, report, manifest)
+    log(f"{side}: inventory source local rootfs {root}")
+    if side == "target":
+        return local_target_inventory_with_sudo(args, report, manifest)
+    return inventory(root, side, report, manifest)
+
+
+def local_target_inventory_with_sudo(args: argparse.Namespace, report: Path,
+                                     manifest: list[tuple[str, str]]) -> list[dict[str, str]]:
+    """Read a local target through a narrowly scoped sudo helper."""
+    command = [
+        "sudo", "--", sys.executable, str(Path(__file__).resolve()),
+        "--target-sudo-inventory-helper",
+        "--target-root", str(args.target_root.resolve()),
+        "--manifest", str(args.manifest.resolve()),
+    ]
+    result = subprocess.run(command, stdout=subprocess.PIPE, check=False)
+    if result.returncode:
+        raise RuntimeError("sudo target inventory helper failed")
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"invalid target inventory helper output: {error}") from error
+
+
+def apply_target_with_sudo(args: argparse.Namespace, report: Path) -> None:
+    """Run only the local target apply phase through sudo."""
+    command = [
+        "sudo", "--", sys.executable, str(Path(__file__).resolve()),
+        "--target-sudo-apply-helper",
+        "--target-root", str(args.target_root.resolve()),
+        "--manifest", str(args.manifest.resolve()),
+        "--plan-file", str(args.plan_file.resolve()),
+        "--report-dir", str(report.resolve()),
+        "--yes",
+    ]
+    result = subprocess.run(command, check=False)
+    if result.returncode:
+        raise RuntimeError("sudo target apply helper failed")
 
 
 def write_comparison(source: list[dict[str, str]], target: list[dict[str, str]], report: Path) -> None:
@@ -370,7 +507,7 @@ def write_directory_comparison(source: list[dict[str, str]], target: list[dict[s
 
 
 def write_html_report(report: Path) -> None:
-    tables = ("migration-plan.tsv", "directory-comparison.tsv", "directory-files.tsv", "comparison.tsv")
+    tables = ("version-comparison.tsv", "migration-plan.tsv", "directory-comparison.tsv", "directory-files.tsv", "comparison.tsv")
     sections = []
     for filename in tables:
         path = report / filename
@@ -429,17 +566,34 @@ def make_plan(source: list[dict[str, str]], target: list[dict[str, str]], report
     return plan
 
 
-def make_diffs(plan: list[dict[str, str]], report: Path) -> None:
-    for item in plan:
-        if item["action"] not in {"copy-after-backup", "copy-new-file", "copy-symlink"}:
-            continue
-        path = item["path"]
-        source = report / "source" / "files" / path.lstrip("/")
-        target = report / "target" / "files" / path.lstrip("/")
-        if source.is_file() and target.is_file():
-            lines = difflib.unified_diff(source.read_text(errors="replace").splitlines(True), target.read_text(errors="replace").splitlines(True), fromfile=f"source:{path}", tofile=f"target:{path}")
-            output = report / "diffs" / f"{path.lstrip('/')}.diff"
-            output.parent.mkdir(parents=True, exist_ok=True); output.write_text("".join(lines))
+def make_diffs(plan: list[dict[str, str]], report: Path, manifest: list[tuple[str, str]]) -> None:
+    explicit = {path for path, _ in manifest if not path.endswith("/")}
+    source_archive = report / "source-analysis.tar.gz"
+    target_archive = report / "target-analysis.tar.gz"
+    if not source_archive.exists() or not target_archive.exists():
+        return
+    source_root = Path(tempfile.mkdtemp(prefix="migrate-diff-source-"))
+    target_root = Path(tempfile.mkdtemp(prefix="migrate-diff-target-"))
+    try:
+        safe_extract(source_archive, source_root)
+        safe_extract(target_archive, target_root)
+        for item in plan:
+            if item["action"] not in {"copy-after-backup", "copy-new-file"} or item["path"] not in explicit:
+                continue
+            path = item["path"]
+            source = source_root / path.lstrip("/")
+            target = target_root / path.lstrip("/")
+            if source.is_file() and target.is_file():
+                # Show the operation in migration direction: current target
+                # first, desired source content second.  Therefore '+' means
+                # content that will be present on target after migration.
+                lines = difflib.unified_diff(target.read_text(errors="replace").splitlines(True), source.read_text(errors="replace").splitlines(True), fromfile=f"target:{path}", tofile=f"source:{path}")
+                output = report / "diffs" / f"{path.lstrip('/')}.diff"
+                output.parent.mkdir(parents=True, exist_ok=True)
+                output.write_text("".join(lines))
+    finally:
+        shutil.rmtree(source_root, ignore_errors=True)
+        shutil.rmtree(target_root, ignore_errors=True)
 
 
 def remote_hash(args: argparse.Namespace, target: str) -> str | None:
@@ -501,16 +655,20 @@ def apply_plan_files(args: argparse.Namespace, report: Path) -> None:
     if Path(args.plan_file).resolve() != (report / "migration-plan.tsv").resolve():
         fail("plan file must belong to the selected report directory")
     backed_up: dict[str, str] = {}
-    with (Path(args.plan_file)).open(newline="") as stream:
+    temporary_source = tempfile.TemporaryDirectory(prefix="migrate-apply-source-")
+    source_root = Path(temporary_source.name)
+    safe_extract(report / "source-migration.tar.gz", source_root)
+    try:
+      with (Path(args.plan_file)).open(newline="") as stream:
         for item in csv.DictReader(stream, delimiter="\t"):
-            if item["action"] not in {"copy-after-backup", "copy-new-file"}:
+            if item["action"] not in {"copy-after-backup", "copy-new-file", "copy-symlink"}:
                 continue
             path = item["path"]
             if not safe_path(path) or item["class"] != "A":
                 fail(f"unsafe plan entry: {path}")
             if not item.get("backup_scope"):
                 fail(f"plan has no backup_scope: {path}; regenerate the plan")
-            source = report / "source" / "files" / path.lstrip("/")
+            source = source_root / path.lstrip("/")
             is_symlink = item["action"] == "copy-symlink"
             data = None if is_symlink else source.read_bytes()
             checksum = digest(source) if is_symlink else hashlib.sha256(data).hexdigest()
@@ -559,7 +717,9 @@ def apply_plan_files(args: argparse.Namespace, report: Path) -> None:
                 fail(f"remote write verification failed: {path}")
             result_writer.writerow((path, "applied", item["target_sha256"], actual_before, actual_after, backed_up[scope])); result_stream.flush()
             log(f"apply {path}: applied, verified sha256={actual_after}, backup-scope={scope}")
-    result_stream.close()
+      result_stream.close()
+    finally:
+      temporary_source.cleanup()
 
 
 def service_status(args: argparse.Namespace, service: str) -> str:
@@ -569,8 +729,21 @@ def service_status(args: argparse.Namespace, service: str) -> str:
 
 def apply_plan(args: argparse.Namespace, report: Path) -> None:
     if not args.target_host:
+        for version_file in VERSION_FILES:
+            filename = f"target-{Path(version_file).name}"
+            expected = (report / filename).read_bytes()
+            actual = read_version(args, "target", version_file)
+            if actual != expected:
+                fail(f"target system version changed since report generation: {version_file}")
         apply_plan_files(args, report)
         return
+
+    for version_file in VERSION_FILES:
+        filename = f"target-{Path(version_file).name}"
+        expected = (report / filename).read_bytes()
+        actual = read_version(args, "target", version_file)
+        if actual != expected:
+            fail(f"target system version changed since report generation: {version_file}")
 
     active = []
     for service in MIGRATION_SERVICES:
@@ -602,42 +775,75 @@ def main() -> int:
     for mode in ("report", "plan", "diff", "dry-run", "apply"):
         parser.add_argument(f"--{mode}", action="store_const", const=mode, dest="mode")
     for prefix in ("source", "target"):
-        parser.add_argument(f"--{prefix}-host"); parser.add_argument(f"--{prefix}-user", default="")
+        parser.add_argument(f"--{prefix}-host", help=f"{prefix} SSH host; omit to use --{prefix}-root")
+        parser.add_argument(f"--{prefix}-user", default="")
         parser.add_argument(f"--{prefix}-port", type=int, default=22); parser.add_argument(f"--{prefix}-identity", default="")
-        parser.add_argument(f"--{prefix}-root", type=Path, default=Path("/"))
+        parser.add_argument(f"--{prefix}-root", type=Path, default=Path("/"),
+                            help=f"{prefix} unpacked rootfs directory when --{prefix}-host is omitted")
     parser.add_argument("--source-read-only-verified", action="store_true")
+    parser.add_argument("--merge-home", action="store_true",
+                        help="merge all of /home from source into target")
     parser.add_argument("--report-dir", type=Path)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--plan-file", type=Path)
     parser.add_argument("--yes", action="store_true")
+    parser.add_argument("--target-sudo-inventory-helper", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--target-sudo-apply-helper", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verbose", action="store_true", help="show detailed progress (default)")
     parser.add_argument("--quiet", action="store_true", help="only show errors and final report")
     args = parser.parse_args()
     VERBOSE = not args.quiet
-    if bool(args.source_host) != bool(args.target_host): fail("source and target must both use SSH, or both use local roots for tests")
+    if args.target_sudo_inventory_helper:
+        manifest = read_manifest(args.manifest)
+        with tempfile.TemporaryDirectory(prefix="migrate-target-inventory-") as temporary:
+            records = inventory(args.target_root, "target", Path(temporary), manifest)
+        json.dump(records, sys.stdout)
+        return 0
+    if args.target_sudo_apply_helper:
+        if not args.plan_file or not args.yes:
+            fail("target apply helper requires --plan-file and --yes")
+        report = args.report_dir or args.plan_file.parent
+        apply_plan_files(args, report)
+        return 0
     if args.mode == "apply" and (not args.yes or not args.plan_file): fail("--apply requires --yes and --plan-file")
     report = args.plan_file.parent if args.mode == "apply" else (args.report_dir or Path("reports/config-migration") / datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S"))
     report.mkdir(parents=True, exist_ok=True); (report / "diffs").mkdir(exist_ok=True)
     manifest = read_manifest(args.manifest)
+    if args.merge_home:
+        if not any(path.rstrip("/") == "/home" for path, _ in manifest):
+            manifest.append(("/home/", "A"))
+        log("--merge-home enabled: adding the complete /home/ tree to the migration scope")
     log(f"migration manifest: {args.manifest} ({len(manifest)} explicit files)")
     log(f"report directory: {report}")
     log("mode: " + args.mode)
     if args.mode == "apply":
-        apply_plan(args, report)
+        if args.target_host:
+            apply_plan(args, report)
+        else:
+            apply_target_with_sudo(args, report)
         print(f"report: {report}\nresults: {report / 'apply-results.tsv'}")
         return 0
+    save_versions(args, report)
     if args.source_host:
         log(f"source: SSH {args.source_user}@{args.source_host}:{args.source_port}")
-        log(f"target: SSH {args.target_user}@{args.target_host}:{args.target_port}")
-        source = remote_inventory(args, "source", report, manifest); target = remote_inventory(args, "target", report, manifest)
     else:
-        log(f"source: local {args.source_root}")
-        log(f"target: local {args.target_root}")
-        source = inventory(args.source_root, "source", report, manifest); target = inventory(args.target_root, "target", report, manifest)
+        log(f"source: local rootfs {args.source_root}")
+    if args.target_host:
+        log(f"target: SSH {args.target_user}@{args.target_host}:{args.target_port}")
+    else:
+        log(f"target: local rootfs {args.target_root}")
+    source = collect_inventory(args, "source", report, manifest)
+    if not args.source_host:
+        create_analysis_archive(args.source_root, source, report, "source-analysis.tar.gz")
+    target = collect_inventory(args, "target", report, manifest)
+    if not args.target_host:
+        create_analysis_archive(args.target_root, target, report, "target-analysis.tar.gz")
     log(f"inventory complete: source={len(source)} target={len(target)}")
     write_comparison(source, target, report)
     write_directory_comparison(source, target, report, manifest)
-    plan = make_plan(source, target, report, manifest); make_diffs(plan, report)
+    plan = make_plan(source, target, report, manifest)
+    create_migration_archive(report, plan)
+    make_diffs(plan, report, manifest)
     write_html_report(report)
     log(f"comparison complete: {len(plan)} plan entries")
     (report / "migration-report.md").write_text(f"# Configuration migration report\n\nGenerated: {datetime.now(timezone.utc).isoformat()}\n\nSecrets and runtime data are excluded.\n")
