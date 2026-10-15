@@ -35,12 +35,4 @@ configure_volume()
     amixer sset "Master" 100%
 }
 
-configure_snapweb()
-{
-    cd /tmp
-    wget https://github.com/snapcast/snapweb/releases/download/v0.9.3/snapweb.zip
-    rm /usr/share/snapserver/snapweb/index.html
-    unzip snapweb.zip -d /usr/share/snapserver/snapweb/
-}
-
 

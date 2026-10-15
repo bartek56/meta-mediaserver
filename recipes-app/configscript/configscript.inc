@@ -10,6 +10,8 @@ SRC_URI = " \
     file://installCommon.sh \
 "
 
+S = "${UNPACKDIR}"
+
 do_install() {
     install -d ${D}/opt
     install -m 0755 ${UNPACKDIR}/${INSTALL_SCRIPT_NAME} ${D}/opt/installScript.sh

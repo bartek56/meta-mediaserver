@@ -2,7 +2,7 @@ SUMMARY = "MediaServer Web"
 SECTION = "network"
 LICENSE = "CLOSED"
 DEPENDS = "apache2"
-RDEPENDS:${PN} += " bash youtubedl-web alarm"
+RDEPENDS:${PN} += " bash youtubedl-web alarm web-assets"
 
 
 

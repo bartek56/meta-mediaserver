@@ -3,20 +3,17 @@ DESCRIPTION = "Mobile-friendly web client for Snapcast"
 HOMEPAGE = "https://github.com/snapcast/snapweb"
 SECTION = "multimedia"
 LICENSE = "GPL-3.0-only"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7702f203b58979ebbc31bfaeb44f219c"
+LIC_FILES_CHKSUM = "file://${COMMON_LICENSE_DIR}/GPL-3.0-only;md5=c79ff39f19dfec6d293b95dea7b07891"
 
-SRC_URI = "git://github.com/snapcast/snapweb.git;branch=develop;protocol=https"
-SRCREV = "9acee022e41da4974ad5f001e61f185dbad76917"
+SRC_URI = "https://github.com/snapcast/snapweb/releases/download/v${PV}/snapweb.zip"
+SRC_URI[sha256sum] = "cc258df98b8c474ea19048bc84c0c2e2c5fbc3b0856aef03a838f3a4489fa4c7"
 
-# DEPENDS += "nodejs-native"
-do_compile() {
-
-}
+S = "${UNPACKDIR}"
 
 do_install() {
     install -d ${D}${datadir}/snapserver/snapweb
     cp --no-preserve=ownership --recursive \
-        ${S}/. \
+        ${UNPACKDIR}/. \
         ${D}${datadir}/snapserver/snapweb/
 }
 

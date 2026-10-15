@@ -51,6 +51,8 @@ do_install:append() {
     install -m 0644 ${UNPACKDIR}/${SNAPCLIENT_CONFIG} ${D}${sysconfdir}/snapclient.conf
     # Remove unneeded icons
     rm -rf ${D}${datadir}/pixmaps
+    # Snapweb is provided by the separate snapweb recipe.
+    rm -rf ${D}${datadir}/snapserver/snapweb
 }
 
 SYSTEMD_PACKAGES = "${PN}-client ${PN}-server"

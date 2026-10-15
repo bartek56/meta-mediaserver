@@ -9,6 +9,7 @@ RDEPENDS:${PN} = " \
     snapcast-client \
     snapcast-server \
     snapcast-bt \
+    snapweb \
     minidlna \
     mpd \
     mpc \
