@@ -51,6 +51,7 @@ A /etc/hosts
 A /etc/resolv.conf
 
 # MediaServer applications
+A /etc/mediaserver/jellyfin.conf
 A /etc/mediaserver/alarm.ini
 A /lib/systemd/system/alarm.timer
 A /etc/mediaserver/qnapi.ini
