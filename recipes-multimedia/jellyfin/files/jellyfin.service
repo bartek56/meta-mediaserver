@@ -8,7 +8,7 @@ Wants=network-online.target
 Type=simple
 EnvironmentFile=/etc/mediaserver/jellyfin.conf
 ExecStartPre=-@DOCKER@ rm -f jellyfin
-ExecStart=@DOCKER@ run --rm --name jellyfin --volume /etc/jellyfin/config:/config --volume /etc/jellyfin/cache:/cache --volume ${JELLYFIN_MEDIA_HOME}:/home_media --volume ${JELLYFIN_MEDIA_EXTERNAL}:/external_media --net=host @JELLYFIN_IMAGE@
+ExecStart=@DOCKER@ run --rm --name jellyfin --volume /etc/jellyfin/config:/config --volume /etc/jellyfin/cache:/cache --volume ${JELLYFIN_MEDIA_HOME}:/home_media --volume ${JELLYFIN_EXTERNAL_DISK}:/disk --net=host @JELLYFIN_IMAGE@
 ExecStop=@DOCKER@ stop --time=10 jellyfin
 Restart=on-failure
 RestartSec=5s
