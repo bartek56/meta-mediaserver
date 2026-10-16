@@ -197,22 +197,34 @@ sudo ./tools/mount-image.sh mount mediaserver-image-base
 sudo ./tools/mount-image.sh unmount mediaserver-image-base
 ```
 
-Podgląd ścieżek i operacji bez roota, loop device oraz montowania:
+Preview paths and operations without root privileges, a loop device, or
+mounting:
 
 ```bash
 ./tools/mount-image.sh mount --dry-run mediaserver-image-base
 ```
 
-Domyślnie obraz jest montowany tylko do odczytu. Aby przygotować system,
-użyj jawnej opcji `--read-write`. Skrypt utworzy wtedy obok oryginału kopię z
-dopiskiem `-migrated` i zamontuje właśnie tę kopię:
+By default, the image is mounted read-only. To prepare the system, use the
+explicit `--read-write` option. The script then creates a copy next to the
+original with the `-migrated` suffix and mounts that copy:
 
 ```bash
 sudo ./tools/mount-image.sh mount --read-write mediaserver-image-qt5
 ```
 
-Oryginalny obraz pozostaje niezmodyfikowany, a kopia `-migrated.rpi-sdimg`
-jest zachowywana po wymontowaniu.
+To increase the rootfs in the copy by a selected number of GB at the same
+time, add `--increase-rootfs-gb N`. This option automatically enables
+read-write mode, for example:
+
+```bash
+sudo ./tools/mount-image.sh mount --increase-rootfs-gb 4 mediaserver-image-qt5
+```
+
+In this example, the `-migrated.rpi-sdimg` copy will have a rootfs partition
+and filesystem that are 4 GB larger.
+
+The original image remains unchanged, and the `-migrated.rpi-sdimg` copy is
+preserved after unmounting.
 
 For another supported machine, pass `--machine`, for example:
 

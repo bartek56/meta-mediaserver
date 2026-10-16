@@ -1,7 +1,10 @@
 # Format: CLASS /absolute/path
 #
 # Classes:
-# A - directory/file may be migrated after comparison and backup.
+# A - directory/file may be migrated after comparison.
+# A! - opaque directory: do not analyze files inside; package the complete
+#      directory as one tar.gz, including hidden files, and replace the target
+#      directory during --apply.
 #     For a directory, the migration unit is the whole tar.gz archive.
 # B - directory/file is validated and reported, but never copied automatically.
 # C - directory/file is validated and reported, but never copied automatically;
@@ -10,8 +13,9 @@
 #     directory-files.tsv report; never copy. For a file, report only.
 #
 # Only paths listed below are read from either system.
-# To migrate a complete directory, add its path with a trailing slash. Its
-# regular files are then added individually to the report and migration plan.
+# To migrate a complete directory with normal per-file analysis, add its path
+# with a trailing slash. For a ready-made opaque package without analyzing its
+# contents, use A! instead.
 
 # MPD and Snapcast
 A /etc/mpd.conf
@@ -83,6 +87,9 @@ A /etc/letsencrypt/archive/
 A /etc/letsencrypt/renewal/
 A /etc/letsencrypt/renewal-hooks/
 
-# Jellyfin - too much files, TODO
-# D /etc/jellyfin/config/
+A /home/
+
+# Jellyfin configuration is intentionally opaque: all files, including hidden
+# files, are copied as one directory package without individual analysis.
+A! /etc/jellyfin/config/
 

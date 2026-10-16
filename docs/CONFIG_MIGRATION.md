@@ -7,24 +7,28 @@ changes.
 
 ## What the migration script does
 
-`scripts/migrate-config.py` runs on an administrative host. By default it only
+`tools/migration/migrate-config.py` runs on an administrative host. By default it only
 reads the source and target systems and creates a local report. It does not
 copy SSH host keys, secrets, network identity, application data, caches, or
 runtime state.
 
-The file manifest in `scripts/migration-files.txt` is the only source of paths
+The file manifest in `tools/migration/migration-files.txt` is the only source of paths
 sent over SSH. Each entry has an explicit class and path:
 
 ```text
 A /path/to/file
+A! /path/to/opaque-directory/
 ```
 
-The script does not add directories recursively unless the manifest entry ends
-with `/`. Classes `B`, `C`, and `D` are reported or require manual review. A
-symbolic link is resolved for inventory and planning; the link itself is not
-copied as file content.
+An ordinary directory entry ending with `/` is expanded and its files are
+listed individually. `A!` is different: the directory is not inspected
+file-by-file. It is stored as one uncompressed tar package, including hidden files,
+symlinks and metadata, and applied as one directory replacement. Classes `B`,
+`C`, and `D` are reported or require manual review. There is no `--merge-home`
+shortcut; add `/home/` explicitly to the manifest when it is needed.
 
-The source-side operation is read-only: the script uses `tar -T -` and streams
+The source-side operation is read-only: the script uses an explicit tar file
+list and streams
 the result over SSH. It does not use `sudo`, `su`, `scp`, `rsync`, package
 installation, service restarts, or write commands on the source.
 
@@ -39,17 +43,23 @@ SSH source operations.
 `--diff` prepares a comparison report, `--dry-run` simulates the plan, and
 `--apply` requires both `--plan-file` and `--yes`.
 
-Only class A candidates can be applied automatically. An existing target file
-is backed up before replacement. The script does not perform a global rollback
+Only class A candidates and `A!` directory packages can be applied
+automatically. The target is checked against the saved plan before any write;
+the report does not create a backup directory because the target is a
+controlled image artifact. The script does not perform a global rollback
 or restart services that were not active before migration.
 
 ```bash
-python3 tools/migrate-config.py --plan \
+python3 tools/migration/migrate-config.py --plan \
   --source-host old-pi --source-user root \
   --target-host new-pi --target-user admin
 ```
 
-Reports are written to `reports/config-migration/YYYY-MM-DD_HH-MM-SS/`.
+By default reports are written beside the script, to
+`tools/migration/reports/YYYY-MM-DD_HH-MM-SS/`, so the
+location does not depend on the current working directory. Use
+`--report-dir /path/to/report` to select a specific report directory. During
+`--apply`, use `--plan-file` from the previously generated report.
 Before applying a plan, review `comparison.tsv`, `migration-plan.tsv`, and the
 diffs, then verify that the target has not changed since inventory collection.
 
@@ -101,7 +111,7 @@ SSH. It stops only services that are active, applies the approved files, and
 starts only those services that were active before the migration. SSH and
 network services are not stopped.
 
-An existing target file is copied to a backup before replacement. Restore only
-the specific file needed after checking the backup, then validate the affected
-service manually. There is no automatic rollback of application data or
-runtime directories.
+The plan contains the exact source and target versions used for analysis.
+`--apply --yes` refuses to run if either version or any planned target entry
+changed. There is no automatic rollback of application data or runtime
+directories.

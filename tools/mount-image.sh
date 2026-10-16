@@ -15,7 +15,7 @@ readonly STATE_BASE="/run/mediaserver-image-mount"
 usage() {
     cat <<'EOF'
 Usage:
-  ./tools/mount-image.sh mount [--dry-run] [--read-write] [--machine MACHINE] IMAGE_TARGET
+  ./tools/mount-image.sh mount [--dry-run] [--read-write] [--increase-rootfs-gb N] [--machine MACHINE] IMAGE_TARGET
   sudo ./tools/mount-image.sh mount [--machine MACHINE] IMAGE_TARGET
   sudo ./tools/mount-image.sh unmount IMAGE_TARGET
 
@@ -37,7 +37,9 @@ that was used for mounting when unmounting.
 root, an image, or a deploy directory.
 
 With --read-write, a separate IMAGE-migrated.rpi-sdimg copy is created and
-mounted. The original image is never modified.
+mounted. The original image is never modified. Add
+--increase-rootfs-gb N to enlarge the migrated image and its root filesystem
+by N GB.
 EOF
 }
 
@@ -113,6 +115,9 @@ dry_run_mount() {
     else
         printf 'Mount mode:          read-only\n'
     fi
+    if (( ROOTFS_INCREASE_GB > 0 )); then
+        printf 'Rootfs increase:     %d GB\n' "$ROOTFS_INCREASE_GB"
+    fi
     printf 'Image filename:      %s\n' "$image_name"
     printf 'Deploy directory:    %s\n' "$deploy_dir"
 
@@ -150,6 +155,9 @@ dry_run_mount() {
     printf '\nPlanned operations:\n'
     if (( READ_WRITE )); then
         printf '  losetup --find --show --partscan IMAGE\n'
+        if (( ROOTFS_INCREASE_GB > 0 )); then
+            printf '  enlarge IMAGE and partition 2 root filesystem by %d GB\n' "$ROOTFS_INCREASE_GB"
+        fi
         printf '  mount -o rw,nosuid,nodev LOOPp2 %s\n' "$mount_dir"
         printf '  mount -o rw,nosuid,nodev,noexec LOOPp1 %s/boot\n' "$mount_dir"
     else
@@ -164,7 +172,8 @@ mount_image() {
     local target=$1
     local state_dir="$STATE_BASE/$target"
     local mount_dir="$MOUNT_BASE/$target"
-    local image original_image loop p1 p2 fstype migrated_image
+    local image original_image loop p1 p2 fstype migrated_image rootfs_end_sector
+    local rootfs_increase_sectors
     local created_copy=0
 
     original_image=$(image_path "$target")
@@ -198,6 +207,17 @@ mount_image() {
     if (( READ_WRITE )); then
         created_copy=1
         cp --reflink=auto --sparse=always -- "$original_image" "$image"
+        if (( ROOTFS_INCREASE_GB > 0 )); then
+            echo "Increasing rootfs partition and filesystem by ${ROOTFS_INCREASE_GB} GB..."
+            truncate -s "+${ROOTFS_INCREASE_GB}G" -- "$image"
+            rootfs_end_sector=$(parted -sm "$image" unit s print |
+                awk -F: '$1 == 2 { gsub(/s/, "", $3); print $3 }')
+            [[ "$rootfs_end_sector" =~ ^[0-9]+$ ]] ||
+                die "Cannot determine rootfs partition end in: $image"
+            rootfs_increase_sectors=$((ROOTFS_INCREASE_GB * 1000000000 / 512))
+            parted -s -- "$image" unit s resizepart 2 \
+                "$((rootfs_end_sector + rootfs_increase_sectors))s"
+        fi
         sync
         loop=$(losetup --find --show --partscan -- "$image") ||
             die "Cannot create a read-write loop device for: $image"
@@ -217,6 +237,16 @@ mount_image() {
     fstype=$(lsblk -dnro FSTYPE "$p2" | xargs)
     [[ "$fstype" == ext2 || "$fstype" == ext3 || "$fstype" == ext4 ]] ||
         die "Root filesystem must be ext2/ext3/ext4, found: ${fstype:-unknown}"
+
+    if (( READ_WRITE && ROOTFS_INCREASE_GB > 0 )); then
+        set +e
+        e2fsck -f -p -- "$p2"
+        local fsck_status=$?
+        set -e
+        (( fsck_status == 0 || fsck_status == 1 )) ||
+            die "Filesystem check failed (e2fsck exit code $fsck_status)."
+        resize2fs -- "$p2" || die "Cannot resize root filesystem: $p2"
+    fi
 
     mkdir "$mount_dir/boot"
     if (( READ_WRITE )); then
@@ -315,12 +345,16 @@ require_command find
 require_command findmnt
 require_command awk
 require_command cut
+require_command e2fsck
 require_command losetup
 require_command lsblk
 require_command mount
 require_command mountpoint
+require_command parted
 require_command realpath
+require_command resize2fs
 require_command sync
+require_command truncate
 require_command umount
 require_command udevadm
 require_command xargs
@@ -331,6 +365,7 @@ shift
 MACHINE=${MACHINE:-$DEFAULT_MACHINE}
 DRY_RUN=0
 READ_WRITE=0
+ROOTFS_INCREASE_GB=0
 
 case "$ACTION" in
     mount)
@@ -343,6 +378,14 @@ case "$ACTION" in
                 --read-write|--rw)
                     READ_WRITE=1
                     shift
+                    ;;
+                --increase-rootfs-gb)
+                    [[ $# -ge 3 ]] || { usage; exit 1; }
+                    [[ $2 =~ ^[1-9][0-9]*$ ]] ||
+                        die "Invalid rootfs increase in GB: $2"
+                    ROOTFS_INCREASE_GB=$2
+                    READ_WRITE=1
+                    shift 2
                     ;;
                 --machine)
                     [[ $# -ge 3 ]] || { usage; exit 1; }
