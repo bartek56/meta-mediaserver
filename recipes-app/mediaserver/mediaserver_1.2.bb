@@ -2,7 +2,7 @@ SUMMARY = "MediaServer Qt6 GUI app"
 SECTION = "apps"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtdeclarative-native"
-RDEPENDS:${PN} = "bash alarm ntfs-3g qtbase qtdeclarative qtvirtualkeyboard"
+RDEPENDS:${PN} = "bash alarm ntfs-3g qtbase qtdeclarative qtdeclarative-qmlplugins qtvirtualkeyboard"
 
 SRCREV = "${AUTOREV}"
 

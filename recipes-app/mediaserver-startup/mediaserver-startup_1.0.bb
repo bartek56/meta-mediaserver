@@ -2,7 +2,7 @@ SUMMARY = "MediaServer Qt6 startup GUI app"
 SECTION = "apps"
 LICENSE = "CLOSED"
 DEPENDS += "qtbase qtdeclarative qtdeclarative-native"
-RDEPENDS:${PN} = "qtbase qtdeclarative qtvirtualkeyboard"
+RDEPENDS:${PN} = "qtbase qtdeclarative qtdeclarative-qmlplugins qtvirtualkeyboard"
 
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/MediaServer;branch=qt6;protocol=https \

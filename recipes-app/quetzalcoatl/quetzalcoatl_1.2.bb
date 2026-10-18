@@ -9,7 +9,7 @@ PRIVATE_LIBS:${PN} = "libcontroller.so"
 FILES:${PN}-dev:remove = "${libdir}/lib*.so"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/quetzalcoatl;branch=master;protocol=https \
+SRC_URI = "git://github.com/bartek56/quetzalcoatl;branch=mediaserverQt6;protocol=https \
            file://mpc_mediaserver.service \
 "
 
@@ -19,7 +19,6 @@ do_install() {
     install -d ${D}/opt
     install -m 0755 ${B}/quetzalcoatl ${D}/opt
     install -d ${D}${libdir}
-    install -m 0755 ${B}/controller/libcontroller.so ${D}${libdir}/
     install -d ${D}${datadir}/icons
     cp -r ${S}/app/icons/breeze ${D}${datadir}/icons/
 
@@ -32,7 +31,6 @@ SYSTEMD_SERVICE:${PN} = "mpc_mediaserver.service"
 
 FILES:${PN} += " \
     /opt/quetzalcoatl \
-    ${libdir}/libcontroller.so \
     ${datadir}/icons/breeze/* \
     ${systemd_system_unitdir}/mpc_mediaserver.service \
 "
