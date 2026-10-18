@@ -1,35 +1,38 @@
-SUMMARY = "MPD client Qt5"
+SUMMARY = "MPD client Qt6"
 SECTION = "apps"
 LICENSE = "MIT"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=b34f40e0535e51cae4b93caa4dbd99bf"
 
 DEPENDS += "qtbase libmpdclient"
 RDEPENDS:${PN} += "qtbase libmpdclient bash"
-
-
-
-SRC_URI[md5sum] = "5900b09d36848e446e53e19c413ec363"
-SRC_URI[sha256sum] = "b828614be6b8be36493e18b7c239d6264dd78e1f4e325301f2d1722cad6eaf5e"
-
+PRIVATE_LIBS:${PN} = "libcontroller.so"
+FILES:${PN}-dev:remove = "${libdir}/lib*.so"
 
 SRCREV = "${AUTOREV}"
 SRC_URI = "git://github.com/bartek56/quetzalcoatl;branch=master;protocol=https \
            file://mpc_mediaserver.service \
 "
 
+inherit qt6-cmake pkgconfig systemd
 
-inherit cmake_qt5 pkgconfig
-
-do_install(){
+do_install() {
     install -d ${D}/opt
-	install -m 0755 quetzalcoatl ${D}/opt
-    install -d ${D}/usr/share/icons
-    cp -r ${S}/app/icons/breeze ${D}/usr/share/icons/
+    install -m 0755 ${B}/quetzalcoatl ${D}/opt
+    install -d ${D}${libdir}
+    install -m 0755 ${B}/controller/libcontroller.so ${D}${libdir}/
+    install -d ${D}${datadir}/icons
+    cp -r ${S}/app/icons/breeze ${D}${datadir}/icons/
 
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/mpc_mediaserver.service ${D}${systemd_unitdir}/system
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/mpc_mediaserver.service ${D}${systemd_system_unitdir}
 }
 
-FILES:${PN} += "/opt/quetzalcoatl"
-FILES:${PN} += "/usr/share/icons/breeze/*"
-FILES:${PN} += "${systemd_system_unitdir}/mpc_mediaserver.service"
+SYSTEMD_AUTO_ENABLE:${PN} = "enable"
+SYSTEMD_SERVICE:${PN} = "mpc_mediaserver.service"
+
+FILES:${PN} += " \
+    /opt/quetzalcoatl \
+    ${libdir}/libcontroller.so \
+    ${datadir}/icons/breeze/* \
+    ${systemd_system_unitdir}/mpc_mediaserver.service \
+"

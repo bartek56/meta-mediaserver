@@ -20,7 +20,7 @@ Usage:
   sudo ./tools/mount-image.sh unmount IMAGE_TARGET
 
 IMAGE_TARGET:
-  mediaserver-image-base | mediaserver-image-qt5 | mediaserver-image-minimal
+  mediaserver-image-base | mediaserver-image-qt6 | mediaserver-image-minimal
 
 The default machine is raspberrypi4-64.  Images are searched below:
   build/tmp/deploy/images/*/
@@ -54,7 +54,7 @@ require_command() {
 
 valid_target() {
     case "$1" in
-        mediaserver-image-base|mediaserver-image-qt5|mediaserver-image-minimal)
+        mediaserver-image-base|mediaserver-image-qt6|mediaserver-image-minimal)
             return 0 ;;
         *)
             return 1 ;;

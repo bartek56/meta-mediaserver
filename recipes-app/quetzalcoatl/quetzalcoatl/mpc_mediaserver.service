@@ -1,5 +1,5 @@
 [Unit]
-Description=MPC Qt5
+Description=MPC Qt6
 
 [Service]
 ExecStartPre=/bin/bash /opt/serviceHelper.sh mpc_mediaserver.service start

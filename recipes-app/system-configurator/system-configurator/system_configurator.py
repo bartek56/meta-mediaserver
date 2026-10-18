@@ -46,7 +46,7 @@ PROFILES: Mapping[str, ModeProfile] = {
         key="MediaServer",
         label="MediaServer",
         description="GUI, Jellyfin, web services, and Snapcast server",
-        legacy_script="/opt/installScript.sh (Qt5 variant)",
+        legacy_script="/opt/installScript.sh (Qt6 variant)",
         gui=True,
         jellyfin=True,
         webserver=True,
@@ -137,9 +137,9 @@ class SystemConfigurator:
     CLOCKPICKER_URL = "https://github.com/weareoutman/clockpicker/archive/gh-pages.zip"
     JELLYFIN_IMAGE = "jellyfin/jellyfin:12"
 
-    def __init__(self, runner: Optional[CommandRunner] = None, variant: str = "qt5") -> None:
+    def __init__(self, runner: Optional[CommandRunner] = None, variant: str = "qt6") -> None:
         self.runner = runner or CommandRunner()
-        self.variant = variant if variant in {"minimal", "base", "qt5"} else "qt5"
+        self.variant = variant if variant in {"minimal", "base", "qt6"} else "qt6"
 
     def current_hostname(self) -> str:
         try:

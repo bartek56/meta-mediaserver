@@ -1,60 +1,53 @@
-SUMMARY = "MediaServer GUI app"
+SUMMARY = "MediaServer Qt6 GUI app"
 SECTION = "apps"
 LICENSE = "CLOSED"
-DEPENDS += "qtbase qtdeclarative qtquickcontrols2 systemdlib-qt"
-RDEPENDS:${PN} = "bash alarm ntfs-3g qnapi systemdlib-qt qtbase qtquickcontrols qtquickcontrols2 qtvirtualkeyboard qtdeclarative"
-
+DEPENDS += "qtbase qtdeclarative qtdeclarative-native"
+RDEPENDS:${PN} = "bash alarm ntfs-3g qtbase qtdeclarative qtvirtualkeyboard"
 
 SRCREV = "${AUTOREV}"
-#FILESEXTRAPATHS:append = "/home/bartosz/Documents/QTCreator"
-#file://MediaServer
-#git://github.com/bartek56/MediaServer;protocol=https
 
-SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
+SRC_URI = "git://github.com/bartek56/MediaServer;branch=qt6;protocol=https \
           file://fstab_manager.sh \
           file://screensaver.conf \
           file://start.service \
           file://alarm_gui.service \
-          file://serviceHelper.sh "
+          file://serviceHelper.sh \
+          file://0001-cmake-make-unit-tests-optional.patch \
+"
 
+inherit qt6-cmake systemd
 
-#S = "${UNPACKDIR}/MediaServer"
+EXTRA_OECMAKE += "-DBUILD_TESTING=OFF"
 
-require recipes-qt/qt5/qt5.inc
-
-inherit qmake5
+SYSTEMD_SERVICE:${PN} = "start.service alarm_gui.service"
 
 do_compile() {
-    oe_runmake sub-MediaServerApp
-    oe_runmake sub-Alarm
+    cmake_runcmake_build --target MediaServerApp
+    cmake_runcmake_build --target Alarm
 }
 
 do_install() {
-    oe_runmake sub-MediaServerApp-install_subtargets  INSTALL_ROOT=${D}
-    oe_runmake sub-Alarm-install_subtargets INSTALL_ROOT=${D}
-}
-
-do_install:append() {
-    install -d ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/start.service ${D}${systemd_unitdir}/system
-    install -m 0644 ${UNPACKDIR}/alarm_gui.service ${D}${systemd_unitdir}/system
-
     install -d ${D}/opt
+    install -m 0755 ${B}/MediaServerApp/MediaServerApp ${D}/opt/MediaServerApp
+    install -m 0755 ${B}/Alarm/Alarm ${D}/opt/AlarmApp
+
+    install -d ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/start.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/alarm_gui.service ${D}${systemd_system_unitdir}
+
     install -m 0755 ${UNPACKDIR}/fstab_manager.sh ${D}/opt
     install -m 0755 ${UNPACKDIR}/serviceHelper.sh ${D}/opt
 
-    # TODO rename in qmake
-    mv ${D}/opt/Alarm ${D}/opt/AlarmApp
-
-    install -d ${D}/etc/mediaserver
+    install -d ${D}${sysconfdir}/mediaserver
     install -m 0755 ${UNPACKDIR}/screensaver.conf ${D}${sysconfdir}/mediaserver
 }
 
-INSANE_SKIP:${PN} += " libMediaServerLib.so.1()(64bit)"
-FILES:${PN} += "/opt/MediaServerApp"
-FILES:${PN} += "/opt/AlarmApp"
-FILES:${PN} += "/opt/fstab_manager.sh"
-FILES:${PN} += "/opt/serviceHelper.sh"
-FILES:${PN} += "${sysconfdir}/mediaserver/screensaver.conf"
-FILES:${PN} += "${systemd_system_unitdir}/start.service"
-FILES:${PN} += "${systemd_system_unitdir}/alarm_gui.service"
+FILES:${PN} += " \
+    /opt/MediaServerApp \
+    /opt/AlarmApp \
+    /opt/fstab_manager.sh \
+    /opt/serviceHelper.sh \
+    ${sysconfdir}/mediaserver/screensaver.conf \
+    ${systemd_system_unitdir}/start.service \
+    ${systemd_system_unitdir}/alarm_gui.service \
+"

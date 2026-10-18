@@ -61,39 +61,39 @@ BitBake commands can be passed directly:
 
 ```bash
 docker compose run --rm yocto bitbake mediaserver-image-base
-docker compose run --rm yocto bitbake mediaserver-image-qt5
+docker compose run --rm yocto bitbake mediaserver-image-qt6
 docker compose run --rm yocto bitbake mediaserver-image-minimal
 ```
 
 The three images are independent. `mediaserver-image-minimal` is the
 headless Snapcast/PulseAudio endpoint, `mediaserver-image-base` is the full
-non-Qt server image, and `mediaserver-image-qt5` adds the Qt5 applications and
-MediaServer splash screen. Only the Qt5 image inherits the optional display
-profile marker; no image recipe installs Qt5 implicitly.
+non-Qt server image, and `mediaserver-image-qt6` adds the Qt6 applications and
+MediaServer splash screen. Only the Qt6 image inherits the optional display
+profile marker; no image recipe installs Qt6 implicitly.
 
-The Qt5 variant requires:
+The Qt6 variant requires:
 
 ```bash
 docker compose run --rm yocto bitbake \
-    -R conf/yocto_conf/qt5-hdmi.conf \
-    mediaserver-image-qt5
+    -R conf/machine/qt6-hdmi.conf \
+    mediaserver-image-qt6
 ```
 
-The `-R` fragment adds Qt5 and the product HDMI/display profile only for
+The `-R` fragment adds Qt6 and the product HDMI/display profile only for
 this BitBake invocation. It avoids replacing `build/conf/local.conf` and
 keeps the profile away from the `base` and `minimal` images.
 
 `-R` resolves relative paths through BitBake's `BBPATH`. Since the
-`meta-mediaserver` layer is in `BBPATH`, `conf/yocto_conf/qt5-hdmi.conf`
+`meta-mediaserver` layer is in `BBPATH`, `conf/machine/qt6-hdmi.conf`
 resolves to the file in that layer. Do not use
-`sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf` with `-R`: BitBake
+`sources/meta-mediaserver/conf/machine/qt6-hdmi.conf` with `-R`: BitBake
 would search for that path below each `BBPATH` entry and fail. An absolute
 container path is also valid:
 
 ```bash
 docker compose run --rm yocto bitbake \
-    -R /home/builder/yocto-project/sources/meta-mediaserver/conf/yocto_conf/qt5-hdmi.conf \
-    mediaserver-image-qt5
+    -R /home/builder/yocto-project/sources/meta-mediaserver/conf/machine/qt6-hdmi.conf \
+    mediaserver-image-qt6
 ```
 
 The default `build/conf/local.conf` created by `setup.sh` is suitable for the
@@ -107,8 +107,8 @@ bitbake mediaserver-image-minimal
 ### Multiconfig: all Raspberry Pi machines
 
 The project provides five multiconfigurations. `rpi0-base` targets the Zero
-2 W without Qt5; `rpi3` and `rpi4` each provide `base` and `qt5`. The Qt5
-configurations automatically load the Qt5/HDMI profile, so no `-R` option is
+2 W without Qt6; `rpi3` and `rpi4` each provide `base` and `qt6`. The Qt6
+configurations automatically load the Qt6/HDMI profile, so no `-R` option is
 needed.
 
 Build all base images:
@@ -120,12 +120,12 @@ docker compose run --rm yocto bitbake \
     mc:rpi4-base:mediaserver-image-base
 ```
 
-Build all Qt5/HDMI images:
+Build all Qt6/HDMI images:
 
 ```bash
 docker compose run --rm yocto bitbake \
-    mc:rpi3-qt5:mediaserver-image-qt5 \
-    mc:rpi4-qt5:mediaserver-image-qt5
+    mc:rpi3-qt6:mediaserver-image-qt6 \
+    mc:rpi4-qt6:mediaserver-image-qt6
 ```
 
 Build Rpi3 image:
@@ -134,10 +134,10 @@ Build Rpi3 image:
 docker compose run --rm -e MACHINE=raspberrypi3-64  yocto bitbake mediaserver-image-base
 ```
 
-Build Qt5/HDMI image:
+Build Qt6/HDMI image:
 
 ```bash
-docker compose run --rm yocto bitbake -R "conf/machine/qt5-hdmi.conf" mediaserver-image-qt5
+docker compose run --rm yocto bitbake -R "conf/machine/qt6-hdmi.conf" mediaserver-image-qt6
 ```
 
 Each multiconfiguration has its own `TMPDIR`, so the builds do not overwrite
@@ -145,12 +145,11 @@ one another. Shared downloads and sstate remain reusable.
 
 Set `MACHINE = "raspberrypi4-64"` (or another BSP-provided machine) in
 `build/conf/local.conf`. The image target selects the package set; the
-optional `qt5-hdmi.conf` fragment selects Qt5 and the firmware display
-settings for the Qt5 build.
+optional `qt6-hdmi.conf` fragment selects Qt6 and the firmware display
+settings for the Qt6 build.
 
-Wrynose still supports Qt5 through the `meta-qt5` layer. The MediaServer
-application recipes currently use `cmake_qt5`, `qmake5`, and `qt5.inc`.
-Migrating to Qt6 requires separate application and recipe changes.
+Wrynose provides Qt6 through the `meta-qt6` layer. The MediaServer and
+Quetzalcoatl recipes use the `qt6-cmake` class and build against Qt6.
 
 ### Raspberry Pi display configuration
 
@@ -158,11 +157,11 @@ The Raspberry Pi BSP's `rpi-config` recipe consumes `HDMI_*`, `HDMI_CVT`,
 `VC4DTBO`, `GPU_MEM_1024`, `ENABLE_UART`, `ENABLE_SPI_BUS`,
 `DISABLE_OVERSCAN`, `DISABLE_RPI_BOOT_LOGO`, and `RPI_EXTRA_CONFIG` while it
 generates `config.txt`. These are therefore kept in `local.conf` or a
-machine configuration, not in an image class. The Qt5 image still requires
-the `conf/machine/qt5-hdmi.conf` profile when it is built, but the profile
+machine configuration, not in an image class. The Qt6 image still requires
+the `conf/machine/qt6-hdmi.conf` profile when it is built, but the profile
 settings are consumed by the Raspberry Pi BSP rather than by an image class.
 
-The ADS7846 touchscreen lines in the Qt5 sample are independent of HDMI.
+The ADS7846 touchscreen lines in the Qt6 sample are independent of HDMI.
 `KERNEL_DEVICETREE` should only name overlays that the selected kernel builds;
 the standard Wrynose BSP does not list `overlays/ads7846.dtbo`, so the sample
 uses the firmware `RPI_EXTRA_CONFIG` overlay instead. Validate that the
@@ -209,7 +208,7 @@ explicit `--read-write` option. The script then creates a copy next to the
 original with the `-migrated` suffix and mounts that copy:
 
 ```bash
-sudo ./tools/mount-image.sh mount --read-write mediaserver-image-qt5
+sudo ./tools/mount-image.sh mount --read-write mediaserver-image-qt6
 ```
 
 To increase the rootfs in the copy by a selected number of GB at the same
@@ -217,7 +216,7 @@ time, add `--increase-rootfs-gb N`. This option automatically enables
 read-write mode, for example:
 
 ```bash
-sudo ./tools/mount-image.sh mount --increase-rootfs-gb 4 mediaserver-image-qt5
+sudo ./tools/mount-image.sh mount --increase-rootfs-gb 4 mediaserver-image-qt6
 ```
 
 In this example, the `-migrated.rpi-sdimg` copy will have a rootfs partition
@@ -229,7 +228,7 @@ preserved after unmounting.
 For another supported machine, pass `--machine`, for example:
 
 ```bash
-sudo ./tools/mount-image.sh mount --machine raspberrypi3-64 mediaserver-image-qt5
+sudo ./tools/mount-image.sh mount --machine raspberrypi3-64 mediaserver-image-qt6
 ```
 
 The root filesystem is mounted at `/mnt/mediaserver-image/<target>` and the
@@ -239,7 +238,7 @@ detaching the loop device.
 
 ## Layer contents
 
-The layer integrates MediaServer, Quetzalcoatl, QNapi, File Browser,
+The layer integrates MediaServer, Quetzalcoatl, File Browser,
 Ampache, Transmission, MPD, ympd, MiniDLNA, Tvheadend, Samba, yt-dlp,
 and vsftpd.
 

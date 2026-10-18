@@ -10,9 +10,9 @@ The layer provides three image profiles:
 | --- | --- |
 | `mediaserver-image-minimal` | Headless audio endpoint: Snapcast client and PulseAudio receiver. |
 | `mediaserver-image-base` | Full non-GUI MediaServer, including MPD, Snapcast server/client, Bluetooth audio, web services, and network services. |
-| `mediaserver-image-qt5` | The base image plus the Qt5 user interface, HDMI/display profile, MediaServer application, and splash screen. |
+| `mediaserver-image-qt6` | The base image plus the Qt6 user interface, HDMI/display profile, MediaServer application, and splash screen. |
 
-The image recipes are independent. Qt5 is not installed implicitly in the
+The image recipes are independent. Qt6 is not installed implicitly in the
 base or minimal image.
 
 ## Audio architecture
@@ -192,7 +192,7 @@ forms of reboot or image replacement.
 ## Other layer contents
 
 The layer also contains recipes or append files for the MediaServer Qt
-application, Quetzalcoatl, QNapi, Jellyfin, MiniDLNA, Samba, Transmission,
+application, Quetzalcoatl, Jellyfin, MiniDLNA, Samba, Transmission,
 File Browser, Ampache, vsftpd, networking, system configuration, and Raspberry
 Pi kernel/image integration. The package groups in
 `recipes-core/packagegroups/` define most of the full image contents.

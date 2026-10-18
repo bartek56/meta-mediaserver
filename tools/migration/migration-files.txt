@@ -58,7 +58,6 @@ A /etc/resolv.conf
 A /etc/mediaserver/jellyfin.conf
 A /etc/mediaserver/alarm.ini
 A /lib/systemd/system/alarm.timer
-A /etc/mediaserver/qnapi.ini
 A /etc/mediaserver/youtubedl.ini
 A /etc/mediaserver/screensaver.conf
 B /etc/php-fpm.conf

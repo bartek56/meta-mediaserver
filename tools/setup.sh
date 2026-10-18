@@ -270,7 +270,7 @@ mkdir -p "$PROJECT_SOURCES"
 clone_repo https://git.openembedded.org/bitbake             "$PROJECT_SOURCES/bitbake"                 master         fae9db3168dbff1b8c76fe9c6726a9687ff97514
 clone_repo https://git.openembedded.org/openembedded-core   "$PROJECT_SOURCES/poky"                 "$YOCTO_BRANCH"   0f03c732a0a2d0506b41b1abe60b3f368b2300dc
 clone_repo https://git.yoctoproject.org/meta-yocto          "$PROJECT_SOURCES/meta-yocto"           "$YOCTO_BRANCH"   7c25b11156553145fa6b241a2d4f65d94438f804
-clone_repo https://github.com/meta-qt5/meta-qt5             "$PROJECT_SOURCES/meta-qt5"             "$YOCTO_BRANCH"   2ca5dfa9403f5454f4bdc702caca00b2cd225a41
+clone_repo https://code.qt.io/yocto/meta-qt6.git             "$PROJECT_SOURCES/meta-qt6"             6.11            ec98b3ab1c8deeab9412ef6cbfd55729dc567b01
 clone_repo https://git.openembedded.org/meta-openembedded   "$PROJECT_SOURCES/meta-openembedded"    "$YOCTO_BRANCH"   47d7dbdd10890bbd429bc0cccbe14435c37e5af1
 clone_repo https://git.yoctoproject.org/meta-virtualization "$PROJECT_SOURCES/meta-virtualization"  "$YOCTO_BRANCH"   2807579615834a143c8ed453b463f93f43446019
 clone_repo https://github.com/agherzan/meta-raspberrypi     "$PROJECT_SOURCES/meta-raspberrypi"     "$YOCTO_BRANCH"   f62c67921474370829d24a4fa01ef88543f3906b

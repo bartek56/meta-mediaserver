@@ -26,8 +26,8 @@ tree diverge.
 Shared image policy is assembled in `classes/mediaserver-image-common.bbclass`.
 Package selection and common `IMAGE_INSTALL` settings are defined in
 `recipes-core/packagegroups/` and `recipes-core/images/mediaserver-image-base.inc`.
-The Qt5/HDMI variant is described by the files under `conf/yocto_conf/` and
-the `conf/machine/qt5-hdmi.conf` profile.
+The Qt6/HDMI variant is described by the files under `conf/yocto_conf/` and
+the `conf/machine/qt6-hdmi.conf` profile.
 
 Raspberry Pi, HDMI, display, and audio-device settings are machine-specific.
 They should not be copied from an old device without checking the selected

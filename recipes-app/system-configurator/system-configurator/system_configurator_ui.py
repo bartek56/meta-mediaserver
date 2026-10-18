@@ -74,10 +74,10 @@ class SystemConfiguratorApp(App[None]):
     @staticmethod
     def _detect_variant() -> str:
         requested = os.environ.get("MEDIASERVER_CONFIGURATOR_VARIANT", "").lower()
-        if requested in {"minimal", "base", "qt5"}:
+        if requested in {"minimal", "base", "qt6"}:
             return requested
         if Path("/opt/MediaServerApp").exists():
-            return "qt5"
+            return "qt6"
         if Path("/usr/bin/snapserver").exists():
             return "base"
         return "minimal"
@@ -146,7 +146,7 @@ class SystemConfiguratorApp(App[None]):
     def _mode_text(self) -> str:
         if self.mode == "MediaClient":
             return "MediaClient — minimal image (Snapcast client)"
-        suffix = " with Qt5" if self.variant == "qt5" else ""
+        suffix = " with Qt6" if self.variant == "qt6" else ""
         return f"MediaServer — {self.variant} image{suffix}"
 
     def _show_section(self, section: str) -> None:

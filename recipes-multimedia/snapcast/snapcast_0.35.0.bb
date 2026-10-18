@@ -14,7 +14,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=7702f203b58979ebbc31bfaeb44f219c"
 
 SRCREV = "f12373479243e93a97237592d6a3703539ec41d5"
 
-SNAPCLIENT_CONFIG = "${@bb.utils.contains('MEDIASERVER_QT5_HDMI_PROFILE', '1', 'snapclient.conf.qt5', 'snapclient.conf', d)}"
+SNAPCLIENT_CONFIG = "${@bb.utils.contains('MEDIASERVER_QT6_HDMI_PROFILE', '1', 'snapclient.conf.qt6', 'snapclient.conf', d)}"
 
 DEPENDS += " \
     avahi \

@@ -5,7 +5,11 @@ source /opt/installCommon.sh
 configure_alarm()
 {
     chgrp www-data /etc/mediaserver/alarm.ini
-    chgrp www-data /lib/systemd/system/alarm.timer
+    local alarm_unit
+    alarm_unit="$(systemctl show --property=FragmentPath --value alarm.timer || true)"
+    if [ -n "$alarm_unit" ] && [ -e "$alarm_unit" ]; then
+        chgrp www-data "$alarm_unit"
+    fi
 }
 
 configure_startGUI()
