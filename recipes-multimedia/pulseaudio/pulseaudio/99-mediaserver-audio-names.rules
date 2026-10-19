@@ -1,0 +1,6 @@
+# Stable PulseAudio names for the Raspberry Pi bcm2835 audio cards.
+# PULSE_NAME is consumed by module-udev-detect and becomes part of the
+# generated card and sink names.
+
+SUBSYSTEM=="sound", KERNEL=="card*", ATTR{id}=="b1", ENV{PULSE_NAME}="hdmi"
+SUBSYSTEM=="sound", KERNEL=="card*", ATTR{id}=="Headphones", ENV{PULSE_NAME}="headphones"

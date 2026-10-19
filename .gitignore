@@ -16,3 +16,7 @@ _deps
 
 #python
 __pycache__
+
+.vscode
+
+reports/

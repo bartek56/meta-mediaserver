@@ -10,7 +10,7 @@ SRC_URI = "https://github.com/ampache/ampache/releases/download/${PV}/${PN}-${PV
 SRC_URI[md5sum] = "963d35b329d0829f10b391a5913bc926"
 SRC_URI[sha256sum] = "4f07f78dbc3bff7ec5e905c655af1073fec00acbdba13062049635d6c9e3883d"
 
-S = "${WORKDIR}/${PN}"
+S = "${UNPACKDIR}/${PN}"
 
 do_unpack (){
   unzip ${DL_DIR}/${PN}-${PV}_all.zip -d ${S}/

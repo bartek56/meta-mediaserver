@@ -15,14 +15,14 @@ SRC_URI += "https://github.com/ampache/ampache/releases/download/${PV}/${PN}-${P
 SRC_URI[md5sum] = "eb958442fcc0c6377f9070baa7db13b4"
 SRC_URI[sha256sum] = "b8247e3fa551b6bacf0d81959f4ccd91d8f7825cfda34734c8680fdc2391fad1"
 
-S = "${WORKDIR}/${PN}"
+S = "${UNPACKDIR}/${PN}"
 
 inherit systemd
 
 do_unpack (){
   unzip ${DL_DIR}/${PN}-${PV}_all.zip -d ${S}/
-  cp ${THISDIR}/${PN}/ampacheupdate.service ${WORKDIR}/
-  cp ${THISDIR}/${PN}/ampacheupdate.timer ${WORKDIR}/
+  cp ${THISDIR}/${PN}/ampacheupdate.service ${UNPACKDIR}/
+  cp ${THISDIR}/${PN}/ampacheupdate.timer ${UNPACKDIR}/
 }
 
 do_install () {
@@ -30,8 +30,8 @@ do_install () {
     cp -r ${S}/ ${D}/usr/htdocs/ampache/
 
     install -d ${D}${systemd_system_unitdir}
-    cp ${WORKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
-    cp ${WORKDIR}/ampacheupdate.timer ${D}${systemd_system_unitdir}
+    cp ${UNPACKDIR}/ampacheupdate.service ${D}${systemd_system_unitdir}
+    cp ${UNPACKDIR}/ampacheupdate.timer ${D}${systemd_system_unitdir}
 
     chmod -R 777 ${D}/usr/htdocs/ampache/config
 	cp ${D}/usr/htdocs/ampache/channel/.htaccess.dist ${D}/usr/htdocs/ampache/channel/.htaccess

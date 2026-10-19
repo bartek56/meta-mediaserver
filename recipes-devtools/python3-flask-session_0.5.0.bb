@@ -10,7 +10,7 @@ RDEPENDS:${PN} += "python3-cachelib"
 
 inherit python3native
 
-S = "${WORKDIR}/Flask-Session-${PV}"
+S = "${UNPACKDIR}/Flask-Session-${PV}"
 
 do_compile() {
     :
@@ -24,4 +24,3 @@ do_install() {
 
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/flask_session/sessions.py"
 FILES:${PN} += "${PYTHON_SITEPACKAGES_DIR}/flask_session/__init__.py"
-

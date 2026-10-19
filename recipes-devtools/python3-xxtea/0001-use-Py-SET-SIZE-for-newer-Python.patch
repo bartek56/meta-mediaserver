@@ -1,0 +1,10 @@
+Upstream-Status: Pending [not submitted upstream]
+
+Use the public setter for PyObject sizes, as Py_SIZE is no longer an
+assignable lvalue with newer Python versions.
+
+--- a/xxtea.c
++++ b/xxtea.c
+@@ -340 +340 @@
+-            Py_SIZE(retval) = rc;
++            Py_SET_SIZE(retval, rc);

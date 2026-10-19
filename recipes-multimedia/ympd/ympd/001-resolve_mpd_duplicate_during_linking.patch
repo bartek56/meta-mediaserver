@@ -1,3 +1,5 @@
+Upstream-Status: Pending [not submitted upstream]
+
 diff --git a/src/mpd_client.c b/src/mpd_client.c
 index 7271984..e7af689 100644
 --- a/src/mpd_client.c

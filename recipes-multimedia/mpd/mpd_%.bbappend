@@ -1,6 +1,16 @@
 SUMMARY = "Replacement recipe"
 FILESEXTRAPATHS:prepend := "${THISDIR}/mpd:"
-SRC_URI += "file://mpd.conf"
+SRC_URI += " \
+    file://mpd.conf \
+    file://mpd.conf.rpi3 \
+    file://mpd.conf.rpi4 \
+    file://mpd.conf.rpi0-2w \
+"
+
+MPD_CONFIG = "mpd.conf"
+MPD_CONFIG:raspberrypi3 = "mpd.conf.rpi3"
+MPD_CONFIG:raspberrypi4 = "mpd.conf.rpi4"
+MPD_CONFIG:raspberrypi0-2w-64 = "mpd.conf.rpi0-2w"
 
 PACKAGECONFIG += "aac" 
 PACKAGECONFIG += "alsa" 
@@ -23,7 +33,7 @@ PACKAGECONFIG += "fifo"
 
 do_install:append() {
     install -d ${D}/etc
-    install -m 0755 ${WORKDIR}/mpd.conf ${D}/etc
+    install -m 0755 ${UNPACKDIR}/${MPD_CONFIG} ${D}/etc/mpd.conf
 
     install -d ${D}/etc/mediaserver
     ln -sf /etc/mpd.conf ${D}/etc/mediaserver/mpd.conf
@@ -31,4 +41,3 @@ do_install:append() {
 }
 
 FILES:${PN} += "etc/mpd.conf"
-

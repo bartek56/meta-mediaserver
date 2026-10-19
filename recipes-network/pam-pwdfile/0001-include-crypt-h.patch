@@ -1,0 +1,14 @@
+Upstream-Status: Pending [not submitted upstream]
+
+Include the header that declares crypt() with modern libc toolchains.
+
+--- a/bigcrypt.c
++++ b/bigcrypt.c
+@@ -26,6 +26,7 @@
+ 
+ #define _XOPEN_SOURCE 700
+ #include <unistd.h>
++#include <crypt.h>
+ #include <string.h>
+ 
+ #include "bigcrypt.h"

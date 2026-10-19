@@ -18,12 +18,12 @@ inherit systemd
 
 do_install() {
     install -d ${D}${bindir}
-    install -m 0755 ${WORKDIR}/bt-snapcast-autoplug.sh ${D}${bindir}
-    install -m 0755 ${WORKDIR}/pa-event-generator.sh ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/bt-snapcast-autoplug.sh ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/pa-event-generator.sh ${D}${bindir}
 
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/bt-snapcast-autoplug.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/pa-event-generator.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/bt-snapcast-autoplug.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/pa-event-generator.service ${D}${systemd_system_unitdir}
 }
 
 SYSTEMD_SERVICE_${PN} = "bt-snapcast-autoplug.service pa-event-generator.service"

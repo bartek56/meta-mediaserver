@@ -1,75 +1,274 @@
 # meta-mediaserver
-yocto layer for MediaServer project
 
-Support machine: Raspberry Pi Zero 2w, Raspberry Pi 3b, Raspberry Pi 4
+Yocto layer for the MediaServer project, maintained for the Yocto
+Project Wrynose (6.0).
 
-Required:.
-- Ubuntu 22.04.1 LTS or Docker
-- min. 150GB disk space
+## Supported hardware
 
-layer support:
-- [mediaserver](https://github.com/bartek56/MediaServer)
-- [quetzalcoatl](https://github.com/bartek56/quetzalcoatl)
-- [qnapi](https://github.com/QNapi/qnapi)
-- [filebrowser](https://github.com/filebrowser/filebrowser)
-- [ampache](https://github.com/ampache/ampache)
-- [transmission](https://github.com/transmission/transmission)
-- [mpd](https://github.com/MusicPlayerDaemon/MPD)
-- [ympd](https://github.com/notandy/ympd)
-- [minidlna](https://github.com/azatoth/minidlna)
-- [tvheadend](https://github.com/tvheadend/tvheadend)
-- [samba](https://github.com/samba-team/samba)
-- [yt_dlt](https://github.com/yt-dlp/yt-dlp)
-- [vsftpd](https://github.com/djarosz/vsftpd)
+- Raspberry Pi Zero 2 W
+- Raspberry Pi 3B
+- Raspberry Pi 4 / 4B
 
+The BSP already supplies the 64-bit machine definitions used by the layer:
+`raspberrypi0-2w-64`, `raspberrypi3-64`, and `raspberrypi4-64`. The layer
+does not duplicate those machine files. Select `MACHINE` in the build
+configuration; it is not fixed by an image recipe.
 
+The default machine is `raspberrypi4-64`. It can be changed in
+`build/conf/local.conf`.
 
-1. Create directory and download layers
+## Requirements
 
-- mkdir -p yocto_mediaserver/sources
-- cd yocto_mediaserver/sources
-- git clone -b kirkstone https://git.yoctoproject.org/poky
-- git clone -b kirkstone https://github.com/meta-qt5/meta-qt5
-- git clone -b kirkstone https://git.openembedded.org/meta-openembedded
-- git clone -b kirkstone https://git.yoctoproject.org/meta-virtualization
-- git clone -b kirkstone https://github.com/agherzan/meta-raspberrypi
-- git clone -b kirkstone https://github.com/bartek56/meta-mediaserver
+- Docker with Docker Compose
+- at least 150 GB of free disk space
+- Internet access for downloading layers and sources
 
+The build container uses Ubuntu 26.04 and the `builder` user.
 
-2. Generate and run Docker image
+## Project setup
 
-docker build -t yocto-ubuntu-22.04 meta-mediaserver/conf/docker/
-ln -s sources/meta-mediaserver/conf/docker/docker-compose.yml docker-compose.yml
+Run these commands from the project root:
+
+```bash
+mkdir -p sources
+git clone -b wrynose https://github.com/bartek56/meta-mediaserver \
+    sources/meta-mediaserver
+bash sources/meta-mediaserver/conf/setup.sh
+docker compose build yocto
+```
+
+The `conf/setup.sh` script downloads the Wrynose layers, BitBake 2.18
+and the required dependency layers. It creates `build/conf/bblayers.conf`
+and `build/conf/local.conf` if they do not already exist.
+
+If the host user UID/GID is not 1000:
+
+```bash
+export HOST_UID=$(id -u)
+export HOST_GID=$(id -g)
+docker compose build yocto
+```
+
+## Running the container
+
+Compose starts a clean Bash shell by default:
+
+```bash
 docker compose run --rm yocto
+```
 
+BitBake commands can be passed directly:
 
-3. Edit configuration files
+```bash
+docker compose run --rm yocto bitbake mediaserver-image-base
+docker compose run --rm yocto bitbake mediaserver-image-qt6
+docker compose run --rm yocto bitbake mediaserver-image-minimal
+```
 
-- cp ../sources/meta-mediaserver/conf/yocto_conf/bblayers.conf.sample conf/bblayers.conf
+The three images are independent. `mediaserver-image-minimal` is the
+headless Snapcast/PulseAudio endpoint, `mediaserver-image-base` is the full
+non-Qt server image, and `mediaserver-image-qt6` adds the Qt6 applications and
+MediaServer splash screen. Only the Qt6 image inherits the optional display
+profile marker; no image recipe installs Qt6 implicitly.
 
-File local.conf depends on target
-for target with Qt5 Gui
-- cp ../sources/meta-mediaserver/conf/yocto_conf/local.conf.qt5.sample conf/local.conf
+The Qt6 variant requires:
 
-for target without Qt5 Gui
-- cp ../sources/meta-mediaserver/conf/yocto_conf/local.conf.base.sample conf/local.conf
+```bash
+docker compose run --rm yocto bitbake \
+    -R conf/machine/qt6-hdmi.conf \
+    mediaserver-image-qt6
+```
 
+The `-R` fragment adds Qt6 and the product HDMI/display profile only for
+this BitBake invocation. It avoids replacing `build/conf/local.conf` and
+keeps the profile away from the `base` and `minimal` images.
 
-4. Build MediaServer
+`-R` resolves relative paths through BitBake's `BBPATH`. Since the
+`meta-mediaserver` layer is in `BBPATH`, `conf/machine/qt6-hdmi.conf`
+resolves to the file in that layer. Do not use
+`sources/meta-mediaserver/conf/machine/qt6-hdmi.conf` with `-R`: BitBake
+would search for that path below each `BBPATH` entry and fail. An absolute
+container path is also valid:
 
-with Qt5 GUI:
-- bitbake mediaserver-image-qt5
+```bash
+docker compose run --rm yocto bitbake \
+    -R /home/builder/yocto-project/sources/meta-mediaserver/conf/machine/qt6-hdmi.conf \
+    mediaserver-image-qt6
+```
 
-without GUI:
-- bitbake mediaserver-image-base
+The default `build/conf/local.conf` created by `setup.sh` is suitable for the
+non-Qt image:
 
-core:
-- bitbake mediaserver-image-minimal
+```bash
+bitbake mediaserver-image-base
+bitbake mediaserver-image-minimal
+```
 
-5. Configure MediaServer
+### Multiconfig: all Raspberry Pi machines
 
-- cd /opt
-- ./installScript.sh
+The project provides five multiconfigurations. `rpi0-base` targets the Zero
+2 W without Qt6; `rpi3` and `rpi4` each provide `base` and `qt6`. The Qt6
+configurations automatically load the Qt6/HDMI profile, so no `-R` option is
+needed.
 
+Build all base images:
 
-Enjoy !!
+```bash
+docker compose run --rm yocto bitbake \
+    mc:rpi0-base:mediaserver-image-base \
+    mc:rpi3-base:mediaserver-image-base \
+    mc:rpi4-base:mediaserver-image-base
+```
+
+Build all Qt6/HDMI images:
+
+```bash
+docker compose run --rm yocto bitbake \
+    mc:rpi3-qt6:mediaserver-image-qt6 \
+    mc:rpi4-qt6:mediaserver-image-qt6
+```
+
+Build Rpi3 image:
+
+```bash
+docker compose run --rm -e MACHINE=raspberrypi3-64  yocto bitbake mediaserver-image-base
+```
+
+Build Qt6/HDMI image:
+
+```bash
+docker compose run --rm yocto bitbake -R "conf/machine/qt6-hdmi.conf" mediaserver-image-qt6
+```
+
+Each multiconfiguration has its own `TMPDIR`, so the builds do not overwrite
+one another. Shared downloads and sstate remain reusable.
+
+Set `MACHINE = "raspberrypi4-64"` (or another BSP-provided machine) in
+`build/conf/local.conf`. The image target selects the package set; the
+optional `qt6-hdmi.conf` fragment selects Qt6 and the firmware display
+settings for the Qt6 build.
+
+Wrynose provides Qt6 through the `meta-qt6` layer. The MediaServer and
+Quetzalcoatl recipes use the `qt6-cmake` class and build against Qt6.
+
+### Raspberry Pi display configuration
+
+The Raspberry Pi BSP's `rpi-config` recipe consumes `HDMI_*`, `HDMI_CVT`,
+`VC4DTBO`, `GPU_MEM_1024`, `ENABLE_UART`, `ENABLE_SPI_BUS`,
+`DISABLE_OVERSCAN`, `DISABLE_RPI_BOOT_LOGO`, and `RPI_EXTRA_CONFIG` while it
+generates `config.txt`. These are therefore kept in `local.conf` or a
+machine configuration, not in an image class. The Qt6 image still requires
+the `conf/machine/qt6-hdmi.conf` profile when it is built, but the profile
+settings are consumed by the Raspberry Pi BSP rather than by an image class.
+
+The ADS7846 touchscreen lines in the Qt6 sample are independent of HDMI.
+`KERNEL_DEVICETREE` should only name overlays that the selected kernel builds;
+the standard Wrynose BSP does not list `overlays/ads7846.dtbo`, so the sample
+uses the firmware `RPI_EXTRA_CONFIG` overlay instead. Validate that the
+panel's firmware overlay is present for the selected Raspberry Pi before
+deploying it. `VC4DTBO` remains machine-dependent: Pi 3/Zero 2 W use FKMS,
+while Pi 4's BSP default is KMS.
+
+## Images and artifacts
+
+Images are stored in:
+
+```
+build/tmp/deploy/images/<machine>/
+```
+
+For Raspberry Pi 4:
+
+```
+build/tmp/deploy/images/raspberrypi4-64/
+```
+
+`rpi-sdimg` images use a 128 MiB boot partition, which is large enough
+for the Raspberry Pi kernel and overlays.
+
+### Mounting an image on Ubuntu
+
+The helper mounts the selected image read-only, including both its root and
+boot partitions. The default machine is `raspberrypi4-64`:
+
+```bash
+sudo ./tools/mount-image.sh mount mediaserver-image-base
+sudo ./tools/mount-image.sh unmount mediaserver-image-base
+```
+
+Preview paths and operations without root privileges, a loop device, or
+mounting:
+
+```bash
+./tools/mount-image.sh mount --dry-run mediaserver-image-base
+```
+
+By default, the image is mounted read-only. To prepare the system, use the
+explicit `--read-write` option. The script then creates a copy next to the
+original with the `-migrated` suffix and mounts that copy:
+
+```bash
+sudo ./tools/mount-image.sh mount --read-write mediaserver-image-qt6
+```
+
+To increase the rootfs in the copy by a selected number of GB at the same
+time, add `--increase-rootfs-gb N`. This option automatically enables
+read-write mode, for example:
+
+```bash
+sudo ./tools/mount-image.sh mount --increase-rootfs-gb 4 mediaserver-image-qt6
+```
+
+In this example, the `-migrated.rpi-sdimg` copy will have a rootfs partition
+and filesystem that are 4 GB larger.
+
+The original image remains unchanged, and the `-migrated.rpi-sdimg` copy is
+preserved after unmounting.
+
+For another supported machine, pass `--machine`, for example:
+
+```bash
+sudo ./tools/mount-image.sh mount --machine raspberrypi3-64 mediaserver-image-qt6
+```
+
+The root filesystem is mounted at `/mnt/mediaserver-image/<target>` and the
+boot partition at its `boot/` subdirectory. Mounting is read-only; unmounting
+checks the recorded loop device and both partition mount sources before
+detaching the loop device.
+
+## Layer contents
+
+The layer integrates MediaServer, Quetzalcoatl, File Browser,
+Ampache, Transmission, MPD, ympd, MiniDLNA, Tvheadend, Samba, yt-dlp,
+and vsftpd.
+
+Detailed runtime documentation is available in
+[`docs/MEDIASERVER.md`](docs/MEDIASERVER.md). Configuration migration is
+covered separately in [`docs/CONFIG_MIGRATION.md`](docs/CONFIG_MIGRATION.md)
+and [`docs/YOCTO_CONFIG_MAP.md`](docs/YOCTO_CONFIG_MAP.md).
+
+## Troubleshooting
+
+After changing a recipe, a specific task can be forced:
+
+```bash
+docker compose run --rm yocto bitbake <recipe> -c configure -f
+docker compose run --rm yocto bitbake <recipe> -c package_qa -f
+docker compose run --rm yocto bitbake <recipe> -c populate_lic -f
+```
+
+Task logs are stored in:
+
+```
+build/tmp/work/<tune>-poky-linux/<recipe>/<version>/temp/
+```
+
+Common Wrynose failures involve SPDX identifiers, `WORKDIR`/`UNPACKDIR`
+paths, old CMake versions, and build-time paths left in artifacts.
+Do not disable QA without a clear reason; fix the issue in the recipe or
+the source patch.
+
+## Licensing
+
+This layer contains recipes and patches from multiple upstream projects.
+The license for each component is declared in its recipe.

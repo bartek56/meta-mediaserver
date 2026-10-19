@@ -14,11 +14,11 @@ SYSTEMD_SERVICE:${PN} = "psplash-quit.service"
 
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/psplash-start.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/psplash-quit.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/psplash-start.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/psplash-quit.service ${D}${systemd_system_unitdir}
 }
 
 FILES:${PN} += "${systemd_system_unitdir}/psplash-start.service"
 FILES:${PN} += "${systemd_system_unitdir}/psplash-quit.service"
+FILES:${PN} += "${systemd_system_unitdir}/psplash-start@.service"
 FILES:${PN} += "${systemd_system_unitdir}/psplash-systemd.service"
-

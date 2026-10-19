@@ -1,0 +1,34 @@
+music_directory "/home/Music"
+playlist_directory "/var/lib/mpd/playlists"
+db_file "/var/lib/mpd/mpd.db"
+log_file "/var/log/mpd.log"
+pid_file "/var/run/mpd.pid"
+state_file "/var/lib/mpd/state"
+auto_update "yes"
+mixer_type "software"
+
+
+
+audio_output {
+    type "pulse"
+    name "Local Pulse"
+    sink "alsa_output.hdmi.stereo-fallback"
+}
+
+# if You want only play music from DLNA server, uncomment below and disable db_file
+#database {
+#    plugin  "upnp"
+#}
+
+#audio_output {
+#    type "pulse"
+#    server "192.168.1.6"
+#    name "Client Pulse"
+#}
+
+audio_output {
+    type            "fifo"
+    name            "snapcast"
+    path            "/tmp/snapmpdfifo"
+    format          "48000:16:2"
+}

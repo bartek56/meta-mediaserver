@@ -1,0 +1,3 @@
+#!/bin/sh
+exec python3 /usr/libexec/system-configurator/system_configurator_ui.py "$@"
+

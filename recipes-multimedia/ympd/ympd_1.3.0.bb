@@ -1,16 +1,13 @@
-LICENSE = "GPLv2 & GPLv3"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=eb723b61539feef013de476e68b5c50a"
-SRCREV = "${PV}"
+SRCREV = "ec008a4995666d673bd4cb3926fae7f4b6aa3239"
 
-SRC_URI[md5sum] = "90206af29c42af66fc900054816aee24"
-SRC_URI="https://github.com/notandy/ympd/archive/v${PV}.tar.gz \
+SRC_URI = "git://github.com/notandy/ympd.git;branch=master;protocol=https \
          file://ympd.service \
-         file://001-resolve_mpd_duplicate_during_linking.patch"
+         file://001-resolve_mpd_duplicate_during_linking.patch \
+         file://0002-update-cmake-minimum-version.patch"
 
 DEPENDS = "libmpdclient openssl mpd"
-
-P = "${PN}-${PV}"
-S = "${WORKDIR}/${P}"
 
 inherit pkgconfig cmake systemd
 
@@ -23,8 +20,7 @@ do_compile:prepend() {
 
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/ympd.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/ympd.service ${D}${systemd_system_unitdir}
 }
 
 FILES:${PN} += "${systemd_system_unitdir}/ympd.service"
-

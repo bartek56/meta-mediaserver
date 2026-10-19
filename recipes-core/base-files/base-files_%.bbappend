@@ -1,4 +1,8 @@
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+
+SRC_URI:append = " file://hosts"
+
 do_install:append () {
-    echo "192.168.1.10 opkg-server" >> ${D}${sysconfdir}/hosts
+    install -m 0644 ${UNPACKDIR}/hosts ${D}${sysconfdir}/hosts
 }
 

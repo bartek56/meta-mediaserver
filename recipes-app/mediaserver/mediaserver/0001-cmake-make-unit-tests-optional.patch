@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MediaServer layer maintainers <mediaserver@example.invalid>
+Date: Sat, 17 Oct 2026 22:45:00 +0200
+Subject: [PATCH] cmake: make unit tests optional
+
+The production Yocto recipes build the installed applications only. The
+upstream source tree does not ship the vendored googletest directory, so make
+the test subdirectory opt-in for downstream builds.
+
+Upstream-Status: Inappropriate [downstream build policy]
+---
+ CMakeLists.txt | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,7 +1,10 @@
+ cmake_minimum_required(VERSION 3.16)
+ project(MediaServer LANGUAGES CXX)
+ 
+-enable_testing()
++option(BUILD_TESTING "Build MediaServer unit tests" OFF)
++if(BUILD_TESTING)
++    enable_testing()
++endif()
+ 
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED ON)
+@@ -26,4 +29,6 @@
+ add_subdirectory(MediaServerStartup)
+ add_subdirectory(MediaServerApp)
+ add_subdirectory(Alarm)
+-add_subdirectory(UnitTests)
++if(BUILD_TESTING)
++    add_subdirectory(UnitTests)
++endif()
+-- 
+2.39.5

@@ -7,13 +7,13 @@ RDEPENDS:${PN} += "bash"
 SSTATE_SKIP_CREATION = "1"
 
 
-SRC_URI:arm="https://github.com/filebrowser/filebrowser/releases/download/v${PV}/linux-armv7-filebrowser.tar.gz \
+SRC_URI:arm = "https://github.com/filebrowser/filebrowser/releases/download/v${PV}/linux-armv7-filebrowser.tar.gz \
          file://filebrowser.service"
 
-SRC_URI:aarch64="https://github.com/filebrowser/filebrowser/releases/download/v${PV}/linux-arm64-filebrowser.tar.gz \
+SRC_URI:aarch64 = "https://github.com/filebrowser/filebrowser/releases/download/v${PV}/linux-arm64-filebrowser.tar.gz \
          file://filebrowser.service"
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 SHA_CHECKSUM:arm = "87451de51f2b230a095225c450a846da48c4f7589c2524cb8b4693a215ad3dff"
 SHA_CHECKSUM:aarch64 = "3e1fa5bb2320ab317cae8e7325ee4d409004981b17571bf80008c96dabfef23c"
@@ -32,7 +32,7 @@ do_install(){
 
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${WORKDIR}/filebrowser.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/filebrowser.service ${D}${systemd_system_unitdir}
 }
 
 FILES:${PN} += "/usr/bin/filebrowser"

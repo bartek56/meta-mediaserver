@@ -1,0 +1,22 @@
+services:
+  yocto:
+    build:
+      context: ./sources/meta-mediaserver/conf/docker
+      dockerfile: Dockerfile
+    image: yocto-ubuntu-26.04
+    entrypoint: /usr/local/bin/yocto-entrypoint
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    container_name: yocto-builder
+    hostname: yocto-builder
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/home/builder/yocto-project
+
+    environment:
+      - HOME=/home/builder
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US:en
+      - LC_ALL=en_US.UTF-8
+    working_dir: /home/builder/yocto-project
+    command: ["bash"]
