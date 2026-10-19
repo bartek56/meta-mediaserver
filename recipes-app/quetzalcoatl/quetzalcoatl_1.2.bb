@@ -26,7 +26,6 @@ do_install() {
     install -m 0644 ${UNPACKDIR}/mpc_mediaserver.service ${D}${systemd_system_unitdir}
 }
 
-SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 SYSTEMD_SERVICE:${PN} = "mpc_mediaserver.service"
 
 FILES:${PN} += " \

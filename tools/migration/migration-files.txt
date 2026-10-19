@@ -44,24 +44,40 @@ A /etc/systemd/network/10-wired.network
 A /etc/systemd/network/20-wireless.network
 A /etc/systemd/system/systemd-networkd-wait-online.service.d/10-mediaserver-any.conf
 
-# SSH, FTP and device identity — reported, never copied automatically
+# FTP and device identity — reported, never copied automatically
 A /etc/vsftpd.conf
 A /etc/vsftpd/vsftpd
 A /etc/vsftpd_user_conf/bartosz
-C /etc/sshd_config
-C /etc/ssh/sshd_config
 A /etc/hostname
 A /etc/hosts
 A /etc/resolv.conf
 
-# MediaServer applications
+# SSH config
+A /etc/ssh/ssh_config
+A /etc/ssh/sshd_config
+A /root/.ssh/config
+A /root/.ssh/authorized_keys
+A /root/.ssh/id_rsa
+A /root/.ssh/id_rsa.pub
+
+# Jellyfin
 A /etc/mediaserver/jellyfin.conf
+A /lib/systemd/system/jellyfin.service
+A /lib/systemd/system/jellyfin-tunnel.service
+A! /etc/jellyfin/config/
+
+# Filebrowser
+A /etc/filebrowser/filebrowser.json
+A /var/cache/filebrowser.db
+A /lib/systemd/system/filebrowser.service
+A /lib/systemd/system/filebrowser-tunnel.service
+
+# MediaServer app
 A /etc/mediaserver/alarm.ini
 A /lib/systemd/system/alarm.timer
 A /etc/mediaserver/youtubedl.ini
 A /etc/mediaserver/screensaver.conf
 B /etc/php-fpm.conf
-
 
 # system
 A /etc/fstab
@@ -70,9 +86,7 @@ A /etc/fstab
 # services
 A /lib/systemd/system/certbot.service
 A /lib/systemd/system/certbot.timer
-A /jellyfin-tunnel.service
 A /lib/systemd/system/ssh-tunnel-msi.service
-A /lib/systemd/system/filebrowser-tunnel.service
 A /lib/systemd/system/ssh-tunnel.service
 A /lib/systemd/system/website-tunnel.service
 
@@ -88,7 +102,6 @@ A /etc/letsencrypt/renewal-hooks/
 
 A /home/
 
-# Jellyfin configuration is intentionally opaque: all files, including hidden
-# files, are copied as one directory package without individual analysis.
-A! /etc/jellyfin/config/
 
+# scripts
+A /opt/wakeUpMSI.sh
