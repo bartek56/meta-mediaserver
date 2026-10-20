@@ -36,8 +36,13 @@ IMAGE_INSTALL:append = " \
 "
 
 # FFmpeg provider configuration
+PREFERRED_PROVIDER_ffmpeg = "ffmpeg"
+PREFERRED_PROVIDER_libav = "ffmpeg"
 PACKAGECONFIG:remove:pn-ffmpeg = "x264"
 PACKAGECONFIG:remove:pn-x264 = "ffmpeg"
+
+# mDNS NSS provider configuration
+PREFERRED_RPROVIDER_libnss-mdns = "avahi-libnss-mdns"
 
 # Raspberry Pi boot configuration
 ENABLE_UART = "1"
@@ -73,3 +78,5 @@ USER_CLASSES ?= "buildstats"
 CONF_VERSION = "2"
 BUILDHISTORY_COMMIT = "1"
 
+# problem with the qt.code.io repository
+# QT_GIT = "git://github.com"

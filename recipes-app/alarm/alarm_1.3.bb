@@ -11,6 +11,8 @@ SRC_URI = "file://alarm.service \
            file://alarm_snooze.service \
 "
 
+S = "${UNPACKDIR}"
+
 do_install(){
     install -d ${D}/opt
     install -m 0775 ${UNPACKDIR}/alarm.py ${D}/opt/alarm

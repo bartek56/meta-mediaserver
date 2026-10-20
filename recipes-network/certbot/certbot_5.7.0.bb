@@ -13,7 +13,7 @@ SRC_URI += "file://certbot.service \
 
 PYPI_PACKAGE = "certbot"
 
-inherit systemd pypi setuptools3
+inherit systemd pypi python_setuptools_build_meta
 
 do_install:append () {
     install -d ${D}${systemd_system_unitdir}

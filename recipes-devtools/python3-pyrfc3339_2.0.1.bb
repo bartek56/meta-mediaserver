@@ -9,5 +9,5 @@ SRC_URI[sha256sum] = "e47843379ea35c1296c3b6c67a948a1a490ae0584edfcbdea0eaffb5dd
 PYPI_PACKAGE = "pyrfc3339"
 
 
-inherit pypi setuptools3
+inherit pypi python_setuptools_build_meta
 

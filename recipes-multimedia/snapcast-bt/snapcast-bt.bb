@@ -11,6 +11,8 @@ SRC_URI = " \
     file://pa-event-generator.service \
 "
 
+S = "${UNPACKDIR}"
+
 RDEPENDS:${PN} = "bash snapcast-server"
 
 

@@ -6,5 +6,5 @@ RDEPENDS:${PN} += " python3"
 SRC_URI[sha256sum] = "4be4fe6cf3809c3988d75fa1213ce8e784d9d5d8380cac63c2dca555e105653d"
 PYPI_PACKAGE = "acme"
 
-inherit pypi setuptools3
+inherit pypi python_setuptools_build_meta
 

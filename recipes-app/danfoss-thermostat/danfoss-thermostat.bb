@@ -5,6 +5,8 @@ RDEPENDS:${PN} += " python3-libetrv"
 
 SRC_URI = "file://danfoss.py"
 
+S = "${UNPACKDIR}"
+
 do_install(){
     install -d ${D}/opt
     install -m 0755 ${UNPACKDIR}/danfoss.py ${D}/opt

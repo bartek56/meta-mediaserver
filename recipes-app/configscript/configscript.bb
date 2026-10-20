@@ -7,6 +7,8 @@ INSTALL_SCRIPT_NAME = '${@bb.utils.contains("DISTRO_FEATURES", "qt6", "installSc
 
 SRC_URI = "file://${INSTALL_SCRIPT_NAME}"
 
+S = "${UNPACKDIR}"
+
 
 do_install(){
     install -d ${D}/opt

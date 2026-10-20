@@ -7,4 +7,5 @@ inherit packagegroup
 RDEPENDS:${PN} = " \
     kernel-modules \
     localedef \
+    motd-status \
 "

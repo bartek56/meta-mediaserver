@@ -6,5 +6,5 @@ RDEPENDS:${PN} += " python3"
 SRC_URI[sha256sum] = "03c881bbf23aa07bccf1b837005975993c4ab4427ba57f959afdd9d1a2386848"
 PYPI_PACKAGE = "configobj"
 
-inherit pypi setuptools3
+inherit pypi python_setuptools_build_meta
 
