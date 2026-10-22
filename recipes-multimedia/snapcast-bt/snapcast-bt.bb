@@ -28,8 +28,8 @@ do_install() {
     install -m 0644 ${UNPACKDIR}/pa-event-generator.service ${D}${systemd_system_unitdir}
 }
 
-SYSTEMD_SERVICE_${PN} = "bt-snapcast-autoplug.service pa-event-generator.service"
-SYSTEMD_AUTO_ENABLE_${PN} = "enable"
+SYSTEMD_SERVICE:${PN} = "bt-snapcast-autoplug.service pa-event-generator.service"
+SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 FILES:${PN}-client = " \
     ${bindir}/snapclient \

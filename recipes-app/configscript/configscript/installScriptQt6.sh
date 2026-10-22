@@ -2,6 +2,13 @@
 
 source /opt/installCommon.sh
 
+configure_serial_gettys()
+{
+    # if those serial is enable, blutooth not working
+    systemctl disable serial-getty@ttyS0.service
+    systemctl disable getty@tty1
+}
+
 configure_alarm()
 {
     chgrp www-data /etc/mediaserver/alarm.ini

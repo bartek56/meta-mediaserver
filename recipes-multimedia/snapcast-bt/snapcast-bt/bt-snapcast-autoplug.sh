@@ -34,20 +34,27 @@ snapcast_set_stream() {
     STATUS_JSON=$(printf '{"id":1,"jsonrpc":"2.0","method":"Server.GetStatus"}\n' \
         | nc "$SNAPCAST_HOST" "$SNAPCAST_PORT")
 
-    # Extract group_id (first/default group)
-    GROUP_ID=$(echo "$STATUS_JSON" \
-        | sed -n 's/.*"groups":\[{"clients".*"id":"\([^"]*\)","muted".*/\1/p')
+    # Group IDs are followed by the group's muted flag.  Client IDs are not,
+    # so this avoids accidentally selecting a client instead of a group.
+    GROUP_IDS=$(printf '%s\n' "$STATUS_JSON" \
+        | grep -o '"id":"[^"]*","muted"' \
+        | sed 's/^"id":"//; s/","muted"$//')
 
-    if [ -z "$GROUP_ID" ]; then
-        log "snapcast_set_stream: cannot determine group_id"
+    if [ -z "$GROUP_IDS" ]; then
+        log "snapcast_set_stream: cannot determine group IDs"
         return 2
     fi
 
-    # Switch stream
-    printf '{"id":2,"jsonrpc":"2.0","method":"Group.SetStream","params":{"id":"%s","stream_id":"%s"}}\n' \
-        "$GROUP_ID" "$STREAM_NAME" \
-        | nc "$SNAPCAST_HOST" "$SNAPCAST_PORT" >/dev/null
-    log "switched to $STREAM_NAME"
+    # Switch every group, not only the first/default group.
+    while IFS= read -r GROUP_ID; do
+        [ -n "$GROUP_ID" ] || continue
+        printf '{"id":2,"jsonrpc":"2.0","method":"Group.SetStream","params":{"id":"%s","stream_id":"%s"}}\n' \
+            "$GROUP_ID" "$STREAM_NAME" \
+            | nc "$SNAPCAST_HOST" "$SNAPCAST_PORT" >/dev/null
+        log "switched group $GROUP_ID to $STREAM_NAME"
+    done <<EOF
+$GROUP_IDS
+EOF
 
     return 0
 }

@@ -54,8 +54,8 @@ There are two supported uses for this image:
 The endpoint's `snapclient.conf` currently points to `192.168.1.5`; this is a
 deployment-specific setting and should be changed for the target network.
 The installed `snapclient.service` uses the ALSA card
-`sysdefault:CARD=Headphones`, so the service configuration may also require a
-machine-specific adjustment.
+`sysdefault:CARD=Headphones` by default. For `raspberrypi0-2w-64`, the layer
+selects the HDMI card `sysdefault:CARD=b1`.
 
 ## Snapcast
 

@@ -59,7 +59,9 @@ disk_line() {
 }
 
 cpu="$(cpu_usage)"
-checked_at="$(date '+%Y-%m-%d %H:%M:%S %Z')"
+host_name="$(hostname)"
+host_padding=$(( (60 - ${#host_name}) / 2 ))
+[ "$host_padding" -lt 0 ] && host_padding=0
 ram_total_kib="$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)"
 ram_available_kib="$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)"
 ram_used_kib=$((ram_total_kib - ram_available_kib))
@@ -78,8 +80,7 @@ root_name="$(lsblk -ndo LABEL "$root_source" 2>/dev/null || true)"
 
 {
     printf '%s\n' '============================================================'
-    printf '%s\n' '                       MediaServer'
-    printf 'Checked:              %s\n' "$checked_at"
+    printf '%*s%s\n' "$host_padding" '' "$host_name"
     printf '%s\n' '============================================================'
     printf 'CPU:                  %s usage\n' "$cpu"
     printf 'RAM:                  %s / %s (%s%%), free %s\n' \

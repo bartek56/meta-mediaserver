@@ -21,6 +21,7 @@ TOOLS = " \
     vim \
     wget \
     git \
+    motd-status \
 "
 
 # The minimal image is used as a Snapcast/MPD audio endpoint.  MPD on the

@@ -1,0 +1,10 @@
+format=1
+yocto_branch=hardknott
+build_host=unknown
+machine=unknown
+distro=unknown
+distro_version=unknown
+image=legacy-target
+image_version=unknown
+source_date_epoch=unknown
+meta_mediaserver_commit=unknown

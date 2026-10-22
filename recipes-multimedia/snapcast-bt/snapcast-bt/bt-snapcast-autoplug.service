@@ -6,6 +6,7 @@ Wants=bluetooth.target
 
 [Service]
 Type=simple
+ExecStartPre=/usr/bin/bluetoothctl discoverable on
 
 Environment="XDG_RUNTIME_DIR=/run/user/0"
 Environment="PULSE_RUNTIME_PATH=/run/user/0/pulse"

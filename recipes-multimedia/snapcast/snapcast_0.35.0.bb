@@ -16,6 +16,9 @@ SRCREV = "f12373479243e93a97237592d6a3703539ec41d5"
 
 SNAPCLIENT_CONFIG = "${@bb.utils.contains('MEDIASERVER_QT6_HDMI_PROFILE', '1', 'snapclient.conf.qt6', 'snapclient.conf', d)}"
 
+SNAPCLIENT_SOUNDCARD ?= "sysdefault:CARD=Headphones"
+SNAPCLIENT_SOUNDCARD:raspberrypi0-2w-64 = "sysdefault:CARD=b1"
+
 DEPENDS += " \
     avahi \
     boost \
@@ -44,6 +47,8 @@ PACKAGES = " \
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${UNPACKDIR}/snapclient.service ${D}${systemd_system_unitdir}
+    sed -i "s|@SNAPCLIENT_SOUNDCARD@|${SNAPCLIENT_SOUNDCARD}|" \
+        ${D}${systemd_system_unitdir}/snapclient.service
     install -m 0644 ${UNPACKDIR}/snapserver.service ${D}${systemd_system_unitdir}
 
     install -d ${D}${sysconfdir}

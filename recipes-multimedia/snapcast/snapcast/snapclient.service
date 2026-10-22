@@ -5,8 +5,9 @@ Requires=pulseaudio.service
 After=connman.service sound.target avahi-daemon.service pulseaudio.service
 
 [Service]
-ExecStart=/usr/bin/snapclient --logsink=system --hostID "%H" --player alsa --soundcard sysdefault:CARD=Headphones
+ExecStart=/usr/bin/snapclient --logsink=system --hostID "%H" --player alsa --soundcard @SNAPCLIENT_SOUNDCARD@
 Restart=on-failure
+RestartSec=3s
 
 [Install]
 WantedBy=multi-user.target

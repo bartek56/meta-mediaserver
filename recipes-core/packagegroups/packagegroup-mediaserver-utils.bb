@@ -18,7 +18,6 @@ RDEPENDS:${PN} = " \
     git \
     bash \
     tzdata \
-    system-configurator \
     nano \
     vim \
 "

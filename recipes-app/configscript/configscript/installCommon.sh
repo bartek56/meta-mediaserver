@@ -13,13 +13,6 @@ configure_vim()
     fi
 }
 
-configure_serial_gettys()
-{
-    # if those serial is enable, blutooth not working
-    systemctl disable serial-getty@ttyS0.service
-    systemctl disable getty@tty1
-}
-
 disable_dhcpcd()
 {
     systemctl disable dhcpcd.service
