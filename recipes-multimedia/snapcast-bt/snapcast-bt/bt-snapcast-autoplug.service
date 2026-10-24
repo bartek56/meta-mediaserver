@@ -1,7 +1,7 @@
 [Unit]
 Description=Bluetooth to Snapcast autoplug daemon
-Requires=pulseaudio.service
-After=network.target sound.target bluetooth.target pulseaudio.service
+Requires=pulseaudio.service snapserver.service
+After=network.target sound.target bluetooth.target pulseaudio.service snapserver.service
 Wants=bluetooth.target
 
 [Service]

@@ -1,19 +1,26 @@
 #!/bin/bash
 
-SINK_NAME="snapcast_bt"
+SINK_BT="snapcast_bt"
+SINK_PC="snapcast_pc"
 FIFO_SNAPBT="/tmp/snapbtfifo"
+FIFO_SNAPPC="/tmp/snappcfifo"
 
 STATE_DIR="/run/bt-snapcast"
-NULLSINK_ID_FILE="$STATE_DIR/nullsink.id"
+NULLSINK_BT_ID_FILE="$STATE_DIR/nullsink_bt.id"
+NULLSINK_PC_ID_FILE="$STATE_DIR/nullsink_pc.id"
 LOOPBACK_ID_FILE="$STATE_DIR/loopback.id"
-PAREC_PID_FILE="$STATE_DIR/parec.pid"
-INITIALIZATION_TIMEOUT=3
+LOOPBACK_SOURCE_FILE="$STATE_DIR/loopback.source"
+PAREC_BT_PID_FILE="$STATE_DIR/parec_bt.pid"
+PAREC_PC_PID_FILE="$STATE_DIR/parec_pc.pid"
 DEFAULT_GAIN="120%"
 
 SNAPCAST_HOST="localhost"
 SNAPCAST_PORT="1705"
 SNAPCAST_STREAM_MPD="MPD"
 SNAPCAST_STREAM_BLUETOOTH="Bluetooth"
+SNAPCAST_STREAM_PC="PC"
+
+CURRENT_MODE=""
 
 mkdir -p "$STATE_DIR"
 
@@ -22,7 +29,7 @@ log() {
 }
 
 snapcast_set_stream() {
-    # usage: snapcast_set_stream Bluetooth|MPD
+    # usage: snapcast_set_stream Bluetooth|PC|MPD
     STREAM_NAME="$1"
 
     if [ -z "$STREAM_NAME" ]; then
@@ -64,142 +71,214 @@ start_bt_audio() {
 
     log "BT CONNECTED: $BT_SOURCE"
 
-    # 1. Null sink
-    if ! pactl list short sinks | grep -q "^.*\s$SINK_NAME\s"; then
-        log "Loading null sink $SINK_NAME"
-        NS_ID=$(pactl load-module module-null-sink \
-            sink_name=$SINK_NAME \
-            sink_properties=device.description=Snapcast_BT)
-
-        echo "$NS_ID" > "$NULLSINK_ID_FILE"
-    else
-        log "Null sink already exists"
-    fi
-
-    # 2. FIFO_SNAPBT
-    if [ ! -p "$FIFO_SNAPBT" ]; then
-        log "Creating FIFO_SNAPBT $FIFO_SNAPBT"
-        mkfifo "$FIFO_SNAPBT"
-    fi
-
-    # 3. parec
-    if [ ! -f "$PAREC_PID_FILE" ]; then
-        log "Starting parec"
-        parec -d ${SINK_NAME}.monitor \
-              --format=s16le --rate=48000 --channels=2 \
-              > "$FIFO_SNAPBT" &
-
-        echo $! > "$PAREC_PID_FILE"
-    fi
-
-    # 4. Loopback BT → Snapcast
-    if [ ! -f "$LOOPBACK_ID_FILE" ]; then
-        log "Loading loopback $BT_SOURCE -> $SINK_NAME"
-
-        LB_ID=$(pactl load-module module-loopback \
-            source="$BT_SOURCE" \
-            sink=$SINK_NAME \
-            latency_msec=10)
-
-        echo "$LB_ID" > "$LOOPBACK_ID_FILE"
-
-        # ---- Ustawiamy domyślny gain ----
-        sleep 0.5  # czekamy aż sink-input powstanie
-        LOOP_SINK_INPUT=$(pactl list sink-inputs short | awk '/module-loopback/ {print $1; exit}')
-        if [ -n "$LOOP_SINK_INPUT" ]; then
-            log "Setting loopback volume to $DEFAULT_GAIN"
-            pactl set-sink-input-volume "$LOOP_SINK_INPUT" "$DEFAULT_GAIN"
-        else
-            log "Nie udało się znaleźć sink-input dla loopbacka"
+    if [ -f "$LOOPBACK_ID_FILE" ]; then
+        ACTIVE_SOURCE=$(cat "$LOOPBACK_SOURCE_FILE" 2>/dev/null || true)
+        if [ "$ACTIVE_SOURCE" = "$BT_SOURCE" ]; then
+            log "Bluetooth loopback already exists"
+            return 0
         fi
+        stop_bt_audio
+    fi
+
+    log "Loading loopback $BT_SOURCE -> $SINK_BT"
+    if ! LB_ID=$(pactl load-module module-loopback \
+            source="$BT_SOURCE" \
+            sink="$SINK_BT" \
+            latency_msec=10); then
+        log "Could not load Bluetooth loopback for $BT_SOURCE"
+        return 1
+    fi
+
+    echo "$LB_ID" > "$LOOPBACK_ID_FILE"
+    echo "$BT_SOURCE" > "$LOOPBACK_SOURCE_FILE"
+
+    sleep 0.5
+    LOOP_SINK_INPUT=$(pactl list sink-inputs short | awk '/module-loopback/ {print $1; exit}')
+    if [ -n "$LOOP_SINK_INPUT" ]; then
+        log "Setting loopback volume to $DEFAULT_GAIN"
+        pactl set-sink-input-volume "$LOOP_SINK_INPUT" "$DEFAULT_GAIN"
+    else
+        log "Could not find sink input for Bluetooth loopback"
     fi
 }
 
 stop_bt_audio() {
     log "BT DISCONNECTED"
 
-    # 1. Kill parec
-    if [ -f "$PAREC_PID_FILE" ]; then
-        PAREC_PID=$(cat "$PAREC_PID_FILE")
-        log "Stopping parec ($PAREC_PID)"
-        kill "$PAREC_PID" 2>/dev/null
-        rm -f "$PAREC_PID_FILE"
-    fi
-
-    # 2. Unload loopback
+    # Keep the sink, FIFO and parec alive. They are the permanent Bluetooth
+    # Snapcast path; only the device-specific loopback is removed.
     if [ -f "$LOOPBACK_ID_FILE" ]; then
         LB_ID=$(cat "$LOOPBACK_ID_FILE")
         log "Unloading loopback module $LB_ID"
         pactl unload-module "$LB_ID"
         rm -f "$LOOPBACK_ID_FILE"
     fi
-
-    # 3. Unload null sink
-    if [ -f "$NULLSINK_ID_FILE" ]; then
-        NS_ID=$(cat "$NULLSINK_ID_FILE")
-        log "Unloading null sink module $NS_ID"
-        pactl unload-module "$NS_ID"
-        rm -f "$NULLSINK_ID_FILE"
-    fi
+    rm -f "$LOOPBACK_SOURCE_FILE"
 }
 
-init() {
-    log "Wait for pa signal.."
-    systemctl start pa-event-generator.service
-    FIFO_INIT=/tmp/pa-watch.fifo
-    rm -f "$FIFO_INIT"
-    mkfifo "$FIFO_INIT"
+find_bt_source() {
+    pactl list short sources | awk '$2 ~ /^bluez_source/ {print $2; exit}'
+}
 
-    pactl subscribe >"$FIFO_INIT" &
-    PACTL_PID=$!
+initialize_sink_path() {
+    SINK_NAME="$1"
+    FIFO_NAME="$2"
+    NULLSINK_ID_FILE="$3"
+    PAREC_PID_FILE="$4"
+    DESCRIPTION="$5"
 
-    if read -r -t "$INITIALIZATION_TIMEOUT" line <"$FIFO_INIT"; then
-        echo "[PA-WATCH] event OK: $line"
-        kill "$PACTL_PID"
-        wait "$PACTL_PID" 2>/dev/null
-        rm -f "$FIFO_INIT"
-        systemctl stop pa-event-generator.service
+    if ! pactl list short sinks | awk -v sink_name="$SINK_NAME" \
+            '$2 == sink_name {found=1} END {exit !found}'; then
+        log "Loading permanent null sink $SINK_NAME"
+        NS_ID=$(pactl load-module module-null-sink \
+            sink_name="$SINK_NAME" \
+            sink_properties="device.description=$DESCRIPTION")
+        echo "$NS_ID" > "$NULLSINK_ID_FILE"
     else
-        echo "[PA-WATCH] NO EVENT → exiting"
-        kill "$PACTL_PID"
-        wait "$PACTL_PID" 2>/dev/null
-        rm -f "$FIFO_INIT"
-        exit 1
+        log "Permanent null sink already exists: $SINK_NAME"
+    fi
+
+    if [ -e "$FIFO_NAME" ] && [ ! -p "$FIFO_NAME" ]; then
+        log "Removing invalid non-FIFO path $FIFO_NAME"
+        rm -f "$FIFO_NAME"
+    fi
+    if [ ! -p "$FIFO_NAME" ]; then
+        log "Creating permanent FIFO $FIFO_NAME"
+        mkfifo "$FIFO_NAME"
+    fi
+
+    if [ -f "$PAREC_PID_FILE" ] && kill -0 "$(cat "$PAREC_PID_FILE")" 2>/dev/null; then
+        log "Permanent parec already running for $SINK_NAME"
+    else
+        log "Starting permanent parec for $SINK_NAME"
+        parec -d "${SINK_NAME}.monitor" \
+              --format=s16le --rate=48000 --channels=2 \
+              > "$FIFO_NAME" &
+        echo $! > "$PAREC_PID_FILE"
     fi
 }
 
-main_loop() {
-    log "BT Snapcast listening Bluetooth clients.."
-    pactl subscribe | while read -r line; do
+initialize_audio_paths() {
+    log "Waiting for PulseAudio"
+    until pactl info >/dev/null 2>&1; do
+        sleep 1
+    done
 
-        # interesują nas tylko zdarzenia źródeł
-        echo "$line" | grep -q "source" || continue
+    initialize_sink_path "$SINK_BT" "$FIFO_SNAPBT" "$NULLSINK_BT_ID_FILE" \
+        "$PAREC_BT_PID_FILE" "Snapcast_BT"
+    initialize_sink_path "$SINK_PC" "$FIFO_SNAPPC" "$NULLSINK_PC_ID_FILE" \
+        "$PAREC_PC_PID_FILE" "Snapcast_PC"
+}
 
-        # CONNECT
-        if echo "$line" | grep -q "new"; then
-            sleep 0.5
+find_sink_id() {
+    pactl list short sinks | awk -v sink_name="$1" '$2 == sink_name {print $1; exit}'
+}
 
-            pactl list sources short | while read -r ID NAME REST; do
-                if echo "$NAME" | grep -q "^bluez_source"; then
-                    # jeśli nie mamy aktywnego loopbacka → nowy connect
-                    if [ ! -f "$LOOPBACK_ID_FILE" ]; then
-                        start_bt_audio "$NAME"
-                        snapcast_set_stream "$SNAPCAST_STREAM_BLUETOOTH"
-                    fi
-                fi
-            done
-        fi
+pc_audio_active() {
+    PC_SINK_ID=$(find_sink_id "$SINK_PC")
+    [ -n "$PC_SINK_ID" ] || return 1
 
-        # DISCONNECT
-        if echo "$line" | grep -q "remove"; then
+    pactl list sink-inputs | awk -v sink_id="$PC_SINK_ID" '
+        /^Sink Input #[0-9]+/ {
+            if (matched && active) { found=1 }
+            matched=0
+            active=0
+        }
+        /^[[:space:]]*Sink: / {
+            if ($2 == sink_id) { matched=1 }
+        }
+        /^[[:space:]]*Corked: no/ {
+            if (matched) { active=1 }
+        }
+        END {
+            if (matched && active) { found=1 }
+            exit !found
+        }
+    '
+}
+
+mpd_snapcast_active() {
+    mpc outputs 2>/dev/null \
+        | grep -Eiq '^[[:space:]]*Output [0-9]+ \(snapcast\) is enabled$'
+}
+
+set_mode() {
+    MODE="$1"
+    [ "$MODE" = "$CURRENT_MODE" ] && return 0
+
+    case "$MODE" in
+        bluetooth) STREAM_NAME="$SNAPCAST_STREAM_BLUETOOTH" ;;
+        pc)        STREAM_NAME="$SNAPCAST_STREAM_PC" ;;
+        mpd|none)  STREAM_NAME="$SNAPCAST_STREAM_MPD" ;;
+        *)         log "Unknown source mode: $MODE"; return 1 ;;
+    esac
+
+    if snapcast_set_stream "$STREAM_NAME"; then
+        CURRENT_MODE="$MODE"
+        log "active source mode: $MODE"
+    fi
+}
+
+monitor_audio_sources() {
+    PREV_BT=false
+    PREV_PC=false
+    PREV_MPD=false
+
+    while :; do
+        BT_SOURCE=$(find_bt_source)
+        BT_ACTIVE=false
+        if [ -n "$BT_SOURCE" ]; then
+            BT_ACTIVE=true
+            ACTIVE_SOURCE=$(cat "$LOOPBACK_SOURCE_FILE" 2>/dev/null || true)
+            if [ ! -f "$LOOPBACK_ID_FILE" ] || [ "$ACTIVE_SOURCE" != "$BT_SOURCE" ]; then
+                start_bt_audio "$BT_SOURCE"
+            fi
+        elif [ -f "$LOOPBACK_ID_FILE" ]; then
             stop_bt_audio
-            snapcast_set_stream "$SNAPCAST_STREAM_MPD"
         fi
+
+        PC_ACTIVE=false
+        if pc_audio_active; then
+            PC_ACTIVE=true
+        fi
+
+        MPD_ACTIVE=false
+        if mpd_snapcast_active; then
+            MPD_ACTIVE=true
+        fi
+
+        if [ "$CURRENT_MODE" = "" ]; then
+            if [ "$MPD_ACTIVE" = true ]; then
+                set_mode mpd
+            elif [ "$BT_ACTIVE" = true ]; then
+                set_mode bluetooth
+            elif [ "$PC_ACTIVE" = true ]; then
+                set_mode pc
+            else
+                set_mode none
+            fi
+        elif [ "$MPD_ACTIVE" = true ] && [ "$PREV_MPD" = false ]; then
+            set_mode mpd
+        elif [ "$PC_ACTIVE" = true ] && [ "$PREV_PC" = false ]; then
+            set_mode pc
+        elif [ "$BT_ACTIVE" = true ] && [ "$PREV_BT" = false ]; then
+            set_mode bluetooth
+        elif [ "$CURRENT_MODE" = bluetooth ] && [ "$BT_ACTIVE" = false ]; then
+            if [ "$PC_ACTIVE" = true ]; then
+                set_mode pc
+            else
+                set_mode mpd
+            fi
+        fi
+
+        PREV_BT="$BT_ACTIVE"
+        PREV_PC="$PC_ACTIVE"
+        PREV_MPD="$MPD_ACTIVE"
+        sleep 1
     done
 }
 
-
 log "BT Snapcast autoplug started"
-init
-main_loop
+initialize_audio_paths
+monitor_audio_sources
 

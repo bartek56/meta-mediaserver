@@ -13,7 +13,7 @@ SRC_URI = " \
 
 S = "${UNPACKDIR}"
 
-RDEPENDS:${PN} = "bash snapcast-server"
+RDEPENDS:${PN} = "bash mpc pulseaudio-misc snapcast-server"
 
 
 inherit systemd
