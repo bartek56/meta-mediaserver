@@ -13,6 +13,9 @@ LOOPBACK_SOURCE_FILE="$STATE_DIR/loopback.source"
 PAREC_BT_PID_FILE="$STATE_DIR/parec_bt.pid"
 PAREC_PC_PID_FILE="$STATE_DIR/parec_pc.pid"
 DEFAULT_GAIN="120%"
+CAPTURE_IDLE_TIMEOUT=60
+MONITOR_INTERVAL=2
+MPD_CHECK_INTERVAL=5
 
 SNAPCAST_HOST="localhost"
 SNAPCAST_PORT="1705"
@@ -105,8 +108,8 @@ start_bt_audio() {
 stop_bt_audio() {
     log "BT DISCONNECTED"
 
-    # Keep the sink, FIFO and parec alive. They are the permanent Bluetooth
-    # Snapcast path; only the device-specific loopback is removed.
+    # Keep the sink and FIFO as the permanent Bluetooth Snapcast path. The
+    # capture process is stopped separately after the idle timeout.
     if [ -f "$LOOPBACK_ID_FILE" ]; then
         LB_ID=$(cat "$LOOPBACK_ID_FILE")
         log "Unloading loopback module $LB_ID"
@@ -114,6 +117,47 @@ stop_bt_audio() {
         rm -f "$LOOPBACK_ID_FILE"
     fi
     rm -f "$LOOPBACK_SOURCE_FILE"
+}
+
+start_capture() {
+    SINK_NAME="$1"
+    FIFO_NAME="$2"
+    PAREC_PID_FILE="$3"
+
+    if [ -f "$PAREC_PID_FILE" ] && kill -0 "$(cat "$PAREC_PID_FILE")" 2>/dev/null; then
+        return 0
+    fi
+
+    log "Starting audio capture for $SINK_NAME"
+    parec -d "${SINK_NAME}.monitor" \
+          --format=s16le --rate=48000 --channels=2 \
+          > "$FIFO_NAME" &
+    echo $! > "$PAREC_PID_FILE"
+}
+
+stop_capture() {
+    SINK_NAME="$1"
+    PAREC_PID_FILE="$2"
+
+    if [ ! -f "$PAREC_PID_FILE" ]; then
+        return 0
+    fi
+
+    PAREC_PID=$(cat "$PAREC_PID_FILE" 2>/dev/null || true)
+    if [ -n "$PAREC_PID" ] && kill -0 "$PAREC_PID" 2>/dev/null; then
+        log "Stopping idle audio capture for $SINK_NAME after ${CAPTURE_IDLE_TIMEOUT}s"
+        kill "$PAREC_PID" 2>/dev/null || true
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
+            kill -0 "$PAREC_PID" 2>/dev/null || break
+            sleep 0.1
+        done
+        if kill -0 "$PAREC_PID" 2>/dev/null; then
+            log "Force-stopping unresponsive audio capture for $SINK_NAME"
+            kill -KILL "$PAREC_PID" 2>/dev/null || true
+        fi
+        wait "$PAREC_PID" 2>/dev/null || true
+    fi
+    rm -f "$PAREC_PID_FILE"
 }
 
 find_bt_source() {
@@ -147,15 +191,8 @@ initialize_sink_path() {
         mkfifo "$FIFO_NAME"
     fi
 
-    if [ -f "$PAREC_PID_FILE" ] && kill -0 "$(cat "$PAREC_PID_FILE")" 2>/dev/null; then
-        log "Permanent parec already running for $SINK_NAME"
-    else
-        log "Starting permanent parec for $SINK_NAME"
-        parec -d "${SINK_NAME}.monitor" \
-              --format=s16le --rate=48000 --channels=2 \
-              > "$FIFO_NAME" &
-        echo $! > "$PAREC_PID_FILE"
-    fi
+    # Capture is started lazily by monitor_audio_sources when the source is
+    # active. Keeping the sink and FIFO does not require a running parec.
 }
 
 initialize_audio_paths() {
@@ -179,6 +216,29 @@ pc_audio_active() {
     [ -n "$PC_SINK_ID" ] || return 1
 
     pactl list sink-inputs | awk -v sink_id="$PC_SINK_ID" '
+        /^Sink Input #[0-9]+/ {
+            if (matched && active) { found=1 }
+            matched=0
+            active=0
+        }
+        /^[[:space:]]*Sink: / {
+            if ($2 == sink_id) { matched=1 }
+        }
+        /^[[:space:]]*Corked: no/ {
+            if (matched) { active=1 }
+        }
+        END {
+            if (matched && active) { found=1 }
+            exit !found
+        }
+    '
+}
+
+bluetooth_audio_active() {
+    BT_SINK_ID=$(find_sink_id "$SINK_BT")
+    [ -n "$BT_SINK_ID" ] || return 1
+
+    pactl list sink-inputs | awk -v sink_id="$BT_SINK_ID" '
         /^Sink Input #[0-9]+/ {
             if (matched && active) { found=1 }
             matched=0
@@ -223,6 +283,10 @@ monitor_audio_sources() {
     PREV_BT=false
     PREV_PC=false
     PREV_MPD=false
+    BT_IDLE_SECONDS=0
+    PC_IDLE_SECONDS=0
+    MPD_ACTIVE=false
+    MPD_CHECK_ELAPSED=$MPD_CHECK_INTERVAL
 
     while :; do
         BT_SOURCE=$(find_bt_source)
@@ -242,9 +306,37 @@ monitor_audio_sources() {
             PC_ACTIVE=true
         fi
 
-        MPD_ACTIVE=false
-        if mpd_snapcast_active; then
-            MPD_ACTIVE=true
+        BT_AUDIO_ACTIVE=false
+        if bluetooth_audio_active; then
+            BT_AUDIO_ACTIVE=true
+        fi
+
+        if [ "$BT_AUDIO_ACTIVE" = true ]; then
+            BT_IDLE_SECONDS=0
+            start_capture "$SINK_BT" "$FIFO_SNAPBT" "$PAREC_BT_PID_FILE"
+        else
+            BT_IDLE_SECONDS=$((BT_IDLE_SECONDS + 1))
+            if [ "$BT_IDLE_SECONDS" -ge "$CAPTURE_IDLE_TIMEOUT" ]; then
+                stop_capture "$SINK_BT" "$PAREC_BT_PID_FILE"
+            fi
+        fi
+
+        if [ "$PC_ACTIVE" = true ]; then
+            PC_IDLE_SECONDS=0
+            start_capture "$SINK_PC" "$FIFO_SNAPPC" "$PAREC_PC_PID_FILE"
+        else
+            PC_IDLE_SECONDS=$((PC_IDLE_SECONDS + 1))
+            if [ "$PC_IDLE_SECONDS" -ge "$CAPTURE_IDLE_TIMEOUT" ]; then
+                stop_capture "$SINK_PC" "$PAREC_PC_PID_FILE"
+            fi
+        fi
+
+        if [ "$MPD_CHECK_ELAPSED" -ge "$MPD_CHECK_INTERVAL" ]; then
+            MPD_ACTIVE=false
+            if mpd_snapcast_active; then
+                MPD_ACTIVE=true
+            fi
+            MPD_CHECK_ELAPSED=0
         fi
 
         if [ "$CURRENT_MODE" = "" ]; then
@@ -274,7 +366,8 @@ monitor_audio_sources() {
         PREV_BT="$BT_ACTIVE"
         PREV_PC="$PC_ACTIVE"
         PREV_MPD="$MPD_ACTIVE"
-        sleep 1
+        sleep "$MONITOR_INTERVAL"
+        MPD_CHECK_ELAPSED=$((MPD_CHECK_ELAPSED + MONITOR_INTERVAL))
     done
 }
 
