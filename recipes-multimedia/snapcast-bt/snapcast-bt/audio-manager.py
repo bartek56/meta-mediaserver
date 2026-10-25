@@ -904,7 +904,10 @@ class Controller:
         if now >= self.next_snap_presence_check:
             reachable_clients = {
                 service_name for service_name in known_clients
-                if self._network_reachable(service_name)
+                if (
+                    not self._service_addresses(service_name)
+                    or self._network_reachable(service_name)
+                )
             }
             self.next_snap_presence_check = now + AVAHI_POLL_INTERVAL
             if reachable_clients != known_clients:

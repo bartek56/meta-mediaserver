@@ -52,9 +52,7 @@ do_install:append() {
     install -m 0755 ${UNPACKDIR}/snapclient-zeroconf-publish.sh ${D}${bindir}
     install -m 0644 ${UNPACKDIR}/snapclient-zeroconf-publish.service ${D}${systemd_system_unitdir}
     sed -i "s|@SNAPCLIENT_SOUNDCARD@|${SNAPCLIENT_SOUNDCARD}|" \
-        ${D}${systemd_system_u
-￼
-Latest responsenitdir}/snapclient.service
+        ${D}${systemd_system_unitdir}/snapclient.service
     install -m 0644 ${UNPACKDIR}/snapserver.service ${D}${systemd_system_unitdir}
 
     install -d ${D}${sysconfdir}
