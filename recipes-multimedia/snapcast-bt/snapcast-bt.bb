@@ -5,30 +5,38 @@ LICENSE = "CLOSED"
 
 
 SRC_URI = " \
-    file://bt-snapcast-autoplug.sh \
-    file://bt-snapcast-autoplug.service \
+    file://audio-manager.py \
+    file://audio-manager.service \
     file://pa-event-generator.sh \
     file://pa-event-generator.service \
 "
 
 S = "${UNPACKDIR}"
 
-RDEPENDS:${PN} = "bash mpc pulseaudio-misc snapcast-server"
+RDEPENDS:${PN} = " \
+    python3-core \
+    python3-dbus \
+    python3-pygobject \
+    python3-mpd2 \
+    python3-pulsectl \
+    pulseaudio-misc \
+    snapcast-server \
+"
 
 
 inherit systemd
 
 do_install() {
     install -d ${D}${bindir}
-    install -m 0755 ${UNPACKDIR}/bt-snapcast-autoplug.sh ${D}${bindir}
+    install -m 0755 ${UNPACKDIR}/audio-manager.py ${D}${bindir}
     install -m 0755 ${UNPACKDIR}/pa-event-generator.sh ${D}${bindir}
 
     install -d ${D}${systemd_system_unitdir}
-    install -m 0644 ${UNPACKDIR}/bt-snapcast-autoplug.service ${D}${systemd_system_unitdir}
+    install -m 0644 ${UNPACKDIR}/audio-manager.service ${D}${systemd_system_unitdir}
     install -m 0644 ${UNPACKDIR}/pa-event-generator.service ${D}${systemd_system_unitdir}
 }
 
-SYSTEMD_SERVICE:${PN} = "bt-snapcast-autoplug.service pa-event-generator.service"
+SYSTEMD_SERVICE:${PN} = "audio-manager.service pa-event-generator.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 FILES:${PN}-client = " \
@@ -40,8 +48,8 @@ FILES:${PN}-client = " \
 FILES:${PN}-client-doc = "${mandir}/man1/snapclient*"
 
 FILES:${PN} = " \
-    ${bindir}/bt-snapcast-autoplug.sh \
-    ${systemd_system_unitdir}/bt-snapcast-autoplug.service \
+    ${bindir}/audio-manager.py \
+    ${systemd_system_unitdir}/audio-manager.service \
     ${bindir}/pa-event-generator.sh \
     ${systemd_system_unitdir}/pa-event-generator.service \
 "

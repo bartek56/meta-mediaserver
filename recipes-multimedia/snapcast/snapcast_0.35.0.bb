@@ -6,6 +6,8 @@ LICENSE = "GPL-3.0-only"
 SRC_URI = " \
     git://github.com/snapcast/snapcast.git;protocol=https;branch=develop \
     file://snapclient.service \
+    file://snapclient-zeroconf-publish.sh \
+    file://snapclient-zeroconf-publish.service \
     file://snapserver.service \
     file://snapserver.conf \
     file://${SNAPCLIENT_CONFIG} \
@@ -33,7 +35,7 @@ inherit cmake systemd pkgconfig
 
 EXTRA_OECMAKE = "-DBUILD_TESTS=OFF -DBUILD_STATIC_LIBS=OFF"
 
-RDEPENDS:${PN}-client += "pulseaudio"
+RDEPENDS:${PN}-client += "pulseaudio avahi-daemon avahi-utils"
 
 PACKAGES = " \
     ${PN}-client \
@@ -47,8 +49,12 @@ PACKAGES = " \
 do_install:append() {
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${UNPACKDIR}/snapclient.service ${D}${systemd_system_unitdir}
+    install -m 0755 ${UNPACKDIR}/snapclient-zeroconf-publish.sh ${D}${bindir}
+    install -m 0644 ${UNPACKDIR}/snapclient-zeroconf-publish.service ${D}${systemd_system_unitdir}
     sed -i "s|@SNAPCLIENT_SOUNDCARD@|${SNAPCLIENT_SOUNDCARD}|" \
-        ${D}${systemd_system_unitdir}/snapclient.service
+        ${D}${systemd_system_u
+￼
+Latest responsenitdir}/snapclient.service
     install -m 0644 ${UNPACKDIR}/snapserver.service ${D}${systemd_system_unitdir}
 
     install -d ${D}${sysconfdir}
@@ -61,7 +67,7 @@ do_install:append() {
 }
 
 SYSTEMD_PACKAGES = "${PN}-client ${PN}-server"
-SYSTEMD_SERVICE:${PN}-client = "snapclient.service"
+SYSTEMD_SERVICE:${PN}-client = "snapclient.service snapclient-zeroconf-publish.service"
 SYSTEMD_SERVICE:${PN}-server = "snapserver.service"
 
 SYSTEMD_AUTO_ENABLE:${PN}-client = "enable"
@@ -72,6 +78,8 @@ FILES:${PN}-client = " \
     ${bindir}/snapclient \
     ${sysconfdir}/snapclient.conf \
     ${systemd_system_unitdir}/snapclient.service \
+    ${bindir}/snapclient-zeroconf-publish.sh \
+    ${systemd_system_unitdir}/snapclient-zeroconf-publish.service \
 "
 
 FILES:${PN}-client-doc = "${mandir}/man1/snapclient*"

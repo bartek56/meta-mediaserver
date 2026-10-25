@@ -1,7 +1,7 @@
 [Unit]
-Description=Bluetooth to Snapcast autoplug daemon
-Requires=pulseaudio.service snapserver.service
-After=network.target sound.target bluetooth.target pulseaudio.service snapserver.service
+Description=Media audio manager
+Wants=pulseaudio.service
+After=network.target sound.target bluetooth.target pulseaudio.service
 Wants=bluetooth.target
 
 [Service]
@@ -11,7 +11,7 @@ ExecStartPre=/usr/bin/bluetoothctl discoverable on
 Environment="XDG_RUNTIME_DIR=/run/user/0"
 Environment="PULSE_RUNTIME_PATH=/run/user/0/pulse"
 
-ExecStart=/usr/bin/bt-snapcast-autoplug.sh
+ExecStart=/usr/bin/audio-manager.py
 
 KillMode=control-group
 TimeoutStopSec=3

@@ -3,7 +3,8 @@
 import time
 import os
 import configparser
-from mpd import MPDClient
+import logging
+from mpd import CommandError, MPDClient
 
 
 # ---------------- CONFIG ----------------
@@ -32,6 +33,8 @@ ALARM_CONFIG_FILE = "/tmp/alarmConfig"
 
 
 client = MPDClient()
+logging.basicConfig(level=logging.INFO, format="[ALARM] %(levelname)s: %(message)s")
+LOG = logging.getLogger("alarm")
 
 
 def connect():
@@ -113,6 +116,39 @@ def ensure_playing():
         client.play()
 
 
+def load_configured_playlist():
+    """Load the configured playlist, or leave playback to ensure_playing."""
+
+    playlist = (PLAYLIST or "").strip()
+    if not playlist:
+        LOG.warning("No alarm playlist is configured; using random songs")
+        return False
+
+    try:
+        available = {
+            item.get("playlist")
+            for item in client.listplaylists()
+            if item.get("playlist")
+        }
+    except (CommandError, OSError) as exc:
+        LOG.warning("Could not check alarm playlist %r: %s; using random songs", playlist, exc)
+        return False
+
+    if playlist not in available:
+        LOG.warning("Alarm playlist %r is not available; using random songs", playlist)
+        return False
+
+    try:
+        client.load(playlist)
+    except CommandError as exc:
+        LOG.warning("Could not load alarm playlist %r: %s; using random songs", playlist, exc)
+        return False
+
+    client.random(1)
+    client.play()
+    return True
+
+
 def ramp_volume():
     while True:
         time.sleep(GROWING_SPEED)
@@ -156,9 +192,7 @@ def main():
 
     else:
         print(f"----- load playlist {PLAYLIST}")
-        client.load(PLAYLIST)
-        client.random(1)
-        client.play()
+        load_configured_playlist()
 
     print("----- start")
     ensure_playing()

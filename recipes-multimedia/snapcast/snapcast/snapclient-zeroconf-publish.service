@@ -1,0 +1,15 @@
+[Unit]
+Description=Publish Snapclient presence over Avahi
+Wants=avahi-daemon.service
+After=network-online.target avahi-daemon.service snapclient.service
+BindsTo=snapclient.service
+PartOf=snapclient.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/snapclient-zeroconf-publish.sh
+Restart=on-failure
+RestartSec=3s
+
+[Install]
+WantedBy=multi-user.target

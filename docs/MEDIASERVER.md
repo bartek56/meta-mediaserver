@@ -114,7 +114,7 @@ enables the `bluez5` and `bluetooth` distro features, while the audio package
 group installs the PulseAudio Bluetooth discovery, policy, and device modules.
 
 For the automatic Bluetooth-to-Snapcast path, install the `snapcast-bt`
-package. Its `bt-snapcast-autoplug.service` listens for PulseAudio source
+package. Its `audio-manager.service` listens for PulseAudio source
 events and manages the temporary capture path. `pa-event-generator.service`
 generates a short PulseAudio event during startup so the watcher can verify
 that PulseAudio is ready.
