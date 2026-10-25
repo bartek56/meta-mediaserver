@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MediaServer Yocto <mediaserver@example.invalid>
+Date: Sat, 24 Oct 2026 11:35:00 +0200
+Subject: [PATCH] Pass OAuth token to SABR player requests
+
+Upstream-Status: Pending
+
+The SABR player resolver obtained an OAuth access token but discarded it
+when trying the WEB_REMIX and IOS InnerTube clients. As a result, Premium
+accounts fell back to an unauthenticated IOS request and were throttled
+after approximately 60 seconds. Also allow WEB_REMIX when OAuth or a cast
+credential transfer token is available without cookies.
+
+---
+diff --git a/src/sabr/stream.rs b/src/sabr/stream.rs
+index cebadf6..e99fae3 100644
+--- a/src/sabr/stream.rs
++++ b/src/sabr/stream.rs
+@@ -567,18 +567,18 @@ async fn get_player_data(
+     ctt: Option<&str>,
+     yt_cookies: Option<&crate::cookies::YtCookies>,
+     yt_session: Option<&crate::cookies::YtMusicSession>,
+-    _oauth_token: Option<&str>,
++    oauth_token: Option<&str>,
+ ) -> Result<PlayerResult, SabrError> {
+     let gvs = fetch_pot_token(http, Some(video_id)).await;
+ 
+     // --- Attempt 1: WEB_REMIX + ctt + cookies ---
+     // Requires nsig decoding of SABR URL (handled by caller).
+-    if yt_session.is_some() {
++    if yt_session.is_some() || oauth_token.is_some() || ctt.is_some() {
+         tracing::info!("[sabr] WEB_REMIX /player (ctt={}, cookies={}, session=true)",
+             ctt.is_some(), yt_cookies.is_some());
+         match innertube_player(
+             http, video_id, &WEB_REMIX_CLIENT, ctt, None, None,
+-            yt_cookies, yt_session, None,
++            yt_cookies, yt_session, oauth_token,
+         ).await {
+             Ok(data) => {
+                 tracing::info!("[sabr] WEB_REMIX /player OK");
+@@ -593,7 +593,7 @@ async fn get_player_data(
+     // --- Fallback: IOS ---
+     // No nsig needed but 60s throttle (stream_protection_status=2).
+     tracing::info!("[sabr] IOS /player fallback (potoken={})", gvs.is_some());
+-    let data = innertube_player(http, video_id, &IOS_CLIENT, None, None, None, None, None, None).await?;
++    let data = innertube_player(http, video_id, &IOS_CLIENT, None, None, None, None, None, oauth_token).await?;
+     tracing::info!("[sabr] IOS /player OK");
+     Ok(PlayerResult { player: data, gvs_token: gvs, client_config: &IOS_CLIENT })
+ }
+

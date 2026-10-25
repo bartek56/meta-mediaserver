@@ -1,0 +1,18 @@
+[Unit]
+Description=YouTube Proof-of-Origin Token provider
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=HOME=/var/lib/bgutil-pot
+Environment=XDG_CACHE_HOME=/var/lib/bgutil-pot/cache
+WorkingDirectory=/var/lib/bgutil-pot
+ExecStart=/usr/bin/bgutil-pot server --host 127.0.0.1 --port 4416
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

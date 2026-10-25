@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MediaServer Yocto <mediaserver@example.invalid>
+Date: Sat, 24 Oct 2026 11:05:00 +0200
+Subject: [PATCH] Disable Cargo stripping for Yocto packaging
+
+Upstream-Status: Inappropriate [embedded build system handles stripping]
+
+Let Yocto perform binary stripping during packaging so that package QA and
+debug symbol handling remain under the control of the build system.
+
+---
+ Cargo.toml | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/Cargo.toml b/Cargo.toml
+index 39f9bd9..fce8e40 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -39,1 +39,0 @@
+-strip = true

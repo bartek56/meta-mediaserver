@@ -14,4 +14,5 @@ RDEPENDS:${PN} = " \
     mpd \
     mpc \
     ympd \
+    ytcast-open \
 "

@@ -46,6 +46,7 @@ IMAGE_INSTALL:append = " \
     ${TOOLS} \
     ${PULSE_AUDIO} \
     ${AUDIO_TOOLS} \
+    ytcast-open \
 "
 
 # Include modules in rootfs
