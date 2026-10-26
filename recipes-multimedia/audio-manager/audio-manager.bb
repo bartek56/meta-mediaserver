@@ -2,7 +2,7 @@ SUMMARY = "Snapcast Bluetooth audio manager"
 DESCRIPTION = "Event-driven audio manager for Snapcast, Bluetooth, PulseAudio, and MPD"
 LICENSE = "CLOSED"
 
-FILESEXTRAPATHS:prepend := "${THISDIR}/snapcast-bt:"
+FILESEXTRAPATHS:prepend := "${THISDIR}/audio-manager:"
 
 
 
@@ -21,8 +21,6 @@ SRC_URI = " \
     file://audio_manager/registry.py \
     file://audio_manager/scheduler.py \
     file://audio-manager.service \
-    file://pa-event-generator.sh \
-    file://pa-event-generator.service \
 "
 
 S = "${UNPACKDIR}"
@@ -42,7 +40,6 @@ inherit systemd python3-dir
 do_install() {
     install -d ${D}${bindir}
     install -m 0755 ${UNPACKDIR}/audio-manager.py ${D}${bindir}
-    install -m 0755 ${UNPACKDIR}/pa-event-generator.sh ${D}${bindir}
 
     install -d ${D}${PYTHON_SITEPACKAGES_DIR}/audio_manager
     install -m 0644 ${UNPACKDIR}/audio_manager/*.py \
@@ -50,10 +47,9 @@ do_install() {
 
     install -d ${D}${systemd_system_unitdir}
     install -m 0644 ${UNPACKDIR}/audio-manager.service ${D}${systemd_system_unitdir}
-    install -m 0644 ${UNPACKDIR}/pa-event-generator.service ${D}${systemd_system_unitdir}
 }
 
-SYSTEMD_SERVICE:${PN} = "audio-manager.service pa-event-generator.service"
+SYSTEMD_SERVICE:${PN} = "audio-manager.service"
 SYSTEMD_AUTO_ENABLE:${PN} = "enable"
 
 FILES:${PN}-client = " \
@@ -68,8 +64,4 @@ FILES:${PN} = " \
     ${bindir}/audio-manager.py \
     ${PYTHON_SITEPACKAGES_DIR}/audio_manager/*.py \
     ${systemd_system_unitdir}/audio-manager.service \
-    ${bindir}/pa-event-generator.sh \
-    ${systemd_system_unitdir}/pa-event-generator.service \
 "
-
-FILES:${PN}-server-doc = "${mandir}/man1/snapserver*"

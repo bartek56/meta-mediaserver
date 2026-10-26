@@ -9,9 +9,9 @@ import stat
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
-from .adapters import SystemdUnitController
+from .adapters import SnapcastRpcClient, SystemdUnitController
 from .models import DeviceState, ServiceKind, ServiceStatus
 from .scheduler import EventLoop, MonotonicScheduler, TimerHandle, WorkerPool
 
@@ -158,21 +158,23 @@ class BluetoothRouter:
         self._source: str | None = None
         self._target: str | None = None
 
-    def reconcile(self, snapshot: PulseSnapshot, snapserver_active: bool) -> None:
-        """Make the Bluetooth loopback target match the Snapserver state."""
+    def reconcile(self, snapshot: PulseSnapshot, snapserver_active: bool) -> bool:
+        """Make the Bluetooth loopback target match the Snapserver state.
+
+        Returns:
+            ``True`` when Bluetooth is routed to the Snapcast sink.
+        """
 
         source = self._find_bluetooth_source(snapshot)
         target = self._snapcast_sink if snapserver_active else self._physical_sink(snapshot)
         if source == self._source and target == self._target:
-            if target is not None:
-                self._pulse.set_loopback_volume(target, DEFAULT_BLUETOOTH_LOOPBACK_GAIN)
-            return
+            return source is not None and target == self._snapcast_sink
         if source is None or target is None:
             self._remove_loopback()
             self._source = source
             self._target = target
             LOG.debug("Bluetooth loopback is inactive: source=%s target=%s", source, target)
-            return
+            return False
         self._ensure_loopback(source, target)
         self._source = source
         self._target = target
@@ -181,6 +183,7 @@ class BluetoothRouter:
             source,
             target,
         )
+        return target == self._snapcast_sink
 
     @staticmethod
     def _find_bluetooth_source(snapshot: PulseSnapshot) -> str | None:
@@ -229,7 +232,6 @@ class BluetoothRouter:
         ]
         desired = f"source={source} sink={target}"
         if any(desired in module.argument for module in matching):
-            self._pulse.set_loopback_volume(target, DEFAULT_BLUETOOTH_LOOPBACK_GAIN)
             return
         for module in matching:
             self._pulse.unload_module(module.index)
@@ -421,29 +423,49 @@ class MpdCoordinator:
         self._systemd = systemd
         self._debounce = debounce
         self._timer: TimerHandle | None = None
-        self._signature: tuple[tuple[str, str], ...] = ()
+        self._previous_active_pulse_devices: set[str] = set()
+        self._previous_active_snapclient_devices: set[str] = set()
         self._restart_inflight = False
 
     def update_topology(self, devices: tuple[DeviceState, ...]) -> None:
-        """Schedule an MPD restart when PulseAudio or Snapclient state changes."""
+        """Schedule an MPD restart for stable remote topology changes.
 
-        signature_items: list[tuple[str, str]] = []
-        for device in devices:
-            if (
-                device.has_service(ServiceKind.PULSE_AUDIO)
-                and device.pulse_status is ServiceStatus.ACTIVE
-            ):
-                signature_items.append((device.device_id, "pulse"))
-            if (
-                device.has_service(ServiceKind.SNAPCLIENT)
-                and device.snapclient_status is ServiceStatus.ACTIVE
-            ):
-                signature_items.append((device.device_id, "snapclient"))
-        signature = tuple(sorted(signature_items))
-        if signature == self._signature:
+        The active remote PulseAudio and Snapclient sets are the source of
+        truth.  A restart is requested when either set gains or loses a
+        device; the MPD configurator then regenerates its outputs from the
+        current active-client file.
+        """
+
+        active_pulse = {
+            device.device_id
+            for device in devices
+            if device.has_service(ServiceKind.PULSE_AUDIO)
+            and device.pulse_status is ServiceStatus.ACTIVE
+        }
+        active_snapclients = {
+            device.device_id
+            for device in devices
+            if device.has_service(ServiceKind.SNAPCLIENT)
+            and device.snapclient_status is ServiceStatus.ACTIVE
+        }
+
+        added_pulse = active_pulse - self._previous_active_pulse_devices
+        added_snapclients = active_snapclients - self._previous_active_snapclient_devices
+        removed_pulse = self._previous_active_pulse_devices - active_pulse
+        removed_snapclients = self._previous_active_snapclient_devices - active_snapclients
+        self._previous_active_pulse_devices = active_pulse
+        self._previous_active_snapclient_devices = active_snapclients
+
+        if not (added_pulse or added_snapclients or removed_pulse or removed_snapclients):
             return
-        self._signature = signature
-        LOG.info("Remote audio topology changed; scheduling MPD update")
+        LOG.info(
+            "Stable remote MPD topology changed "
+            "(PulseAudio +%s/-%s, Snapclient +%s/-%s); scheduling MPD update",
+            ",".join(sorted(added_pulse)) or "none",
+            ",".join(sorted(removed_pulse)) or "none",
+            ",".join(sorted(added_snapclients)) or "none",
+            ",".join(sorted(removed_snapclients)) or "none",
+        )
         if self._timer is not None:
             self._timer.cancel()
         self._timer = self._scheduler.call_later(self._debounce, self._restart)
@@ -460,15 +482,74 @@ class MpdCoordinator:
 
     def _restart_finished(self) -> None:
         self._restart_inflight = False
-        LOG.info("MPD restart requested after PulseAudio topology change")
+        LOG.info("MPD restart requested after stable remote topology change")
 
     def _restart_failed(self, error: BaseException) -> None:
         self._restart_inflight = False
-        LOG.warning("Could not restart MPD after PulseAudio topology change: %s", error)
+        LOG.warning("Could not restart MPD after stable remote topology change: %s", error)
+
+
+class SnapcastStreamCoordinator:
+    """Apply local audio source changes to all Snapcast groups asynchronously."""
+
+    def __init__(self, rpc: SnapcastRpcClient, workers: WorkerPool) -> None:
+        self._rpc = rpc
+        self._workers = workers
+        self._desired_stream: str | None = None
+        self._inflight_stream: str | None = None
+
+    def request(self, stream_id: str) -> None:
+        """Request ``stream_id`` for every current Snapcast group.
+
+        Args:
+            stream_id: Stream identifier exposed by Snapserver, such as
+                ``Bluetooth``, ``PC``, or ``MPD``.
+        """
+
+        if stream_id == self._desired_stream:
+            return
+        self._desired_stream = stream_id
+        if self._inflight_stream is not None:
+            LOG.debug("Queued Snapcast stream change to %s", stream_id)
+            return
+        self._start_request()
+
+    def _start_request(self) -> None:
+        stream_id = self._desired_stream
+        if stream_id is None or self._inflight_stream is not None:
+            return
+        self._inflight_stream = stream_id
+        LOG.info("Setting Snapcast stream to %s for all groups", stream_id)
+        self._workers.submit(
+            self._rpc.set_all_groups_stream,
+            stream_id,
+            on_success=lambda changed: self._request_finished(stream_id, int(changed)),
+            on_error=lambda error: self._request_failed(stream_id, error),
+        )
+
+    def _request_finished(self, stream_id: str, changed_groups: int) -> None:
+        if self._inflight_stream != stream_id:
+            return
+        self._inflight_stream = None
+        LOG.info(
+            "Snapcast stream %s applied; changed %d group(s)",
+            stream_id,
+            changed_groups,
+        )
+        if self._desired_stream != stream_id:
+            self._start_request()
+
+    def _request_failed(self, stream_id: str, error: BaseException) -> None:
+        if self._inflight_stream != stream_id:
+            return
+        self._inflight_stream = None
+        LOG.warning("Could not set Snapcast stream to %s: %s", stream_id, error)
+        if self._desired_stream != stream_id:
+            self._start_request()
 
 
 class AudioRoutingCoordinator:
-    """Reconcile local Bluetooth routing and idle captures periodically."""
+    """Reconcile local Bluetooth routing from PulseAudio events."""
 
     def __init__(
         self,
@@ -478,26 +559,48 @@ class AudioRoutingCoordinator:
         captures: CaptureManager,
         scheduler: MonotonicScheduler,
         *,
-        reconcile_interval: float = 30.0,
+        event_debounce: float = 0.2,
+        on_stream_changed: Callable[[str], None] | None = None,
     ) -> None:
         self._pulse = pulse
         self._pipeline = pipeline
         self._router = router
         self._captures = captures
         self._scheduler = scheduler
-        self._reconcile_interval = reconcile_interval
+        self._event_debounce = event_debounce
+        self._on_stream_changed = on_stream_changed
         self._snapserver_active = False
-        self._timer: TimerHandle | None = None
+        self._selected_stream: str | None = None
+        self._stream_before_bluetooth: str | None = None
+        self._event_timer: TimerHandle | None = None
         self._last_error_log = 0.0
 
     def start(self) -> None:
-        """Start the local audio reconciliation timer."""
+        """Perform the initial local audio reconciliation."""
 
-        self._timer = self._scheduler.call_every(
-            self._reconcile_interval,
-            self.reconcile,
-            immediate=True,
+        self.reconcile()
+
+    def on_pulse_event(self, description: str) -> None:
+        """Schedule one debounced reconciliation after a PulseAudio event.
+
+        Args:
+            description: The relevant event line reported by ``pactl
+                subscribe``.
+        """
+
+        LOG.debug("PulseAudio event received: %s", description)
+        if self._event_timer is not None and not self._event_timer.cancelled:
+            return
+        self._event_timer = self._scheduler.call_later(
+            self._event_debounce,
+            self._reconcile_after_event,
         )
+
+    def _reconcile_after_event(self) -> None:
+        """Run the coalesced reconciliation in the event-loop thread."""
+
+        self._event_timer = None
+        self.reconcile()
 
     def set_snapserver_active(self, active: bool) -> None:
         """Apply a Snapserver transition and wake audio reconciliation."""
@@ -510,6 +613,8 @@ class AudioRoutingCoordinator:
         else:
             LOG.info("Disabling Snapcast audio pipeline and using direct routing")
             self._captures.stop_all()
+            self._selected_stream = None
+            self._stream_before_bluetooth = None
         self.reconcile()
 
     def reconcile(self) -> None:
@@ -519,9 +624,23 @@ class AudioRoutingCoordinator:
             snapshot = self._pulse.snapshot()
             if self._snapserver_active:
                 self._pipeline.ensure()
-            self._router.reconcile(snapshot, self._snapserver_active)
+            bluetooth_routed = self._router.reconcile(snapshot, self._snapserver_active)
             if not self._snapserver_active:
                 return
+            pc_active = self._pipeline.sink_active(snapshot, self._pipeline.pc_sink)
+            if bluetooth_routed:
+                if self._selected_stream not in (None, "Bluetooth"):
+                    self._stream_before_bluetooth = self._selected_stream
+                desired_stream = "Bluetooth"
+            else:
+                desired_stream = self._stream_before_bluetooth
+                self._stream_before_bluetooth = None
+                if desired_stream not in ("MPD", "PC"):
+                    desired_stream = "PC" if pc_active else "MPD"
+            if desired_stream != self._selected_stream:
+                self._selected_stream = desired_stream
+                if self._on_stream_changed is not None:
+                    self._on_stream_changed(desired_stream)
             now = time.monotonic()
             self._captures.reconcile(
                 "bluetooth",
@@ -548,8 +667,8 @@ class AudioRoutingCoordinator:
     def stop(self) -> None:
         """Stop local reconciliation and all capture processes."""
 
-        if self._timer is not None:
-            self._timer.cancel()
-            self._timer = None
+        if self._event_timer is not None:
+            self._event_timer.cancel()
+            self._event_timer = None
         self._captures.stop_all()
         self._pulse.close()

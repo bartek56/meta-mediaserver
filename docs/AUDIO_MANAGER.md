@@ -27,12 +27,14 @@ The application is responsible for:
 - keeping the Bluetooth loopback volume at `120%`;
 - starting `parec` capture processes only when the corresponding sink is in
   use;
-- requesting an MPD restart after the remote audio topology changes.
+- requesting an MPD restart only after a new active remote PulseAudio or
+  Snapclient service appears, a known service is removed, or a known host
+  reaches the unavailable ping threshold;
+- selecting the `Bluetooth`, `PC`, or `MPD` stream for every Snapcast group.
 
-The application does not replace Snapserver. Stream definitions and the
-default Snapcast stream remain configured in `/etc/snapserver.conf`. The
-manager creates the audio inputs used by that configuration; it does not call
-Snapcast `Group.SetStream`.
+The application does not replace Snapserver. Stream definitions remain
+configured in `/etc/snapserver.conf`; the manager uses Snapcast JSON-RPC
+`Group.SetStream` to select the active input for every group.
 
 ## Source layout
 
@@ -52,7 +54,7 @@ The Python package is installed below `audio_manager/`:
 | `avahi.py` | Avahi D-Bus browsers and service resolution. |
 | `monitoring.py` | Per-device ping/PulseAudio monitoring and the shared Snapcast poller. |
 | `lifecycle.py` | Snapserver desired-state policy and systemd reconciliation. |
-| `audio.py` | PulseAudio sinks, Bluetooth loopback, FIFOs, captures, and MPD restart coordination. |
+| `audio.py` | PulseAudio sinks, Bluetooth loopback, FIFOs, captures, MPD restart coordination, and Snapcast stream selection. |
 | `adapters.py` | Blocking system integrations: ping, `pactl`, JSON-RPC, and systemd D-Bus. |
 | `models.py` | Device and service state models. |
 | `registry.py` | In-memory device registry. |
@@ -95,7 +97,7 @@ Events are converted to callbacks at these boundaries:
 | Monotonic scheduler | timer callback executed by `run_due()` | Start a periodic probe or reconcile operation. |
 
 The typed events in `events.py` include `ServiceDiscovered`,
-`ServiceResolved`, `ServiceRemoved`, `SystemdStateChanged`, `PingCompleted`,
+`ServiceResolved`, `ServiceRemoved`, `PulseAudioEvent`, `SystemdStateChanged`, `PingCompleted`,
 `PulseProbeCompleted`, and `SnapcastStatusCompleted`.
 
 ## Startup and shutdown
@@ -105,7 +107,7 @@ The typed events in `events.py` include `ServiceDiscovered`,
 1. installs `SIGTERM` and `SIGINT` handlers;
 2. publishes an initial empty client state;
 3. starts the Snapserver supervisor and its 30-second systemd fallback timer;
-4. starts the local audio reconciliation timer;
+4. performs the initial local audio reconciliation and starts `pactl subscribe`;
 5. starts Avahi discovery in its GLib thread;
 6. starts the systemd D-Bus listener;
 7. enters the event loop.
@@ -196,16 +198,17 @@ The default values are defined by `AudioManagerConfig` in `app.py`:
 | Operation | Default | Behaviour |
 |---|---:|---|
 | Host ping | 5 s per device | One IPv4 `ping` is submitted at a time. Three consecutive failures make the host unavailable. |
+| Recovery ping | 30 s per unavailable device | Runs only while Avahi still retains at least one service for an unavailable device. It stops when Avahi removes the last service. |
 | Remote PulseAudio handshake | 5 s per device | Runs `pactl -s tcp:<address>:<port> info`; timeout is 1 s. |
 | Snapcast status poll | 2 s globally | One `Server.GetStatus` request covers all known devices. It runs only while Snapserver is active. |
 | Snapclient invalid-status threshold | 2 polls | After two invalid observations, `snapclient.active` becomes false. |
 | Accepted `lastSeen` age | 5 s | A client must be connected and have a recent `lastSeen` value. |
-| Local PulseAudio reconciliation | 30 s | Reads sinks, sources, and sink inputs; creates routes and capture processes as needed. It also runs immediately at startup and on Snapserver transitions. |
+| Local PulseAudio reconciliation | PulseAudio events | `pactl subscribe` wakes the application for relevant source, source-output, module, and sink-input changes. Sink-only mute events are ignored. It also runs immediately at startup and on Snapserver transitions. |
 | systemd fallback read | 30 s | Re-reads `snapserver.service` if a D-Bus state signal was missed. The first read is immediate. |
 | MPD restart debounce | 3 s | Coalesces several device-state changes into one restart request. |
 | Idle capture timeout | 60 s | Stops an inactive Bluetooth or PC `parec` process. |
 
-There is no local PulseAudio polling every second and no per-device
+There is no periodic local PulseAudio query and no per-device
 `Server.GetStatus` request. The status poller is shared by all devices and
 guards against overlapping requests.
 
@@ -216,6 +219,9 @@ The two failure mechanisms have different purposes:
 - three failed pings change the host state to `unavailable`; the device is
   then excluded from the active-client file and no longer keeps Snapserver
   desired;
+- after that transition, only a 30-second recovery ping remains while Avahi
+  retains the service record; the ping monitor is stopped when Avahi removes
+  the last service;
 - two invalid `Server.GetStatus` observations change only the Snapclient
   service state to inactive. The Avahi service and host record remain present.
 
@@ -259,9 +265,10 @@ When Snapserver is inactive, the application still:
 
 - remains in the main event loop;
 - receives Avahi and systemd events;
+- receives local PulseAudio events from `pactl subscribe`;
 - runs ping and remote PulseAudio checks for known devices;
 - publishes the active-client state;
-- reconciles local Bluetooth routing every 30 seconds;
+- reconciles local Bluetooth routing after PulseAudio events;
 - keeps capture processes stopped.
 
 ## Local PulseAudio and Snapcast audio path
@@ -315,18 +322,27 @@ module-loopback source=<source> sink=<target> latency_msec=10
 ```
 
 Its sink-input volume is explicitly set to a linear gain of `1.2`, which is
-`120%` (`+4.75 dB`). The value is applied after creation and re-applied during
-each 30-second reconciliation so PulseAudio stream-restore cannot leave the
-Bluetooth stream at a lower value such as `25%`.
+`120%` (`+4.75 dB`). The value is applied after a new loopback module is
+created. Stable reconciliations do not write the volume again.
 
 If no Bluetooth source or target sink exists, loopbacks belonging to the
 previous Bluetooth source are unloaded.
 
+When the Bluetooth route becomes active, the manager requests
+`Group.SetStream(stream_id="Bluetooth")` for every Snapcast group. When
+Bluetooth is disconnected, the stream selected before Bluetooth is restored:
+`MPD` or `PC`. If no previous stream is available, the manager selects `PC`
+when its sink has an active input, otherwise `MPD`. These requests are
+asynchronous and do not restart MPD.
+
 ## MPD integration
 
-When the registry's remote PulseAudio or Snapclient topology changes,
-`MpdCoordinator` schedules an `mpd.service` restart after the three-second
-debounce interval.
+`MpdCoordinator` compares the previous and current active remote PulseAudio
+and Snapclient sets. When either set changes, it schedules an `mpd.service`
+restart after the three-second debounce interval. A host timeout clears the
+device's active service state, so the device is removed from the next MPD
+configuration generated from `active-clients.json`. Local Bluetooth routing
+and Snapcast stream selection never call `mpd.service`.
 
 The MPD service's `ExecStartPre` runs `mpd-output-configurator.py`. That helper
 reads `active-clients.json` and regenerates the marked section of
@@ -357,10 +373,10 @@ numeric values are ignored and the documented default is used.
 |---|---:|
 | `AUDIO_MANAGER_ACTIVE_CLIENTS_PATH` | `/run/audio-manager/active-clients.json` |
 | `AUDIO_MANAGER_PING_INTERVAL` | `5` |
+| `AUDIO_MANAGER_RECOVERY_PING_INTERVAL` | `30` |
 | `AUDIO_MANAGER_PING_FAILURE_THRESHOLD` | `3` |
 | `AUDIO_MANAGER_PULSE_INTERVAL` | `5` |
 | `AUDIO_MANAGER_PULSE_TIMEOUT` | `1` |
-| `AUDIO_MANAGER_PULSE_STATE_INTERVAL` | `30` |
 | `AUDIO_MANAGER_SNAPCLIENT_INTERVAL` | `2` |
 | `AUDIO_MANAGER_SNAPCLIENT_FAILURE_THRESHOLD` | `2` |
 | `AUDIO_MANAGER_SNAPCLIENT_LAST_SEEN_MAX_AGE` | `5` |
@@ -411,6 +427,8 @@ Typical messages include:
 - `Snapclient ... removed from active state after 2 invalid status polls` — the
   Snapclient status threshold was reached;
 - `Set ... loopback sink input(s) ... to 120%` — Bluetooth gain was applied;
+- `PulseAudio event subscription started` / `PulseAudio event received ...` —
+  the event-driven local audio path is active;
 - `Starting snapserver.service ...` or `Stopping snapserver.service ...` —
   lifecycle policy requested a transition.
 

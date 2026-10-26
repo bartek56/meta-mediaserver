@@ -40,6 +40,13 @@ class SystemdStateChanged:
 
 
 @dataclass(frozen=True)
+class PulseAudioEvent:
+    """A relevant local PulseAudio object changed."""
+
+    description: str
+
+
+@dataclass(frozen=True)
 class PingCompleted:
     """A device ping completed in a worker thread."""
 

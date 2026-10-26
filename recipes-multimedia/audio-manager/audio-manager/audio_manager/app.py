@@ -11,6 +11,7 @@ from typing import Any
 
 from .adapters import (
     PingProbe,
+    PulseAudioEventListener,
     PulseAudioHandshakeProbe,
     SnapcastRpcClient,
     SystemdUnitController,
@@ -22,6 +23,7 @@ from .audio import (
     CaptureManager,
     MpdCoordinator,
     PulseAudioController,
+    SnapcastStreamCoordinator,
     SnapcastAudioPipeline,
 )
 from .avahi import AvahiDiscovery
@@ -29,6 +31,7 @@ from .events import (
     ServiceDiscovered,
     ServiceRemoved,
     ServiceResolved,
+    PulseAudioEvent,
     SystemdStateChanged,
 )
 from .lifecycle import SnapserverSupervisor
@@ -47,10 +50,10 @@ class AudioManagerConfig:
 
     active_clients_path: Path = Path("/run/audio-manager/active-clients.json")
     ping_interval: float = 5.0
+    recovery_ping_interval: float = 30.0
     ping_failure_threshold: int = 3
     pulse_interval: float = 5.0
     pulse_timeout: float = 1.0
-    pulse_state_interval: float = 30.0
     snapclient_interval: float = 2.0
     snapclient_failure_threshold: int = 2
     snapclient_last_seen_max_age: float = 5.0
@@ -98,16 +101,16 @@ class AudioManagerConfig:
                 )
             ),
             ping_interval=number("AUDIO_MANAGER_PING_INTERVAL", cls.ping_interval),
+            recovery_ping_interval=number(
+                "AUDIO_MANAGER_RECOVERY_PING_INTERVAL",
+                cls.recovery_ping_interval,
+            ),
             ping_failure_threshold=integer(
                 "AUDIO_MANAGER_PING_FAILURE_THRESHOLD",
                 cls.ping_failure_threshold,
             ),
             pulse_interval=number("AUDIO_MANAGER_PULSE_INTERVAL", cls.pulse_interval),
             pulse_timeout=number("AUDIO_MANAGER_PULSE_TIMEOUT", cls.pulse_timeout),
-            pulse_state_interval=number(
-                "AUDIO_MANAGER_PULSE_STATE_INTERVAL",
-                cls.pulse_state_interval,
-            ),
             snapclient_interval=number(
                 "AUDIO_MANAGER_SNAPCLIENT_INTERVAL",
                 cls.snapclient_interval,
@@ -148,6 +151,7 @@ class AudioManagerApplication:
 
         self.ping_probe = PingProbe()
         self.pulse_probe = PulseAudioHandshakeProbe()
+        self.pulse_events = PulseAudioEventListener()
         self.snapcast_rpc = SnapcastRpcClient()
         self.snapserver_systemd = SystemdUnitController("snapserver.service")
         self.mpd_systemd = SystemdUnitController("mpd.service")
@@ -161,6 +165,7 @@ class AudioManagerApplication:
             self.pulse_probe,
             self._on_registry_changed,
             ping_interval=self.config.ping_interval,
+            recovery_ping_interval=self.config.recovery_ping_interval,
             ping_failure_threshold=self.config.ping_failure_threshold,
             pulse_interval=self.config.pulse_interval,
             pulse_timeout=self.config.pulse_timeout,
@@ -176,6 +181,10 @@ class AudioManagerApplication:
             self.snapcast_rpc,
             interval=self.config.snapclient_interval,
         )
+        self.snapcast_streams = SnapcastStreamCoordinator(
+            self.snapcast_rpc,
+            self.workers,
+        )
         # All audio components must share one PulseAudio connection wrapper.
         pulse = PulseAudioController()
         self.audio = AudioRoutingCoordinator(
@@ -184,7 +193,7 @@ class AudioManagerApplication:
             BluetoothRouter(pulse),
             CaptureManager(self.config.capture_idle_timeout),
             self.scheduler,
-            reconcile_interval=self.config.pulse_state_interval,
+            on_stream_changed=self.snapcast_streams.request,
         )
         self.mpd = MpdCoordinator(
             self.scheduler,
@@ -224,6 +233,8 @@ class AudioManagerApplication:
             )
         elif isinstance(event, ServiceRemoved):
             self.monitor_manager.remove_service(event.key)
+        elif isinstance(event, PulseAudioEvent):
+            self.audio.on_pulse_event(event.description)
         elif isinstance(event, SystemdStateChanged):
             self.supervisor.on_systemd_state_changed(event.active)
         else:
@@ -236,6 +247,11 @@ class AudioManagerApplication:
             self.store.publish(self.registry.active_clients_payload())
         except OSError:
             LOG.warning("Active client state could not be published")
+        # The public active-client payload intentionally excludes details such
+        # as ping failure counters.  MPD topology still needs every registry
+        # event so a host that reaches the unavailable threshold can remove a
+        # stale generated PulseAudio output even when the public payload does
+        # not change.
         self.mpd.update_topology(self.registry.devices())
         self.supervisor.on_registry_changed()
 
@@ -243,6 +259,11 @@ class AudioManagerApplication:
         """Post a systemd state change received on the listener thread."""
 
         self._post_event(SystemdStateChanged("snapserver.service", active))
+
+    def _on_pulse_event(self, description: str) -> None:
+        """Post a PulseAudio subscription event to the application loop."""
+
+        self._post_event(PulseAudioEvent(description))
 
     def _install_signal_handlers(self) -> None:
         """Stop the event loop cleanly on SIGTERM and SIGINT."""
@@ -261,6 +282,7 @@ class AudioManagerApplication:
         self.store.publish(self.registry.active_clients_payload())
         self.supervisor.start()
         self.audio.start()
+        self.pulse_events.start(self._on_pulse_event)
         self.avahi.start()
         self.systemd_listener.start(self._on_systemd_state)
         LOG.info("Audio manager started")
@@ -283,6 +305,7 @@ class AudioManagerApplication:
         LOG.info("Stopping audio manager")
         self.avahi.stop()
         self.systemd_listener.stop()
+        self.pulse_events.stop()
         self.supervisor.stop()
         self.monitor_manager.reset()
         self.audio.stop()

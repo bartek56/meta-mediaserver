@@ -11,7 +11,8 @@ import json
 import logging
 import socket
 import subprocess
-from typing import Any
+import threading
+from typing import Any, Callable
 
 
 LOG = logging.getLogger("audio-manager.adapters")
@@ -85,6 +86,120 @@ class PulseAudioHandshakeProbe:
         return result.returncode == 0
 
 
+class PulseAudioEventListener:
+    """Forward relevant events from a blocking ``pactl subscribe`` process."""
+
+    _RELEVANT_OBJECTS = (
+        "source",
+        "source-output",
+        "sink-input",
+        "module",
+    )
+
+    def __init__(self, command: str = "pactl", retry_delay: float = 1.0) -> None:
+        self._command = command
+        self._retry_delay = retry_delay
+        self._stop_event = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._process: subprocess.Popen[str] | None = None
+        self._process_lock = threading.Lock()
+
+    def start(self, callback: Callable[[str], None]) -> None:
+        """Start the listener thread and deliver relevant event lines.
+
+        Args:
+            callback: Function called with one filtered ``pactl subscribe``
+                event line. The callback must return quickly; it is normally
+                used only to post an event to the application loop.
+        """
+
+        if self._thread is not None and self._thread.is_alive():
+            return
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._run,
+            args=(callback,),
+            name="audio-manager-pulse-events",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def _run(self, callback: Callable[[str], None]) -> None:
+        """Keep ``pactl subscribe`` alive and reconnect after failures."""
+
+        while not self._stop_event.is_set():
+            process: subprocess.Popen[str] | None = None
+            try:
+                process = subprocess.Popen(
+                    [self._command, "subscribe"],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    bufsize=1,
+                )
+                with self._process_lock:
+                    self._process = process
+                LOG.info("PulseAudio event subscription started")
+                if process.stdout is None:
+                    raise OSError("pactl subscribe did not provide stdout")
+                for line in process.stdout:
+                    if self._stop_event.is_set():
+                        break
+                    event = line.strip()
+                    if not self.is_relevant_event(event):
+                        continue
+                    try:
+                        callback(event)
+                    except Exception:
+                        LOG.exception("PulseAudio event callback failed")
+                if not self._stop_event.is_set():
+                    LOG.warning("pactl subscribe exited; retrying")
+            except OSError as exc:
+                if not self._stop_event.is_set():
+                    LOG.warning("Could not start pactl subscribe: %s", exc)
+            finally:
+                self._terminate(process)
+                with self._process_lock:
+                    if self._process is process:
+                        self._process = None
+            if not self._stop_event.is_set():
+                self._stop_event.wait(self._retry_delay)
+
+    @classmethod
+    def is_relevant_event(cls, event: str) -> bool:
+        """Return whether an event can change local audio routing."""
+
+        return event.startswith("Event ") and any(
+            f" on {object_name} " in event
+            for object_name in cls._RELEVANT_OBJECTS
+        )
+
+    @staticmethod
+    def _terminate(process: subprocess.Popen[str] | None) -> None:
+        """Terminate one listener process and wait briefly for cleanup."""
+
+        if process is None or process.poll() is not None:
+            return
+        process.terminate()
+        try:
+            process.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+
+    def stop(self) -> None:
+        """Stop the listener process and join its thread."""
+
+        self._stop_event.set()
+        with self._process_lock:
+            process = self._process
+        self._terminate(process)
+        if self._thread is not None and self._thread is not threading.current_thread():
+            self._thread.join(timeout=2.0)
+        self._thread = None
+
+
 class SnapcastRpcClient:
     """Minimal JSON-RPC client for the local Snapserver control socket."""
 
@@ -98,21 +213,21 @@ class SnapcastRpcClient:
         self._port = port
         self._timeout = timeout
         self._request_id = 0
+        self._request_lock = threading.Lock()
 
-    def get_status(self) -> dict[str, Any]:
-        """Return the result of ``Server.GetStatus``.
+    def _request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Send one JSON-RPC request and return its decoded response."""
 
-        Raises:
-            OSError: If the socket cannot be opened or read.
-            ValueError: If Snapserver returns malformed JSON or an RPC error.
-        """
-
-        self._request_id += 1
-        request = {
-            "id": self._request_id,
+        with self._request_lock:
+            self._request_id += 1
+            request_id = self._request_id
+        request: dict[str, Any] = {
+            "id": request_id,
             "jsonrpc": "2.0",
-            "method": "Server.GetStatus",
+            "method": method,
         }
+        if params is not None:
+            request["params"] = params
         with socket.create_connection(
             (self._host, self._port), timeout=self._timeout
         ) as connection:
@@ -124,11 +239,46 @@ class SnapcastRpcClient:
                     break
                 data += chunk
         if not data:
-            raise ValueError("Snapserver returned an empty response")
+            raise ValueError(f"Snapserver returned an empty response to {method}")
         response = json.loads(data.splitlines()[0].decode("utf-8"))
         if "error" in response:
-            raise ValueError(f"Snapserver RPC error: {response['error']}")
+            raise ValueError(f"Snapserver RPC error for {method}: {response['error']}")
         return response
+
+    def get_status(self) -> dict[str, Any]:
+        """Return the result of ``Server.GetStatus``.
+
+        Raises:
+            OSError: If the socket cannot be opened or read.
+            ValueError: If Snapserver returns malformed JSON or an RPC error.
+        """
+
+        return self._request("Server.GetStatus")
+
+    def set_all_groups_stream(self, stream_id: str) -> int:
+        """Set the selected stream for every Snapcast group.
+
+        Args:
+            stream_id: Snapserver stream identifier, for example ``Bluetooth``.
+
+        Returns:
+            The number of groups for which a ``Group.SetStream`` request was
+            sent. Groups already using ``stream_id`` are left unchanged.
+        """
+
+        status = self.get_status()
+        groups = status.get("result", {}).get("server", {}).get("groups", [])
+        changed = 0
+        for group in groups:
+            group_id = group.get("id")
+            if not group_id or group.get("stream_id") == stream_id:
+                continue
+            self._request(
+                "Group.SetStream",
+                {"id": str(group_id), "stream_id": stream_id},
+            )
+            changed += 1
+        return changed
 
 
 class SystemdUnitController:

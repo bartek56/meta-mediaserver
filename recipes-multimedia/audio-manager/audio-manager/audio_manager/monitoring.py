@@ -53,6 +53,7 @@ class DeviceMonitor:
         on_changed: Callable[[str], None],
         *,
         ping_interval: float,
+        recovery_ping_interval: float,
         ping_failure_threshold: int,
         pulse_interval: float,
         pulse_timeout: float,
@@ -68,12 +69,14 @@ class DeviceMonitor:
         self._pulse_probe = pulse_probe
         self._on_changed = on_changed
         self._ping_interval = ping_interval
+        self._recovery_ping_interval = recovery_ping_interval
         self._ping_failure_threshold = ping_failure_threshold
         self._pulse_interval = pulse_interval
         self._pulse_timeout = pulse_timeout
         self._snapclient_failure_threshold = snapclient_failure_threshold
         self._snapclient_last_seen_max_age = snapclient_last_seen_max_age
         self._ping_timer: TimerHandle | None = None
+        self._ping_timer_interval: float | None = None
         self._pulse_timer: TimerHandle | None = None
         self._ping_inflight = False
         self._pulse_inflight = False
@@ -103,6 +106,7 @@ class DeviceMonitor:
             if self._ping_timer is not None:
                 self._ping_timer.cancel()
                 self._ping_timer = None
+                self._ping_timer_interval = None
             if state.host_status is not HostStatus.WAITING_FOR_ADDRESS:
                 self._registry.update_host(
                     self.device_id,
@@ -114,12 +118,33 @@ class DeviceMonitor:
             self._disable_pulse_timer()
             return
 
-        if self._ping_timer is None or self._ping_timer.cancelled:
+        ping_interval = (
+            self._recovery_ping_interval
+            if state.host_status is HostStatus.UNAVAILABLE
+            else self._ping_interval
+        )
+        if (
+            self._ping_timer is None
+            or self._ping_timer.cancelled
+            or self._ping_timer_interval != ping_interval
+        ):
+            was_running = self._ping_timer is not None and not self._ping_timer.cancelled
+            if self._ping_timer is not None:
+                self._ping_timer.cancel()
             self._ping_timer = self._scheduler.call_every(
-                self._ping_interval,
+                ping_interval,
                 self._start_ping,
-                immediate=True,
+                immediate=not was_running or state.host_status is not HostStatus.UNAVAILABLE,
             )
+            self._ping_timer_interval = ping_interval
+            if state.host_status is HostStatus.UNAVAILABLE:
+                LOG.info(
+                    "Device %s is inactive; using %.0f-second recovery pings "
+                    "while Avahi retains %d service(s)",
+                    self.device_id,
+                    ping_interval,
+                    len(state.services),
+                )
 
         state = self.state
         if state is not None and state.host_status is HostStatus.AVAILABLE:
@@ -148,6 +173,12 @@ class DeviceMonitor:
             return
         address = addresses[self._address_index % len(addresses)]
         self._address_index += 1
+        if state.host_status is HostStatus.UNAVAILABLE:
+            LOG.debug(
+                "Recovery ping for %s while Avahi retains %d service(s)",
+                self.device_id,
+                len(state.services),
+            )
         self._ping_inflight = True
         self._workers.submit(
             self._ping_probe.check,
@@ -323,6 +354,7 @@ class DeviceMonitor:
         self._running = False
         if self._ping_timer is not None:
             self._ping_timer.cancel()
+            self._ping_timer_interval = None
         self._disable_pulse_timer()
 
 
@@ -340,6 +372,7 @@ class DeviceMonitorManager:
         on_changed: Callable[[str], None],
         *,
         ping_interval: float = 5.0,
+        recovery_ping_interval: float = 30.0,
         ping_failure_threshold: int = 3,
         pulse_interval: float = 5.0,
         pulse_timeout: float = 1.0,
@@ -355,6 +388,7 @@ class DeviceMonitorManager:
         self._on_changed = on_changed
         self._settings = {
             "ping_interval": ping_interval,
+            "recovery_ping_interval": recovery_ping_interval,
             "ping_failure_threshold": ping_failure_threshold,
             "pulse_interval": pulse_interval,
             "pulse_timeout": pulse_timeout,
@@ -408,6 +442,10 @@ class DeviceMonitorManager:
             monitor = self._monitors.pop(change.device_id, None)
             if monitor is not None:
                 monitor.stop()
+            LOG.info(
+                "Stopped ping monitoring for %s because Avahi removed all services",
+                change.device_id,
+            )
             LOG.info("Removed device monitor for %s", change.device_id)
         else:
             monitor = self._monitors.get(change.device_id)
