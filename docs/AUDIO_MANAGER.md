@@ -1,242 +1,461 @@
 # Audio Manager
 
-`audio-manager` coordinates Bluetooth, PulseAudio, MPD, and Snapcast on the
-MediaServer. It is installed as `audio-manager.service` and runs continuously,
-including when `snapserver.service` is stopped.
+`audio-manager` is the event-driven Python service that connects the local
+Bluetooth/PulseAudio setup with Snapcast and monitors remote MediaServer
+clients. The current implementation is packaged as `audio-manager` and runs
+as `audio-manager.service`.
 
-The manager does not use the built-in Raspberry Pi Bluetooth controller for
-audio routing. It operates on the Bluetooth adapter and PulseAudio sinks and
-sources available on the target system, including an additional USB adapter.
+The application remains running even when there are no remote Snapclients and
+when `snapserver.service` is stopped. In that state it continues to receive
+Avahi and systemd events, monitor known devices, and check local PulseAudio
+state. Snapcast-specific polling and capture processes are disabled.
 
 ## Responsibilities
 
-The manager is responsible for:
+The application is responsible for:
 
-- discovering remote PulseAudio servers and Snapclients with Avahi;
-- maintaining `/run/audio-manager/active-clients.json`;
-- starting and stopping `snapserver.service` according to remote Snapclient
+- discovering remote `_snapclient._tcp` and `_pulse-server._tcp` services with
+  Avahi;
+- maintaining one state record per remote device;
+- checking host reachability, remote PulseAudio availability, and Snapclient
+  status;
+- writing `/run/audio-manager/active-clients.json` atomically;
+- starting or stopping `snapserver.service` according to remote Snapclient
   presence;
-- routing Bluetooth and PC audio into Snapcast FIFO streams;
-- detecting whether MPD's `snapcast` output is enabled;
-- selecting the active Snapcast stream for all Snapcast groups;
-- stopping idle Bluetooth and PC capture processes after 60 seconds;
-- requesting MPD configuration regeneration when remote PulseAudio topology
-  changes.
+- creating the local PulseAudio sinks and FIFOs used by Snapserver;
+- routing Bluetooth audio to Snapcast or to the physical sink;
+- keeping the Bluetooth loopback volume at `120%`;
+- starting `parec` capture processes only when the corresponding sink is in
+  use;
+- requesting an MPD restart after the remote audio topology changes.
 
-## Service lifecycle
+The application does not replace Snapserver. Stream definitions and the
+default Snapcast stream remain configured in `/etc/snapserver.conf`. The
+manager creates the audio inputs used by that configuration; it does not call
+Snapcast `Group.SetStream`.
 
-The service is started by systemd. Before the Python process starts, the unit
-executes:
+## Source layout
+
+The installed entry point is a thin launcher:
+
+```text
+/usr/bin/audio-manager.py
+```
+
+The Python package is installed below `audio_manager/`:
+
+| Module | Responsibility |
+|---|---|
+| `app.py` | Composition root, runtime configuration, startup and shutdown. |
+| `scheduler.py` | Main event loop, monotonic timers, and worker pool. |
+| `events.py` | Event and worker-result data structures. |
+| `avahi.py` | Avahi D-Bus browsers and service resolution. |
+| `monitoring.py` | Per-device ping/PulseAudio monitoring and the shared Snapcast poller. |
+| `lifecycle.py` | Snapserver desired-state policy and systemd reconciliation. |
+| `audio.py` | PulseAudio sinks, Bluetooth loopback, FIFOs, captures, and MPD restart coordination. |
+| `adapters.py` | Blocking system integrations: ping, `pactl`, JSON-RPC, and systemd D-Bus. |
+| `models.py` | Device and service state models. |
+| `registry.py` | In-memory device registry. |
+| `persistence.py` | Atomic publication of the active-client state file. |
+
+Source files are located in:
+
+```text
+recipes-multimedia/snapcast-bt/snapcast-bt/audio_manager/
+```
+
+## Main event loop
+
+The main loop is `EventLoop` in `scheduler.py`. It is deliberately not a
+busy-wait loop:
+
+1. queued callbacks are drained;
+2. timers whose deadlines have elapsed are executed;
+3. the loop waits on a condition variable until either a new event arrives or
+   the next timer is due.
+
+The scheduler uses `time.monotonic()`. Periodic timers use fixed deadlines and
+skip missed periods instead of creating a burst of catch-up calls.
+
+Blocking operations never run in the event-loop thread. `WorkerPool` runs
+ping, remote PulseAudio handshakes, Snapcast JSON-RPC calls, and systemd
+commands in worker threads. Completion callbacks are posted back to the main
+loop.
+
+### Where events enter the queue
+
+The queue contains callbacks (`Callable[[], None]`), not raw event objects.
+Events are converted to callbacks at these boundaries:
+
+| Producer | Queue operation | Main-loop action |
+|---|---|---|
+| Avahi D-Bus thread | `AudioManagerApplication._post_event()` → `loop.post()` | Register, resolve, or remove a service. |
+| systemd D-Bus listener | `_on_systemd_state()` → `_post_event()` | Update Snapserver state and reconcile desired state. |
+| Worker pool | completion callback → `loop.post()` | Apply ping, PulseAudio, JSON-RPC, or systemd results. |
+| Monotonic scheduler | timer callback executed by `run_due()` | Start a periodic probe or reconcile operation. |
+
+The typed events in `events.py` include `ServiceDiscovered`,
+`ServiceResolved`, `ServiceRemoved`, `SystemdStateChanged`, `PingCompleted`,
+`PulseProbeCompleted`, and `SnapcastStatusCompleted`.
+
+## Startup and shutdown
+
+`AudioManagerApplication.run()` performs the following steps:
+
+1. installs `SIGTERM` and `SIGINT` handlers;
+2. publishes an initial empty client state;
+3. starts the Snapserver supervisor and its 30-second systemd fallback timer;
+4. starts the local audio reconciliation timer;
+5. starts Avahi discovery in its GLib thread;
+6. starts the systemd D-Bus listener;
+7. enters the event loop.
+
+On shutdown, listeners and timers are stopped, device monitors are cancelled,
+capture processes are terminated, PulseAudio is closed, and worker threads
+are joined.
+
+The systemd unit also runs:
 
 ```text
 bluetoothctl discoverable on
 ```
 
-This makes the MediaServer discoverable to Bluetooth clients. The manager then
-starts its PulseAudio event listener, systemd listener, and Avahi discovery.
-
-The manager itself remains running when Snapcast is disabled. The remote
-Snapclient list controls `snapserver.service` independently:
+before starting the Python process. It sets the PulseAudio runtime paths for
+the root PulseAudio instance and enables debug logging by default:
 
 ```text
-at least one remote Snapclient  -> snapserver.service active
-no remote Snapclients            -> snapserver.service stopped
+XDG_RUNTIME_DIR=/run/user/0
+PULSE_RUNTIME_PATH=/run/user/0/pulse
+AUDIO_MANAGER_LOG_LEVEL=DEBUG
 ```
 
-The local MediaServer Snapclient is excluded from this decision.
+## Device discovery and state
 
-## Client discovery
-
-Two Avahi service types are monitored:
+Avahi creates two permanent D-Bus service browsers:
 
 ```text
 _snapclient._tcp
 _pulse-server._tcp
 ```
 
-The permanent Avahi browsers react immediately to `ItemNew` and `ItemRemove`.
-Every five seconds the manager also creates a temporary Avahi browser and
-reconciles the currently known services with the current Avahi result. This
-handles devices that disappear without sending a clean Avahi goodbye packet.
+The application handles `ItemNew`, `ItemRemove`, and the resolver's `Found`
+signal. Services belonging to the local host are ignored. A resolved service
+is represented by a `ServiceKey` containing its type, interface, protocol, and
+instance name.
 
-The two service types are tracked independently. A device can therefore have
-one active service and one inactive service, for example:
+Snapclient and PulseAudio advertisements are independent. Names are normalized
+so, for example, `Snapclient-Office` and `pulse@Office` refer to the same
+device record (`office`). Removing one service does not remove the other.
 
-```json
-{
-  "pulse": { "active": false },
-  "snapclient": { "active": true }
-}
-```
+Each device has separate state for:
 
-## Liveness checks
+- host reachability;
+- PulseAudio availability;
+- Snapclient availability;
+- consecutive failure counters;
+- resolved addresses and last Snapcast observation.
 
-### PulseAudio
+### Active-client state file
 
-For a discovered PulseAudio service, the manager resolves its address and
-checks TCP port `4713`. The check uses a short timeout and succeeds when at
-least one known IPv4 address accepts the connection.
-
-If the service is present in Avahi but port `4713` does not respond, the
-manager requires three consecutive failed probes before expiring the
-PulseAudio service. A successful probe resets the failure counter. This avoids
-removing a client because of one temporary network or PulseAudio startup
-failure. The manager then:
-
-1. updates `active-clients.json`;
-2. removes the corresponding remote MPD output on the next configuration run;
-3. schedules an MPD restart after the topology-change debounce interval.
-
-### Snapclient
-
-Snapclient is not checked by opening TCP port `1704`; the client publishes the
-Avahi service but does not provide a server endpoint suitable for this probe.
-
-When Snapserver is available, the manager additionally queries its JSON-RPC
-`Server.GetStatus` method. If a known client is reported with
-`"connected": false`, it is removed even if a stale Avahi announcement still
-exists. If the Snapserver API is unavailable, Avahi remains the source of
-truth so that a newly discovered client can cause Snapserver startup.
-
-The periodic reconciliation also adds services that are present again in the
-current Avahi result. This allows a client that was powered off and then
-started again to return without restarting `audio-manager.service`.
-
-## Active-client state file
-
-The manager atomically writes:
+The registry is published atomically to:
 
 ```text
 /run/audio-manager/active-clients.json
 ```
 
-The file contains the schema version, generation time, client identity,
-resolved addresses, and independent PulseAudio/Snapclient status:
+Only devices whose host status is `available` are included. PulseAudio and
+Snapclient status inside an included device remains independent.
+
+Example:
 
 ```json
 {
-  "schema": 1,
-  "generated_at": "2026-10-25T13:12:35Z",
   "clients": [
     {
-      "id": "MediaClientTV",
-      "hostname": "MediaClientTV.local",
-      "addresses": ["192.168.1.6"],
-      "pulse": {
-        "active": true,
-        "port": 4713
-      },
-      "snapclient": {
-        "active": true,
-        "port": 1704
-      }
+      "addresses": ["192.168.1.7"],
+      "display_name": "Office",
+      "hostname": "Office.local",
+      "host": {"active": true},
+      "id": "office",
+      "pulse": {"active": true, "port": 4713},
+      "snapclient": {"active": true, "port": 1704}
     }
-  ]
+  ],
+  "generated_at": "2026-10-26T10:00:00+00:00",
+  "schema": 1
 }
 ```
 
-The file is runtime state and is not intended to be edited manually.
+The timestamp is updated on every attempted publication, but the file is only
+replaced when the state content changes.
+
+## Monitoring and timers
+
+The default values are defined by `AudioManagerConfig` in `app.py`:
+
+| Operation | Default | Behaviour |
+|---|---:|---|
+| Host ping | 5 s per device | One IPv4 `ping` is submitted at a time. Three consecutive failures make the host unavailable. |
+| Remote PulseAudio handshake | 5 s per device | Runs `pactl -s tcp:<address>:<port> info`; timeout is 1 s. |
+| Snapcast status poll | 2 s globally | One `Server.GetStatus` request covers all known devices. It runs only while Snapserver is active. |
+| Snapclient invalid-status threshold | 2 polls | After two invalid observations, `snapclient.active` becomes false. |
+| Accepted `lastSeen` age | 5 s | A client must be connected and have a recent `lastSeen` value. |
+| Local PulseAudio reconciliation | 30 s | Reads sinks, sources, and sink inputs; creates routes and capture processes as needed. It also runs immediately at startup and on Snapserver transitions. |
+| systemd fallback read | 30 s | Re-reads `snapserver.service` if a D-Bus state signal was missed. The first read is immediate. |
+| MPD restart debounce | 3 s | Coalesces several device-state changes into one restart request. |
+| Idle capture timeout | 60 s | Stops an inactive Bluetooth or PC `parec` process. |
+
+There is no local PulseAudio polling every second and no per-device
+`Server.GetStatus` request. The status poller is shared by all devices and
+guards against overlapping requests.
+
+### Failure semantics
+
+The two failure mechanisms have different purposes:
+
+- three failed pings change the host state to `unavailable`; the device is
+  then excluded from the active-client file and no longer keeps Snapserver
+  desired;
+- two invalid `Server.GetStatus` observations change only the Snapclient
+  service state to inactive. The Avahi service and host record remain present.
+
+When Snapserver stops, the shared status poller is disabled immediately and
+Snapclient states are reset to `unknown`. When it starts again, polling begins
+immediately and resumes every two seconds.
+
+## Snapserver lifecycle
+
+`SnapserverDesiredStatePolicy` requests Snapserver when at least one device:
+
+1. advertises `_snapclient._tcp`; and
+2. has host status `available` after ping monitoring.
+
+The policy intentionally does not require a successful `Server.GetStatus`
+response to start Snapserver. Otherwise a stopped Snapserver could not be
+started just because a new client was discovered.
+
+The lifecycle is:
+
+```text
+Avahi discovers remote Snapclient
+        |
+        v
+Ping succeeds -> desired state: running -> systemd StartUnit
+        |
+        v
+Snapserver ActiveState=active -> enable shared Server.GetStatus poller
+        |
+        v
+No available remote Snapclients -> desired state: stopped -> systemd StopUnit
+        |
+        v
+Snapserver ActiveState=inactive -> disable poller and stop captures
+```
+
+The D-Bus `PropertiesChanged` signal is authoritative. The 30-second systemd
+fallback repairs the state if that signal is lost.
+
+When Snapserver is inactive, the application still:
+
+- remains in the main event loop;
+- receives Avahi and systemd events;
+- runs ping and remote PulseAudio checks for known devices;
+- publishes the active-client state;
+- reconciles local Bluetooth routing every 30 seconds;
+- keeps capture processes stopped.
+
+## Local PulseAudio and Snapcast audio path
+
+When Snapserver is active, `SnapcastAudioPipeline` ensures:
+
+| Purpose | PulseAudio/FIFO name |
+|---|---|
+| Bluetooth null sink | `snapcast_bt` |
+| PC null sink | `snapcast_pc` |
+| Bluetooth capture FIFO | `/tmp/snapbtfifo` |
+| PC capture FIFO | `/tmp/snappcfifo` |
+
+The supplied Snapserver configuration consumes these paths as streams named
+`Bluetooth` and `PC`. MPD supplies the `MPD` stream through
+`/tmp/snapmpdfifo`.
+
+`CaptureManager` checks whether a null sink has an uncorked sink input. If it
+does, it starts:
+
+```text
+parec -d <sink>.monitor --format=s16le --rate=48000 --channels=2
+```
+
+The process writes to the corresponding FIFO. If there is no active sink input
+for 60 seconds, the process is stopped. This is why a running
+`audio-manager.service` does not imply that `parec` is continuously consuming
+CPU.
+
+## Bluetooth routing
+
+`BluetoothRouter` searches for the first source whose name starts with one of:
+
+```text
+bluez_source
+bluez_input
+alsa_input.usb
+```
+
+When Snapserver is active, the loopback target is `snapcast_bt`. When
+Snapserver is inactive, the target is selected in this order:
+
+1. `alsa_output.headphones.stereo-fallback`;
+2. the current default sink, if it is not a Snapcast sink;
+3. the first `alsa_output.*` sink.
+
+The loopback is created as:
+
+```text
+module-loopback source=<source> sink=<target> latency_msec=10
+```
+
+Its sink-input volume is explicitly set to a linear gain of `1.2`, which is
+`120%` (`+4.75 dB`). The value is applied after creation and re-applied during
+each 30-second reconciliation so PulseAudio stream-restore cannot leave the
+Bluetooth stream at a lower value such as `25%`.
+
+If no Bluetooth source or target sink exists, loopbacks belonging to the
+previous Bluetooth source are unloaded.
 
 ## MPD integration
 
-`mpd-output-configurator.py` reads `active-clients.json` and updates the
-auto-generated section at the end of `/etc/mpd.conf`.
+When the registry's remote PulseAudio or Snapclient topology changes,
+`MpdCoordinator` schedules an `mpd.service` restart after the three-second
+debounce interval.
 
-Remote PulseAudio outputs are generated only for clients with
-`pulse.active: true`. The Snapcast FIFO output is generated only when at least
-one remote Snapclient is active:
-
-```conf
-audio_output {
-    type            "fifo"
-    name            "snapcast"
-    path            "/tmp/snapmpdfifo"
-    format          "48000:16:2"
-    enabled         "no"
-}
-```
-
-The FIFO is deliberately disabled by default. The user or an application can
-enable it through the MPD protocol, for example:
-
-```bash
-mpc enable snapcast
-```
-
-The generated section is delimited by:
+The MPD service's `ExecStartPre` runs `mpd-output-configurator.py`. That helper
+reads `active-clients.json` and regenerates the marked section of
+`/etc/mpd.conf`:
 
 ```text
 # BEGIN AUTO-GENERATED MPD OUTPUTS
 # END AUTO-GENERATED MPD OUTPUTS
 ```
 
-User configuration outside this section is preserved. MPD is restarted after a
-remote PulseAudio service is added or removed, allowing the list of outputs to
-match the currently available clients.
+The generated section contains active remote PulseAudio outputs and the
+Snapcast FIFO output when at least one Snapclient is active. Configuration
+outside that section is preserved.
 
-## Audio capture and streams
+The `name` of a generated remote PulseAudio output comes from the device's
+`display_name`. This is the human-readable part of the Avahi service name,
+for example `MediaClientOffice` from `pulse@MediaClientOffice`. The lowercase
+`id` (for example `mediaclientoffice`) remains the stable internal identifier
+and is not used as the user-facing MPD output name. Remote PulseAudio output
+blocks are generated from the current state during the MPD service startup.
 
-Bluetooth and PC audio are captured continuously only while needed. The
-manager uses these PulseAudio sinks and FIFOs:
+## Runtime configuration
 
-| Input | PulseAudio sink | FIFO | Snapcast stream |
-|---|---|---|---|
-| Bluetooth | `snapcast_bt` | `/tmp/snapbtfifo` | `Bluetooth` |
-| PC PulseAudio | `snapcast_pc` | `/tmp/snappcfifo` | `PC` |
-| MPD | MPD FIFO output | `/tmp/snapmpdfifo` | `MPD` |
+All values can be overridden with environment variables. Invalid or nonpositive
+numeric values are ignored and the documented default is used.
 
-If Bluetooth or PC capture has no audio activity for 60 seconds, its capture
-process is stopped. It is started again when activity is detected.
+| Variable | Default |
+|---|---:|
+| `AUDIO_MANAGER_ACTIVE_CLIENTS_PATH` | `/run/audio-manager/active-clients.json` |
+| `AUDIO_MANAGER_PING_INTERVAL` | `5` |
+| `AUDIO_MANAGER_PING_FAILURE_THRESHOLD` | `3` |
+| `AUDIO_MANAGER_PULSE_INTERVAL` | `5` |
+| `AUDIO_MANAGER_PULSE_TIMEOUT` | `1` |
+| `AUDIO_MANAGER_PULSE_STATE_INTERVAL` | `30` |
+| `AUDIO_MANAGER_SNAPCLIENT_INTERVAL` | `2` |
+| `AUDIO_MANAGER_SNAPCLIENT_FAILURE_THRESHOLD` | `2` |
+| `AUDIO_MANAGER_SNAPCLIENT_LAST_SEEN_MAX_AGE` | `5` |
+| `AUDIO_MANAGER_SYSTEMD_FALLBACK_INTERVAL` | `30` |
+| `AUDIO_MANAGER_CAPTURE_IDLE_TIMEOUT` | `60` |
+| `AUDIO_MANAGER_MPD_RESTART_DEBOUNCE` | `3` |
+| `AUDIO_MANAGER_LOG_LEVEL` | `INFO` |
 
-## Source selection
+The production service sets `AUDIO_MANAGER_LOG_LEVEL=DEBUG`.
 
-The desired source is evaluated from the current inputs:
+## Logging
 
-1. Bluetooth, when a Bluetooth source is active;
-2. PC, when a PC Snapcast input is active and Bluetooth is not active;
-3. MPD, when the MPD `snapcast` output is enabled;
-4. MPD as the fallback mode when no higher-priority source is active.
+The application uses Python's `logging` package. It writes to standard error;
+systemd captures the output in the journal. It does not create a separate log
+file by default.
 
-Every five seconds, and after relevant events, the manager queries Snapcast
-groups. Any group whose current stream differs from the desired stream receives
-`Group.SetStream`. This also corrects groups changed manually in the Snapcast
-application.
+Follow all manager logs with:
 
-When Bluetooth disconnects, the manager does not blindly choose PC. It first
-checks whether PC is active; otherwise it falls back to MPD. When Bluetooth
-and PC are both inactive, MPD remains the default source if its Snapcast
-output is enabled.
+```bash
+journalctl -u audio-manager.service -f
+```
 
-## Useful diagnostics
+Useful filters:
 
-Check the services:
+```bash
+journalctl -u audio-manager.service --no-pager -o short-iso
+journalctl -u audio-manager.service --no-pager | grep -E 'ERROR|WARNING|Bluetooth|Snapserver|loopback'
+```
+
+The logger names identify the component:
+
+```text
+audio-manager
+audio-manager.adapters
+audio-manager.audio
+audio-manager.avahi
+audio-manager.lifecycle
+audio-manager.monitoring
+audio-manager.persistence
+audio-manager.scheduler
+```
+
+Typical messages include:
+
+- `Avahi discovered ...` — a remote service appeared;
+- `Ping succeeded ...` / `Device ... is unavailable ...` — host state changed;
+- `Received Snapcast status for ... client(s)` — the shared RPC poll completed;
+- `Snapclient ... removed from active state after 2 invalid status polls` — the
+  Snapclient status threshold was reached;
+- `Set ... loopback sink input(s) ... to 120%` — Bluetooth gain was applied;
+- `Starting snapserver.service ...` or `Stopping snapserver.service ...` —
+  lifecycle policy requested a transition.
+
+## Diagnostics
+
+Check service state:
 
 ```bash
 systemctl status audio-manager.service
+systemctl show audio-manager.service \
+  -p ActiveState -p SubState -p MainPID -p ExecMainStatus -p NRestarts
 systemctl status snapserver.service
-systemctl status mpd.service
 ```
 
-Inspect the current client state:
+Inspect the published device state:
 
 ```bash
 cat /run/audio-manager/active-clients.json
 ```
 
-Inspect MPD outputs:
+Inspect local PulseAudio objects:
 
 ```bash
-mpc outputs
+export PULSE_RUNTIME_PATH=/run/user/0/pulse
+pactl list sinks short
+pactl list sources short
+pactl list sink-inputs short
+pactl list modules short | grep -E 'module-loopback|null-sink'
 ```
 
-Inspect Avahi announcements:
+Inspect the Bluetooth loopback volume:
 
 ```bash
-avahi-browse -rt _pulse-server._tcp
-avahi-browse -rt _snapclient._tcp
+export PULSE_RUNTIME_PATH=/run/user/0/pulse
+pactl list sink-inputs | sed -n '/Driver: module-loopback.c/,+12p'
 ```
 
-Inspect the Snapserver status:
+The expected value is:
+
+```text
+Volume: front-left: ... / 120% / 4.75 dB,
+        front-right: ... / 120% / 4.75 dB
+```
+
+Inspect Snapserver's current view:
 
 ```bash
 curl -sS http://127.0.0.1:1780/jsonrpc \
@@ -244,354 +463,54 @@ curl -sS http://127.0.0.1:1780/jsonrpc \
   --data '{"id":1,"jsonrpc":"2.0","method":"Server.GetStatus"}'
 ```
 
-Follow manager decisions:
+Inspect Avahi advertisements:
 
 ```bash
-journalctl -u audio-manager.service -f
-```
-
-Important log messages include:
-
-- `Remote ... discovered` — Avahi found a service;
-- `Remote ... removed` — Avahi sent an explicit removal;
-- `... expired from Avahi poll` — periodic reconciliation removed a stale
-  service;
-- `Restarting MPD: remote PulseAudio topology changed` — MPD output topology
-  changed;
-- `Active source mode: ...` — Snapcast groups were switched to a source.
-
-## Detailed presence and audio checks
-
-This section documents the exact checks performed by the current
-implementation. Presence, PulseAudio availability, and actual audio activity
-are separate states.
-
-### Overall data flow
-
-```mermaid
-flowchart LR
-    DEV[Remote device] -->|_pulse-server._tcp| AV[Avahi]
-    DEV -->|_snapclient._tcp| AV
-    AV -->|D-Bus ItemNew / ItemRemove / resolver| AM[audio-manager]
-
-    PA[PulseAudio] -->|event listener| AM
-    AM -->|pulsectl snapshot| PA
-    API[Snapserver JSON-RPC] -->|Server.GetStatus| AM
-    LAN[LAN ping / ARP] --> AM
-    SD[systemd D-Bus] -->|snapserver state| AM
-
-    AM -->|atomic write| STATE["/run/audio-manager/active-clients.json"]
-    AM -->|StartUnit / StopUnit| SD
-    AM -->|RestartUnit after topology change| MPD[mpd.service]
-    AM -->|MPD protocol| MPD
-    AM -->|Group.SetStream| API
-    AM -->|sinks, loopback, capture| PA
-```
-
-The manager uses a different source of information for each question:
-
-| Question | Check |
-|---|---|
-| Is a service advertised? | Avahi service browser |
-| Can remote PulseAudio be reached? | TCP connection to port `4713` |
-| Is a Snapclient still on the LAN? | ping, with ARP fallback when `ping` cannot be executed |
-| Does Snapserver see the Snapclient? | `Server.GetStatus` and `connected` |
-| Is audio actually active? | PulseAudio sink-input state and MPD output state |
-| Which audio stream should groups use? | Source priority plus Snapcast `Group.SetStream` |
-
-### Avahi discovery and periodic reconciliation
-
-The manager creates permanent Avahi browsers through D-Bus for:
-
-```text
-_snapclient._tcp
-_pulse-server._tcp
-```
-
-For each browser it handles:
-
-- `ItemNew` — a service appeared;
-- `ItemRemove` — Avahi explicitly reported that a service disappeared;
-- `AllForNow` — the initial enumeration is complete.
-
-After `ItemNew`, an Avahi resolver supplies the address. The manager stores
-that address under the service name. The local MediaServer service is ignored
-when deciding whether a remote Snapclient exists.
-
-Avahi does not always send `ItemRemove` when a machine is powered off or loses
-the network. Therefore, every `AVAHI_POLL_INTERVAL = 5` seconds the manager
-creates a temporary browser, collects a fresh list, and compares it with the
-known list:
-
-```mermaid
-sequenceDiagram
-    participant AM as audio-manager
-    participant AV as Avahi D-Bus
-    participant DEV as remote device
-
-    loop every 5 seconds
-        AM->>AV: ServiceBrowserNew(service type)
-        AV-->>AM: ItemNew for currently advertised services
-        AV-->>AM: AllForNow
-        AM->>AV: Free temporary browser
-        AM->>AM: Compare current list with known list
-    end
-
-    DEV--xAV: power off without goodbye
-    Note over AM,AV: The next enumeration no longer contains DEV.
-    AM->>AM: Run service-specific liveness checks
-```
-
-`AllForNow` marks discovery as ready. PulseAudio topology changes discovered
-during the initial enumeration are coalesced before an MPD restart.
-
-### PulseAudio TCP: what is used instead of `pactl`
-
-The manager does not execute the `pactl` command. It imports `pulsectl` and
-uses the PulseAudio native protocol directly. The command-line equivalents
-are:
-
-| Python operation | Similar manual command |
-|---|---|
-| `pulse.sink_list()` | `pactl list short sinks` |
-| `pulse.source_list()` | `pactl list short sources` |
-| `pulse.sink_input_list()` | `pactl list short sink-inputs` |
-| `pulse.module_list()` | `pactl list modules` |
-| `pulse.module_load()` / `module_unload()` | `pactl load-module` / `unload-module` |
-| `pulse.server_info()` | `pactl info` |
-| `pulse.event_listen()` | `pactl subscribe` |
-
-This avoids starting a new `pactl` process for every check.
-
-For a remote `pulse@MediaClientOffice` service the sequence is:
-
-1. Avahi announces `_pulse-server._tcp`.
-2. `ItemNew` adds the service name to the known PulseAudio set.
-3. The resolver stores the service address.
-4. On each Avahi reconciliation, the manager attempts a TCP connection to
-   `<address>:4713` with a `0.5` second timeout.
-5. One successful IPv4 address is enough to keep the service reachable.
-6. A successful probe resets the consecutive-failure counter.
-
-Port `4713` proves that the remote PulseAudio server is reachable; it does not
-prove that music is playing.
-
-```mermaid
-flowchart TD
-    P[Known _pulse-server._tcp service] --> E{Avahi ItemRemove?}
-    E -->|yes| REMOVE1[Remove immediately]
-    E -->|no| CHECK[Every 5 seconds: TCP :4713]
-    CHECK -->|success| KEEP[Keep active; reset failures]
-    CHECK -->|failure| COUNT[Increment failure counter]
-    COUNT -->|1 or 2| GRACE[Keep temporarily]
-    COUNT -->|3| REMOVE2[Expire service]
-    REMOVE1 --> UPDATE[Rewrite JSON and schedule MPD restart]
-    REMOVE2 --> UPDATE
-```
-
-If a device is powered off without `ItemRemove`, PulseAudio normally expires
-after three failed probes, roughly 10–15 seconds after the first failed
-five-second cycle. A clean Avahi removal is faster. The manager then updates
-`active-clients.json`, removes the remote MPD output on the next configuration
-run, and schedules an MPD restart with a three-second debounce.
-
-### Snapcast: Avahi, API, ping, and ARP
-
-Remote Snapclients announce `_snapclient._tcp`, normally with port `1704`.
-The manager uses that service for discovery but does **not** test TCP port
-`1704` as a server endpoint. Snapclient is a client of Snapserver, so that
-port is not used here as a reliable liveness test.
-
-The manager obtains Snapclient addresses from both:
-
-1. Avahi resolver results;
-2. Snapserver `Server.GetStatus`, from the client's reported `host.ip`.
-
-When Snapserver is available, `Server.GetStatus` is read over the local JSON-RPC
-socket at `127.0.0.1:1705`. The manager examines each client's `connected`
-field. The API is not the only discovery source: Avahi discovery can start
-Snapserver when Snapserver is currently stopped.
-
-Every five seconds known Snapclient addresses are checked with:
-
-```text
-ping -c 1 -W 1 <address>
-```
-
-The subprocess has a maximum timeout of 1.5 seconds. One responding address is
-enough to keep the client reachable. If `ping` cannot be executed at all, the
-manager falls back to `/proc/net/arp` and accepts a complete ARP entry.
-
-There is a deliberate distinction in the current code:
-
-- the direct five-second presence path can remove a known Snapclient after its
-  first failed network check;
-- the separate Avahi-list reconciliation has a three-failure grace counter.
-
-Therefore the fastest effective Snapclient removal is the direct ping path.
-This is different from PulseAudio, where port `4713` needs three consecutive
-failed probes before expiration.
-
-```mermaid
-sequenceDiagram
-    participant DEV as Snapclient
-    participant AV as Avahi
-    participant AM as audio-manager
-    participant SS as snapserver.service
-    participant JSON as active-clients.json
-
-    DEV--xAV: power off / network loss
-    alt Avahi sends ItemRemove
-        AV-->>AM: ItemRemove(_snapclient._tcp)
-        AM->>AM: Remove client
-    else No Avahi goodbye
-        loop every 5 seconds
-            AM->>AM: Read current Avahi list
-            AM->>DEV: ping -c 1 -W 1
-            DEV--xAM: no reply
-        end
-        AM->>AM: Remove after failed direct presence check
-    end
-    AM->>JSON: Rewrite active client list
-    AM->>SS: StopUnit if no remote clients remain
-```
-
-When the device is started again, `ItemNew` or the next five-second Avahi
-enumeration adds it back, its address is resolved, `active-clients.json` is
-rewritten, and Snapserver is started if no other remote client keeps it active.
-
-### PulseAudio events and actual audio activity
-
-The PulseAudio listener is event-driven and runs in a separate thread. It
-subscribes through `pulsectl.Pulse.event_listen()` and wakes the main loop for
-these facilities:
-
-```text
-sink-input, source, sink, card, module, server
-```
-
-This is equivalent in purpose to running `pactl subscribe`, but without
-spawning the command. It reacts when, for example, an Ubuntu application moves
-from `snapcast_pc` to a local speaker or when a Bluetooth source appears.
-
-As a safety net, a complete PulseAudio snapshot is read every
-`PULSE_SNAPSHOT_INTERVAL = 10` seconds:
-
-```text
-sink_list()
-source_list()
-sink_input_list()
-```
-
-The snapshot finds:
-
-- a `bluez_source...` Bluetooth source;
-- the `snapcast_pc` and `snapcast_bt` null sinks;
-- non-corked sink inputs, which indicate active capture input.
-
-```mermaid
-flowchart TD
-    EVENT[PulseAudio event] --> WAKE[Wake reconciliation loop]
-    TIMER[10-second snapshot] --> SNAP[Read sinks, sources, sink-inputs]
-    WAKE --> RECON[Reconcile]
-    SNAP --> RECON
-    RECON --> BT{bluez_source exists?}
-    RECON --> PC{non-corked input on snapcast_pc?}
-    RECON --> OUT{MPD snapcast output enabled?}
-    BT -->|yes| B[Bluetooth stream]
-    BT -->|no| PC
-    PC -->|yes| P[PC stream]
-    PC -->|no| OUT
-    OUT -->|yes| M[MPD stream]
-    OUT -->|no| D[MPD fallback]
-```
-
-A remote PulseAudio server can therefore be reachable while its output is
-silent. Discovery and audio activity are separate states.
-
-## Timing summary
-
-| Operation | Interval or timeout | Purpose |
-|---|---:|---|
-| PulseAudio event listener | event-driven | Wake reconciliation after PulseAudio changes |
-| PulseAudio state snapshot | 10 s | Safety-net read of sinks, sources, and sink-inputs |
-| MPD `snapcast` output check | 5 s | Detect whether MPD selected the Snapcast FIFO |
-| Snapcast group synchronization | 5 s | Correct group stream selection |
-| Avahi service enumeration | 5 s | Detect missing `ItemRemove` and reappearance |
-| PulseAudio TCP probe | Avahi cycle, `0.5 s` connect timeout | Verify port `4713` |
-| PulseAudio expiration | 3 failed TCP probes | Avoid one transient failure |
-| Snapclient ping | Avahi cycle, `1 s` ping wait, `1.5 s` process timeout | Verify LAN reachability |
-| systemd state fallback | 30 s | Re-read `snapserver.service` if D-Bus event was missed |
-| MPD restart debounce | 3 s | Coalesce topology changes |
-| Idle `parec` capture timeout | 60 s | Reduce idle CPU usage |
-| Pulse event-listener retry | 2 s after failure | Recover from a temporary PulseAudio error |
-
-## Lifecycle diagrams
-
-### Remote client starts
-
-```mermaid
-sequenceDiagram
-    participant DEV as MediaClient
-    participant AV as Avahi
-    participant AM as audio-manager
-    participant SS as Snapserver
-    participant MPD as MPD
-
-    DEV->>AV: Publish _snapclient._tcp
-    DEV->>AV: Publish _pulse-server._tcp (if enabled)
-    AV-->>AM: ItemNew + resolver address
-    AM->>AM: Write active-clients.json
-    AM->>SS: StartUnit if first remote Snapclient
-    SS-->>AM: ActiveState=active via systemd D-Bus
-    AM->>AM: Create null sinks and FIFO paths
-    alt PulseAudio TCP service is present
-        AM->>DEV: TCP connect :4713 every 5 seconds
-        AM->>MPD: Restart after 3-second debounce
-    end
-    AM->>SS: Server.GetStatus / Group.SetStream
-```
-
-### Remote client is reachable but silent
-
-This is not a disconnect:
-
-```text
-Avahi service present
-TCP :4713 accepts connections (PulseAudio available)
-ping responds (device reachable)
-no non-corked sink-input (no current audio)
-```
-
-The client remains active in the state file and Snapserver remains available.
-Only the Bluetooth/PC `parec` capture is stopped after the 60-second idle
-timeout.
-
-## Practical diagnostics
-
-The following commands show the same information the manager consumes:
-
-```bash
-# PulseAudio state and event stream
-pactl list short sinks
-pactl list short sources
-pactl list short sink-inputs
-pactl list modules short
-pactl subscribe
-
-# Avahi publications
-avahi-browse -rt _pulse-server._tcp
 avahi-browse -rt _snapclient._tcp
-
-# Generated manager state
-cat /run/audio-manager/active-clients.json
-
-# Snapserver's view of clients
-curl -sS http://127.0.0.1:1780/jsonrpc \
-  -H 'Content-Type: application/json' \
-  --data '{"id":1,"jsonrpc":"2.0","method":"Server.GetStatus"}'
-
-# Decisions and transitions
-journalctl -u audio-manager.service -f
+avahi-browse -rt _pulse-server._tcp
 ```
 
+## Build and test
+
+Run unit tests on the development machine:
+
+```bash
+PYTHONPATH=recipes-multimedia/snapcast-bt/snapcast-bt \
+  pytest -q recipes-multimedia/snapcast-bt/tests/test_audio_manager.py
+python3 -m compileall -q recipes-multimedia/snapcast-bt/snapcast-bt
+git diff --check
+```
+
+Build on the supported builder (`msi_local`):
+
+```bash
+ssh msi_local \
+  'cd /home/bartosz/workspace/yocto_mediaserver && \
+   docker compose run --rm yocto bitbake audio-manager'
+```
+
+The resulting package is normally located at:
+
+```text
+build/tmp/deploy/ipk/cortexa72/audio-manager_1.0-r0_cortexa72.ipk
+```
+
+Install a built package on the target with:
+
+```bash
+scp audio-manager_1.0-r0_cortexa72.ipk mediaserver_local:/tmp/
+ssh mediaserver_local \
+  'opkg install --force-reinstall /tmp/audio-manager_1.0-r0_cortexa72.ipk'
+```
+
+After installation, verify the service, logs, active-client state, and
+PulseAudio loopback volume using the commands above.
+
+## Related files
+
+- Recipe: `recipes-multimedia/snapcast-bt/audio-manager.bb`
+- systemd unit: `recipes-multimedia/snapcast-bt/snapcast-bt/audio-manager.service`
+- launcher: `recipes-multimedia/snapcast-bt/snapcast-bt/audio-manager.py`
+- Snapserver streams: `recipes-multimedia/snapcast/snapcast/snapserver.conf`
+- MPD state consumer: `recipes-multimedia/mpd/mpd/mpd-output-configurator.py`
+- Unit tests: `recipes-multimedia/snapcast-bt/tests/test_audio_manager.py`

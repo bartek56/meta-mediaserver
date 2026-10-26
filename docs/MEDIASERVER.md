@@ -72,16 +72,19 @@ The current setup uses:
 - Avahi for service discovery;
 - `/etc/snapserver.conf` and `/etc/snapclient.conf` for configuration.
 
-The optional `snapcast-bt` package adds Bluetooth-aware stream switching on a
-full image. It watches PulseAudio source events. When a `bluez_source` appears,
-it creates a PulseAudio null sink and loopback, captures the Bluetooth audio
-through a FIFO, and switches the first Snapcast group to the `Bluetooth`
-stream. When the Bluetooth source disappears, it removes the temporary
-PulseAudio modules and switches the group back to `MPD`.
+The `audio-manager` package adds Bluetooth-aware routing on a full image. It
+periodically reconciles local PulseAudio state and the Snapserver systemd
+state. When a Bluetooth source is available, it creates a PulseAudio loopback
+to either the `snapcast_bt` null sink or the physical sink, depending on
+whether Snapserver is active. The Bluetooth loopback is maintained at 120%
+gain. When Snapserver is active, `parec` captures active null-sink monitors
+through FIFOs consumed by the configured Snapcast streams.
 
-This helper expects the local Snapserver JSON-RPC endpoint on port `1705` and
-uses the stream names `MPD` and `Bluetooth`. It therefore depends on the
-Snapserver configuration and group layout matching the script.
+The manager uses the local Snapserver JSON-RPC endpoint on port `1705` for one
+shared `Server.GetStatus` poll every two seconds while Snapserver is active.
+It does not select Snapcast groups directly. See
+`docs/AUDIO_MANAGER.md` for the class structure, timers, state transitions,
+logging, and diagnostics.
 
 ## MPD and PulseAudio
 
@@ -113,7 +116,7 @@ Bluetooth support is supplied by BlueZ and PulseAudio. The common image policy
 enables the `bluez5` and `bluetooth` distro features, while the audio package
 group installs the PulseAudio Bluetooth discovery, policy, and device modules.
 
-For the automatic Bluetooth-to-Snapcast path, install the `snapcast-bt`
+For the automatic Bluetooth-to-Snapcast path, install the `audio-manager`
 package. Its `audio-manager.service` listens for PulseAudio source
 events and manages the temporary capture path. `pa-event-generator.service`
 generates a short PulseAudio event during startup so the watcher can verify

@@ -49,6 +49,43 @@ Build the full Qt5 image with:
 
     docker compose run --rm yocto bitbake mediaserver-image-qt5
 
+
+# MediaServer build and target workflow
+
+## Builder
+
+The Yocto build must run on `msi_local`, not on this workstation.
+
+Synchronize the layer with:
+
+```bash
+rsync -ah --progress --delete --exclude='.git/' \
+    ~/Documents/priv/yocto_mediaserver/sources/meta-mediaserver/ \
+    msi_local:/home/bartosz/workspace/yocto_mediaserver/sources/meta-mediaserver/
+```
+
+Build Raspberry Pi 4 images from the project root with:
+
+```bash
+docker compose run --rm -e MACHINE=raspberrypi4-64 yocto bitbake <image>
+```
+
+After a successful build, refresh the deploy package index:
+
+```bash
+docker compose run --rm -e MACHINE=raspberrypi4-64 yocto bitbake package-index
+```
+
+## Target
+
+The runtime target is `mediaserver_local`. Do not modify it during diagnostics.
+When explicitly deploying a built package, copy the IPK to the target and run:
+
+```bash
+opkg install --force-reinstall /tmp/<package>.ipk
+```
+
+
 ## Change verification
 
 After making changes:

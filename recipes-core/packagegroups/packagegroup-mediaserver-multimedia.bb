@@ -8,7 +8,7 @@ RDEPENDS:${PN} = " \
     jellyfin \
     snapcast-client \
     snapcast-server \
-    snapcast-bt \
+    audio-manager \
     snapweb \
     minidlna \
     mpd \

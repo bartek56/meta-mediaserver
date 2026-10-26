@@ -10,8 +10,12 @@ ExecStartPre=/usr/bin/bluetoothctl discoverable on
 
 Environment="XDG_RUNTIME_DIR=/run/user/0"
 Environment="PULSE_RUNTIME_PATH=/run/user/0/pulse"
+Environment="AUDIO_MANAGER_LOG_LEVEL=DEBUG"
 
 ExecStart=/usr/bin/audio-manager.py
+
+StandardOutput=append:/var/log/audio-manager.log
+StandardError=append:/var/log/audio-manager.log
 
 KillMode=control-group
 TimeoutStopSec=3

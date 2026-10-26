@@ -31,7 +31,6 @@ SNAPCAST_FIFO_OUTPUT = '''audio_output {
 
 AUDIO_OUTPUT_RE = re.compile(r"(?ms)^audio_output\s*\{.*?^\}\s*")
 SERVER_RE = re.compile(r'^\s*server\s+"([^"]+)"\s*$', re.MULTILINE)
-NAME_RE = re.compile(r'^\s*name\s+"([^"]+)"\s*$', re.MULTILINE)
 
 
 def _is_remote_pulse_output(block: str) -> bool:
@@ -54,6 +53,25 @@ def _local_names() -> set[str]:
     return names
 
 
+def _client_display_name(client: dict, hostname: str) -> str:
+    """Return the human-readable name used for an MPD PulseAudio output."""
+
+    explicit_name = client.get("display_name")
+    if isinstance(explicit_name, str) and explicit_name.strip():
+        return explicit_name.strip()
+
+    short_hostname = hostname.split(".", 1)[0].strip()
+    if short_hostname:
+        return short_hostname
+    return str(client.get("id", "remote-pulse"))
+
+
+def _quote_mpd_string(value: str) -> str:
+    """Escape a value before placing it inside an MPD quoted string."""
+
+    return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def discover_active_clients() -> tuple[dict[str, tuple[str, str]], bool]:
     """Read current PulseAudio and Snapclient state from audio-manager."""
 
@@ -74,7 +92,7 @@ def discover_active_clients() -> tuple[dict[str, tuple[str, str]], bool]:
         if not isinstance(client, dict):
             continue
         hostname_raw = str(client.get("hostname", "")).rstrip(".")
-        display_name = str(client.get("id", hostname_raw.split(".", 1)[0]))
+        display_name = _client_display_name(client, hostname_raw)
         fqdn = hostname_raw if "." in hostname_raw else f"{hostname_raw}.local"
         if not hostname_raw or fqdn.lower() in local_names:
             continue
@@ -105,16 +123,6 @@ def discover_active_clients() -> tuple[dict[str, tuple[str, str]], bool]:
     return discovered, snapclients
 
 
-def _extract_server(block: str) -> str | None:
-    match = SERVER_RE.search(block)
-    return match.group(1) if match else None
-
-
-def _extract_name(block: str) -> str | None:
-    match = NAME_RE.search(block)
-    return match.group(1) if match else None
-
-
 def _generated_section(outputs: list[str]) -> str:
     lines = [
         AUTO_START,
@@ -132,13 +140,6 @@ def update_config(
     discovered: dict[str, tuple[str, str]], snapclients: bool
 ) -> bool:
     original = CONFIG_PATH.read_text(encoding="utf-8")
-    blocks = list(AUDIO_OUTPUT_RE.finditer(original))
-    templates: dict[str, str] = {}
-    for match in blocks:
-        block = match.group(0).strip()
-        server = _extract_server(block)
-        if server and _is_remote_pulse_output(block):
-            templates[server] = block
 
     base = re.sub(
         rf"\n?{re.escape(AUTO_START)}.*?{re.escape(AUTO_END)}\n?",
@@ -156,15 +157,14 @@ def update_config(
 
     generated: list[str] = []
     for fqdn, (address, display_name) in sorted(discovered.items()):
-        block = templates.get(address)
-        if block is None:
-            block = (
-                'audio_output {\n'
-                '    type "pulse"\n'
-                f'    server "{address}"\n'
-                f'    name "{display_name}"\n'
-                '}'
-            )
+        escaped_name = _quote_mpd_string(display_name)
+        block = (
+            'audio_output {\n'
+            '    type "pulse"\n'
+            f'    server "{address}"\n'
+            f'    name "{escaped_name}"\n'
+            '}'
+        )
         generated.append(block)
 
     if snapclients:
