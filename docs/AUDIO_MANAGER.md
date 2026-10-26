@@ -23,6 +23,36 @@ The manager is responsible for:
 - requesting MPD configuration regeneration when remote PulseAudio topology
   changes.
 
+## Code structure
+
+The executable is an orchestration layer; audio operations are separated into
+small components:
+
+- `pulse_audio.py` — `PulseAudioRouter`, `BluetoothRoute`, and
+  `CaptureProcessManager`; it owns sink creation, Bluetooth loopback, FIFO
+  creation, `parec`, and PulseAudio event listening;
+- `monitoring.py` — `MonitoringInterface`, `PingMonitor`,
+  `PulseAudioMonitor`, and `SnapcastMonitor`;
+- `monitor_coordinator.py` — monitor deadlines, device availability, and
+  PulseAudio/Snapclient state transitions;
+- `snapcast_control.py` — low-level local Snapcast JSON-RPC transport;
+- `snapserver_service.py` — Snapserver ActiveState, `Server.GetStatus`,
+  client addresses, lifecycle decisions, and group stream synchronization;
+- `mpd_control.py` — `MpdService`, MPD connection, `snapcast` output-state
+  checks, and debounced MPD restarts;
+- `service_discovery.py` — systemd and permanent Avahi `ItemNew`/
+  `ItemRemove` listeners;
+- `audio-manager.py` — application lifecycle, device state, and source
+  selection policy.
+
+The Bluetooth and FIFO components are created once and remain available for
+the lifetime of `audio-manager`; only their routing and `parec` processes are
+reconciled when the relevant source becomes active.
+
+`client_state.py` contains `ActiveClientsStore`, which owns the
+`active-clients.json` schema, validation, atomic writes, and reads. The
+controller does not construct or serialize JSON directly.
+
 ## Service lifecycle
 
 The service is started by systemd. Before the Python process starts, the unit
@@ -55,9 +85,9 @@ _pulse-server._tcp
 ```
 
 The permanent Avahi browsers react immediately to `ItemNew` and `ItemRemove`.
-Every five seconds the manager also creates a temporary Avahi browser and
-reconciles the currently known services with the current Avahi result. This
-handles devices that disappear without sending a clean Avahi goodbye packet.
+There is no periodic Avahi browser or `AllForNow` reconciliation. If a device
+does not send an Avahi removal, its device-level ICMP monitor handles the
+stale entry.
 
 The two service types are tracked independently. A device can therefore have
 one active service and one inactive service, for example:
@@ -71,17 +101,21 @@ one active service and one inactive service, for example:
 
 ## Liveness checks
 
+The reusable `MonitoringInterface` exposes a common state machine for all
+checks. Each observation returns `MonitoringResult` with the current
+availability, whether the state changed, and the consecutive-failure count.
+Returning `None` means that no observation was possible and leaves the
+previous state unchanged.
+
 ### PulseAudio
 
 For a discovered PulseAudio service, the manager resolves its address and
-checks TCP port `4713`. The check uses a short timeout and succeeds when at
-least one known IPv4 address accepts the connection.
+performs a native PulseAudio handshake through `pulsectl`. The probe runs
+every five seconds with a one-second timeout.
 
-If the service is present in Avahi but port `4713` does not respond, the
-manager requires three consecutive failed probes before expiring the
-PulseAudio service. A successful probe resets the failure counter. This avoids
-removing a client because of one temporary network or PulseAudio startup
-failure. The manager then:
+If the handshake fails, the PulseAudio service is marked unavailable for that
+five-second monitoring cycle. A successful handshake marks it available again.
+The manager then:
 
 1. updates `active-clients.json`;
 2. removes the corresponding remote MPD output on the next configuration run;
@@ -89,18 +123,20 @@ failure. The manager then:
 
 ### Snapclient
 
-Snapclient is not checked by opening TCP port `1704`; the client publishes the
-Avahi service but does not provide a server endpoint suitable for this probe.
+Snapclient is not checked by opening TCP port `1704`. The client publishes the
+Avahi service, while its health is evaluated from Snapserver's status.
 
-When Snapserver is available, the manager additionally queries its JSON-RPC
-`Server.GetStatus` method. If a known client is reported with
-`"connected": false`, it is removed even if a stale Avahi announcement still
-exists. If the Snapserver API is unavailable, Avahi remains the source of
-truth so that a newly discovered client can cause Snapserver startup.
+When Snapserver is active, the manager queries its JSON-RPC `Server.GetStatus`
+every two seconds. A client is active only when `connected` is true and its
+`lastSeen.sec` is no older than five seconds. A missing client, a disconnected
+client, or stale `lastSeen` marks the Snapclient service unavailable. If the
+API cannot be read, the current state is retained until the next successful
+observation.
 
-The periodic reconciliation also adds services that are present again in the
-current Avahi result. This allows a client that was powered off and then
-started again to return without restarting `audio-manager.service`.
+The same `MonitoringInterface` state machine is used for all monitors. A
+device-level `PingMonitor` is different: it sends one `ping -c 1` per check,
+requires three consecutive failed checks before declaring the device
+unavailable, and reports recovery on the first successful ping.
 
 ## Active-client state file
 
@@ -250,12 +286,34 @@ Follow manager decisions:
 journalctl -u audio-manager.service -f
 ```
 
+For detailed decision tracing, start the service with:
+
+```bash
+systemctl edit audio-manager.service
+```
+
+and add:
+
+```ini
+[Service]
+Environment=AUDIO_MANAGER_LOG_LEVEL=DEBUG
+```
+
+Then reload and restart the service. Debug logs include Avahi events and
+resolver addresses, every due ping/handshake/status check, failure counters,
+`active-clients.json` writes, PulseAudio sink/capture decisions, MPD output
+state, Snapcast JSON-RPC calls, source-selection decisions, and Snapserver
+start/stop decisions.
+
 Important log messages include:
 
 - `Remote ... discovered` — Avahi found a service;
 - `Remote ... removed` — Avahi sent an explicit removal;
-- `... expired from Avahi poll` — periodic reconciliation removed a stale
-  service;
+- `Device unavailable after ... failed pings` — the device-level monitor
+  reached its consecutive-failure threshold;
+- `Device available again after ICMP recovery` — the device answered again;
+- `PulseAudio service ...` / `Snapclient ...` — a service monitor changed
+  state;
 - `Restarting MPD: remote PulseAudio topology changed` — MPD output topology
   changed;
 - `Active source mode: ...` — Snapcast groups were switched to a source.
@@ -277,7 +335,7 @@ flowchart LR
     PA[PulseAudio] -->|event listener| AM
     AM -->|pulsectl snapshot| PA
     API[Snapserver JSON-RPC] -->|Server.GetStatus| AM
-    LAN[LAN ping / ARP] --> AM
+    LAN[LAN ICMP ping] --> AM
     SD[systemd D-Bus] -->|snapserver state| AM
 
     AM -->|atomic write| STATE["/run/audio-manager/active-clients.json"]
@@ -293,13 +351,13 @@ The manager uses a different source of information for each question:
 | Question | Check |
 |---|---|
 | Is a service advertised? | Avahi service browser |
-| Can remote PulseAudio be reached? | TCP connection to port `4713` |
-| Is a Snapclient still on the LAN? | ping, with ARP fallback when `ping` cannot be executed |
-| Does Snapserver see the Snapclient? | `Server.GetStatus` and `connected` |
+| Can remote PulseAudio be reached? | Native PulseAudio handshake through `pulsectl` |
+| Is a device still on the LAN? | One ICMP ping per five-second check |
+| Does Snapserver see the Snapclient? | `Server.GetStatus`, `connected`, and `lastSeen.sec` |
 | Is audio actually active? | PulseAudio sink-input state and MPD output state |
 | Which audio stream should groups use? | Source priority plus Snapcast `Group.SetStream` |
 
-### Avahi discovery and periodic reconciliation
+### Avahi event discovery
 
 The manager creates permanent Avahi browsers through D-Bus for:
 
@@ -308,20 +366,17 @@ _snapclient._tcp
 _pulse-server._tcp
 ```
 
-For each browser it handles:
+For each permanent browser it handles:
 
 - `ItemNew` — a service appeared;
 - `ItemRemove` — Avahi explicitly reported that a service disappeared;
-- `AllForNow` — the initial enumeration is complete.
 
 After `ItemNew`, an Avahi resolver supplies the address. The manager stores
 that address under the service name. The local MediaServer service is ignored
 when deciding whether a remote Snapclient exists.
 
-Avahi does not always send `ItemRemove` when a machine is powered off or loses
-the network. Therefore, every `AVAHI_POLL_INTERVAL = 5` seconds the manager
-creates a temporary browser, collects a fresh list, and compares it with the
-known list:
+Avahi is not used as a periodic health check. If an Avahi `ItemRemove` is
+missing, the separately maintained device monitor detects the problem:
 
 ```mermaid
 sequenceDiagram
@@ -329,23 +384,16 @@ sequenceDiagram
     participant AV as Avahi D-Bus
     participant DEV as remote device
 
-    loop every 5 seconds
-        AM->>AV: ServiceBrowserNew(service type)
-        AV-->>AM: ItemNew for currently advertised services
-        AV-->>AM: AllForNow
-        AM->>AV: Free temporary browser
-        AM->>AM: Compare current list with known list
-    end
-
     DEV--xAV: power off without goodbye
-    Note over AM,AV: The next enumeration no longer contains DEV.
-    AM->>AM: Run service-specific liveness checks
+    Note over AM,AV: Avahi may retain the stale service.
+    loop every 5 seconds
+        AM->>DEV: ping -c 1 -W 1
+        DEV--xAM: no reply
+    end
+    AM->>AM: Remove device after 3 consecutive failures
 ```
 
-`AllForNow` marks discovery as ready. PulseAudio topology changes discovered
-during the initial enumeration are coalesced before an MPD restart.
-
-### PulseAudio TCP: what is used instead of `pactl`
+### PulseAudio monitoring and what is used instead of `pactl`
 
 The manager does not execute the `pactl` command. It imports `pulsectl` and
 uses the PulseAudio native protocol directly. The command-line equivalents
@@ -368,10 +416,11 @@ For a remote `pulse@MediaClientOffice` service the sequence is:
 1. Avahi announces `_pulse-server._tcp`.
 2. `ItemNew` adds the service name to the known PulseAudio set.
 3. The resolver stores the service address.
-4. On each Avahi reconciliation, the manager attempts a TCP connection to
-   `<address>:4713` with a `0.5` second timeout.
-5. One successful IPv4 address is enough to keep the service reachable.
-6. A successful probe resets the consecutive-failure counter.
+4. Every five seconds, `PulseAudioMonitor` creates a native PulseAudio client
+   for `<address>:4713`, connects with a one-second timeout, and calls
+   `server_info()` as a handshake.
+5. A successful handshake marks the service active; a failed handshake marks
+   it inactive for that cycle.
 
 Port `4713` proves that the remote PulseAudio server is reachable; it does not
 prove that music is playing.
@@ -380,22 +429,20 @@ prove that music is playing.
 flowchart TD
     P[Known _pulse-server._tcp service] --> E{Avahi ItemRemove?}
     E -->|yes| REMOVE1[Remove immediately]
-    E -->|no| CHECK[Every 5 seconds: TCP :4713]
+    E -->|no| CHECK[Every 5 seconds: native PulseAudio handshake]
     CHECK -->|success| KEEP[Keep active; reset failures]
-    CHECK -->|failure| COUNT[Increment failure counter]
-    COUNT -->|1 or 2| GRACE[Keep temporarily]
-    COUNT -->|3| REMOVE2[Expire service]
+    CHECK -->|failure| REMOVE2[Mark service inactive]
     REMOVE1 --> UPDATE[Rewrite JSON and schedule MPD restart]
     REMOVE2 --> UPDATE
 ```
 
-If a device is powered off without `ItemRemove`, PulseAudio normally expires
-after three failed probes, roughly 10–15 seconds after the first failed
-five-second cycle. A clean Avahi removal is faster. The manager then updates
-`active-clients.json`, removes the remote MPD output on the next configuration
-run, and schedules an MPD restart with a three-second debounce.
+If a device is powered off without `ItemRemove`, the device-level ping monitor
+handles the transition. The PulseAudio service is also marked inactive when
+its handshake fails. The manager then updates `active-clients.json`, removes
+the remote MPD output on the next configuration run, and schedules an MPD
+restart with a three-second debounce.
 
-### Snapcast: Avahi, API, ping, and ARP
+### Snapcast: Avahi, API, and device ping
 
 Remote Snapclients announce `_snapclient._tcp`, normally with port `1704`.
 The manager uses that service for discovery but does **not** test TCP port
@@ -407,30 +454,29 @@ The manager obtains Snapclient addresses from both:
 1. Avahi resolver results;
 2. Snapserver `Server.GetStatus`, from the client's reported `host.ip`.
 
-When Snapserver is available, `Server.GetStatus` is read over the local JSON-RPC
-socket at `127.0.0.1:1705`. The manager examines each client's `connected`
-field. The API is not the only discovery source: Avahi discovery can start
-Snapserver when Snapserver is currently stopped.
+When Snapserver is active, `Server.GetStatus` is read over the local JSON-RPC
+socket at `127.0.0.1:1705` every two seconds. The manager examines each
+client's `connected` and `lastSeen.sec` fields. The API is not the discovery
+source: Avahi `ItemNew` can start Snapserver when it is currently stopped.
 
-Every five seconds known Snapclient addresses are checked with:
+Device reachability is checked independently every five seconds with exactly
+one request:
 
 ```text
 ping -c 1 -W 1 <address>
 ```
 
-The subprocess has a maximum timeout of 1.5 seconds. One responding address is
-enough to keep the client reachable. If `ping` cannot be executed at all, the
-manager falls back to `/proc/net/arp` and accepts a complete ARP entry.
+The subprocess has a maximum timeout of 1.5 seconds. The exit code must be
+zero for the attempt to succeed. The monitor allows three consecutive failed
+attempts before declaring the whole device unavailable. The threshold is set
+in `Controller.__init__` as `device_ping_failure_threshold` and can be
+changed to five without changing the monitor implementation. A successful
+ping resets the counter and reports device recovery.
 
-There is a deliberate distinction in the current code:
-
-- the direct five-second presence path can remove a known Snapclient after its
-  first failed network check;
-- the separate Avahi-list reconciliation has a three-failure grace counter.
-
-Therefore the fastest effective Snapclient removal is the direct ping path.
-This is different from PulseAudio, where port `4713` needs three consecutive
-failed probes before expiration.
+When Snapserver is active, `SnapcastMonitor` evaluates each known client on
+the same two-second cadence. A client is active only when `connected` is true
+and `lastSeen.sec` is less than five seconds old. If the JSON-RPC request
+fails, no false negative is generated for that cycle.
 
 ```mermaid
 sequenceDiagram
@@ -446,19 +492,18 @@ sequenceDiagram
         AM->>AM: Remove client
     else No Avahi goodbye
         loop every 5 seconds
-            AM->>AM: Read current Avahi list
             AM->>DEV: ping -c 1 -W 1
             DEV--xAM: no reply
         end
-        AM->>AM: Remove after failed direct presence check
+        AM->>AM: Mark unavailable after 3 consecutive failures
     end
     AM->>JSON: Rewrite active client list
     AM->>SS: StopUnit if no remote clients remain
 ```
 
-When the device is started again, `ItemNew` or the next five-second Avahi
-enumeration adds it back, its address is resolved, `active-clients.json` is
-rewritten, and Snapserver is started if no other remote client keeps it active.
+When the device answers again, the ping monitor resets its failure counter,
+reports recovery, rewrites `active-clients.json`, and allows Snapserver and
+the service monitors to become active again.
 
 ### PulseAudio events and actual audio activity
 
@@ -517,10 +562,11 @@ silent. Discovery and audio activity are separate states.
 | PulseAudio state snapshot | 10 s | Safety-net read of sinks, sources, and sink-inputs |
 | MPD `snapcast` output check | 5 s | Detect whether MPD selected the Snapcast FIFO |
 | Snapcast group synchronization | 5 s | Correct group stream selection |
-| Avahi service enumeration | 5 s | Detect missing `ItemRemove` and reappearance |
-| PulseAudio TCP probe | Avahi cycle, `0.5 s` connect timeout | Verify port `4713` |
-| PulseAudio expiration | 3 failed TCP probes | Avoid one transient failure |
-| Snapclient ping | Avahi cycle, `1 s` ping wait, `1.5 s` process timeout | Verify LAN reachability |
+| Avahi service browser | event-driven | Receive `ItemNew` and `ItemRemove` |
+| PulseAudio handshake | 5 s, `1 s` timeout | Verify native PulseAudio service |
+| Snapserver status | 2 s while active, `5 s` stale limit | Verify `connected` and `lastSeen` |
+| Device ping | 5 s, one `ping -c 1`, `1 s` wait, `1.5 s` process timeout | Verify LAN reachability |
+| Device expiration | 3 consecutive failed pings | Avoid one transient network failure |
 | systemd state fallback | 30 s | Re-read `snapserver.service` if D-Bus event was missed |
 | MPD restart debounce | 3 s | Coalesce topology changes |
 | Idle `parec` capture timeout | 60 s | Reduce idle CPU usage |
@@ -558,7 +604,7 @@ This is not a disconnect:
 
 ```text
 Avahi service present
-TCP :4713 accepts connections (PulseAudio available)
+Native PulseAudio handshake succeeds (PulseAudio available)
 ping responds (device reachable)
 no non-corked sink-input (no current audio)
 ```
