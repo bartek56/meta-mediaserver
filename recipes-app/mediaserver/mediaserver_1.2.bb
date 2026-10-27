@@ -6,7 +6,7 @@ RDEPENDS:${PN} = "bash alarm ntfs-3g qtbase qtdeclarative qtdeclarative-qmlplugi
 
 SRCREV = "${AUTOREV}"
 
-SRC_URI = "git://github.com/bartek56/MediaServer;branch=qt6;protocol=https \
+SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
           file://fstab_manager.sh \
           file://screensaver.conf \
           file://start.service \

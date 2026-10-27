@@ -5,7 +5,7 @@ DEPENDS += "qtbase qtdeclarative qtdeclarative-native"
 RDEPENDS:${PN} = "qtbase qtdeclarative qtdeclarative-qmlplugins qtvirtualkeyboard"
 
 SRCREV = "${AUTOREV}"
-SRC_URI = "git://github.com/bartek56/MediaServer;branch=qt6;protocol=https \
+SRC_URI = "git://github.com/bartek56/MediaServer;branch=master;protocol=https \
           file://startup.service \
           file://0001-cmake-make-unit-tests-optional.patch \
 "
