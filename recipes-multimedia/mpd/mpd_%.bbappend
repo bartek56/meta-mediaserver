@@ -32,7 +32,7 @@ PACKAGECONFIG += "upnp"
 PACKAGECONFIG += "zlib" 
 PACKAGECONFIG += "fifo" 
 
-RDEPENDS:${PN} += "python3-core python3-dbus python3-pygobject avahi-daemon"
+RDEPENDS:${PN} += "python3-core python3-dbus python3-pygobject python3-mpd2 avahi-daemon"
 
 do_install:append() {
     install -d ${D}/etc
@@ -41,6 +41,8 @@ do_install:append() {
 
     if [ -f ${D}${systemd_system_unitdir}/mpd.service ]; then
         sed -i '/^ExecStart=/i ExecStartPre=${bindir}/mpd-output-configurator.py' \
+            ${D}${systemd_system_unitdir}/mpd.service
+        sed -i '/^ExecStart=/a ExecStartPost=${bindir}/mpd-output-configurator.py --enable-single-output' \
             ${D}${systemd_system_unitdir}/mpd.service
         sed -i '/^After=/s/$/ avahi-daemon.service network-online.target/' \
             ${D}${systemd_system_unitdir}/mpd.service

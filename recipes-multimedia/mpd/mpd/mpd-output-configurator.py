@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import os
@@ -13,12 +14,16 @@ import socket
 import tempfile
 import time
 
+from mpd import CommandError, MPDClient
+
 
 LOG = logging.getLogger("mpd-output-configurator")
 logging.basicConfig(level=logging.INFO, format="[MPD-OUTPUTS] %(message)s")
 
 CONFIG_PATH = Path("/etc/mpd.conf")
 ACTIVE_CLIENTS_PATH = Path("/run/audio-manager/active-clients.json")
+MPD_HOST = "127.0.0.1"
+MPD_PORT = 6600
 AUTO_START = "# BEGIN AUTO-GENERATED MPD OUTPUTS"
 AUTO_END = "# END AUTO-GENERATED MPD OUTPUTS"
 SNAPCAST_FIFO_OUTPUT = '''audio_output {
@@ -70,6 +75,67 @@ def _quote_mpd_string(value: str) -> str:
     """Escape a value before placing it inside an MPD quoted string."""
 
     return value.replace("\\", "\\\\").replace('"', '\\"')
+
+
+def enable_single_output() -> int:
+    """Enable the only normal output when MPD restored no usable output.
+
+    MPD restores output enabled/disabled state from ``state_file``.  If MPD
+    has exactly one configured output, it must be enabled after startup so
+    that playback has at least one possible destination.
+    """
+
+    last_error: Exception | None = None
+    for _ in range(20):
+        client = MPDClient()
+        client.timeout = 1
+        try:
+            client.connect(MPD_HOST, MPD_PORT)
+            outputs = client.outputs()
+            break
+        except (CommandError, OSError, TimeoutError) as error:
+            last_error = error
+            time.sleep(0.25)
+        finally:
+            try:
+                client.disconnect()
+            except (OSError, TimeoutError):
+                pass
+    else:
+        LOG.warning("Could not query MPD outputs after startup: %s", last_error)
+        return 0
+
+    if len(outputs) != 1:
+        LOG.info(
+            "Keeping MPD output state; outputs available: %d",
+            len(outputs),
+        )
+        return 0
+
+    output = outputs[0]
+    output_id = output.get("outputid")
+    if not output_id or not output_id.isdigit():
+        LOG.warning("The only MPD output has no valid output id: %s", output)
+        return 0
+    if output.get("outputenabled") == "1":
+        LOG.info("The only MPD output is already enabled: %s", output.get("outputname"))
+        return 0
+
+    client = MPDClient()
+    client.timeout = 1
+    try:
+        client.connect(MPD_HOST, MPD_PORT)
+        client.enableoutput(output_id)
+    except (CommandError, OSError, TimeoutError) as error:
+        LOG.warning("Could not enable the only MPD output: %s", error)
+        return 0
+    finally:
+        try:
+            client.disconnect()
+        except (OSError, TimeoutError):
+            pass
+    LOG.info("Enabled the only MPD output: %s", output.get("outputname"))
+    return 0
 
 
 def discover_active_clients() -> tuple[dict[str, tuple[str, str]], bool]:
@@ -185,6 +251,16 @@ def update_config(
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--enable-single-output",
+        action="store_true",
+        help="enable the only normal output after MPD has started",
+    )
+    args = parser.parse_args()
+    if args.enable_single_output:
+        return enable_single_output()
+
     try:
         discovered, snapclients = discover_active_clients()
     except OSError as exc:

@@ -364,6 +364,13 @@ for example `MediaClientOffice` from `pulse@MediaClientOffice`. The lowercase
 and is not used as the user-facing MPD output name. Remote PulseAudio output
 blocks are generated from the current state during the MPD service startup.
 
+After MPD starts, the same helper queries the output list. If exactly one
+output remains, the helper sends `enableoutput` for that output. No output is
+excluded from this count; when only the system output exists, it is enabled so
+that MPD always has at least one enabled output after startup. This is also the
+fallback for when the previously selected output disappeared during a
+configuration update.
+
 ## Runtime configuration
 
 All values can be overridden with environment variables. Invalid or nonpositive
