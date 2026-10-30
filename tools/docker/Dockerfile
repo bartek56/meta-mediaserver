@@ -28,6 +28,8 @@ RUN if id ubuntu >/dev/null 2>&1; then \
 COPY entrypoint.sh /usr/local/bin/yocto-entrypoint
 RUN chmod 0755 /usr/local/bin/yocto-entrypoint
 
+RUN chmod 0755 /home/builder
+
 USER builder
 
 WORKDIR /home/builder
