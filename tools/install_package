@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+usage() {
+    cat <<EOF
+Usage:
+  $0 MACHINE TARGET PACKAGE_FRAGMENT
+
+Arguments:
+  MACHINE          Target machine: rpi0, rpi3, or rpi4
+  TARGET           SSH target, for example root@192.168.1.10
+  PACKAGE_FRAGMENT Case-sensitive fragment of the package file name
+
+Examples:
+  $0 rpi4 root@192.168.1.10 audio-manager
+  $0 rpi3 root@192.168.1.11 python3
+EOF
+}
+
+if [[ $# -ne 3 ]]; then
+    usage >&2
+    exit 1
+fi
+
+MACHINE=$1
+TARGET=$2
+PACKAGE_FRAGMENT=$3
+
+case "$MACHINE" in
+    rpi0)
+        MACHINE_PACKAGE_DIR="raspberrypi0_2w_64"
+        CPU_PACKAGE_DIR="cortexa53"
+        ;;
+    rpi3)
+        MACHINE_PACKAGE_DIR="raspberrypi3_64"
+        CPU_PACKAGE_DIR="cortexa53"
+        ;;
+    rpi4)
+        MACHINE_PACKAGE_DIR="raspberrypi4_64"
+        CPU_PACKAGE_DIR="cortexa72"
+        ;;
+    *)
+        echo "Error: unsupported machine '$MACHINE'. Use rpi0, rpi3, or rpi4." >&2
+        exit 1
+        ;;
+esac
+
+# Resolve the project root from this script's location, independent of cwd.
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_ROOT=$(cd -- "$SCRIPT_DIR/../../.." && pwd)
+DEPLOY_IPK_DIR="$PROJECT_ROOT/build/tmp/deploy/ipk"
+
+[[ -d "$DEPLOY_IPK_DIR" ]] || {
+    echo "Error: package directory does not exist: $DEPLOY_IPK_DIR" >&2
+    exit 1
+}
+
+# Search machine-specific packages first, then CPU-specific and all-architecture packages.
+SEARCH_DIRS=()
+for directory in \
+    "$DEPLOY_IPK_DIR/$MACHINE_PACKAGE_DIR" \
+    "$DEPLOY_IPK_DIR/$CPU_PACKAGE_DIR" \
+    "$DEPLOY_IPK_DIR/all"; do
+    [[ -d "$directory" ]] && SEARCH_DIRS+=("$directory")
+done
+
+if [[ ${#SEARCH_DIRS[@]} -eq 0 ]]; then
+    echo "Error: no package directories found below $DEPLOY_IPK_DIR." >&2
+    exit 1
+fi
+
+short_path() {
+    local full_path=$1
+    local relative_path
+
+    relative_path=${full_path#"$PROJECT_ROOT/"}
+    printf '%s\n' "$relative_path"
+}
+
+echo "Searching for package fragment '$PACKAGE_FRAGMENT' for machine '$MACHINE'..."
+mapfile -t PACKAGE_FILES < <(
+    find "${SEARCH_DIRS[@]}" -type f -name "*$PACKAGE_FRAGMENT*" -print | sort
+)
+
+if [[ ${#PACKAGE_FILES[@]} -eq 0 ]]; then
+    echo "Error: no package matching '$PACKAGE_FRAGMENT' was found in:"
+    printf '  %s\n' "${SEARCH_DIRS[@]}"
+    exit 1
+fi
+
+if [[ ${#PACKAGE_FILES[@]} -gt 1 ]]; then
+    echo "Multiple matching packages found:"
+    for index in "${!PACKAGE_FILES[@]}"; do
+        printf '%d. %s\n' "$((index + 1))" "$(short_path "${PACKAGE_FILES[$index]}")"
+    done
+
+    while true; do
+        read -r -p "Select the package number to install: " selection
+        if [[ "$selection" =~ ^[0-9]+$ ]] &&
+            (( selection >= 1 && selection <= ${#PACKAGE_FILES[@]} )); then
+            PACKAGE_PATH=${PACKAGE_FILES[$((selection - 1))]}
+            break
+        fi
+        echo "Invalid selection. Enter a number from 1 to ${#PACKAGE_FILES[@]}."
+    done
+else
+    PACKAGE_PATH=${PACKAGE_FILES[0]}
+    echo "Found package: $(short_path "$PACKAGE_PATH")"
+fi
+
+PACKAGE_NAME=$(basename "$PACKAGE_PATH")
+REMOTE_PACKAGE_PATH="/tmp/$PACKAGE_NAME"
+
+echo "Copying '$PACKAGE_NAME' to '$TARGET'..."
+scp "$PACKAGE_PATH" "$TARGET:$REMOTE_PACKAGE_PATH"
+
+echo "Installing '$PACKAGE_NAME' on '$TARGET'..."
+ssh -tt "$TARGET" "opkg install '$REMOTE_PACKAGE_PATH' --force-reinstall"
+
+echo "Package '$PACKAGE_NAME' was installed successfully on '$TARGET'."
+
+
+
