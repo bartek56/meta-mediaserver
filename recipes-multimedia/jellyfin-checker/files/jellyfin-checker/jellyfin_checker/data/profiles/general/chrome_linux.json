@@ -1,0 +1,102 @@
+{
+  "id": "chrome_linux",
+  "name": "Chrome on Linux",
+  "type": "general",
+  "platform": "linux",
+  "application": "chrome",
+  "version": null,
+  "source": {
+    "name": "Jellyfin Codec Support",
+    "url": "https://jellyfin.org/docs/general/clients/codec-support/",
+    "retrieved_at": null
+  },
+  "notes": [
+    "HEVC support depends on the device and browser environment.",
+    "Jellyfin documents MKV playback in Chrome for Chrome 145 and newer."
+  ],
+  "video": {
+    "h264": {
+      "status": "SUPPORTED",
+      "bit_depth": [8, 10],
+      "source": "jellyfin_codec_support"
+    },
+    "hevc": {
+      "status": "CONDITIONAL",
+      "bit_depth": [8, 10],
+      "source": "jellyfin_codec_support"
+    },
+    "vp9": {
+      "status": "SUPPORTED",
+      "source": "jellyfin_codec_support"
+    },
+    "av1": {
+      "status": "SUPPORTED",
+      "source": "jellyfin_codec_support"
+    },
+    "mpeg4": {
+      "status": "UNSUPPORTED",
+      "source": "jellyfin_codec_support"
+    }
+  },
+  "audio": {
+    "flac": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+    "mp3": {"status": "CONDITIONAL", "source": "jellyfin_codec_support"},
+    "aac": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+    "ac3": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"},
+    "eac3": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"},
+    "vorbis": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+    "dts": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"},
+    "opus": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+    "alac": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"}
+  },
+  "containers": {
+    "mp4": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+    "mkv": {"status": "CONDITIONAL", "source": "jellyfin_codec_support"},
+    "webm": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+    "ts": {"status": "SUPPORTED", "source": "jellyfin_codec_support"}
+  },
+  "subtitles": {
+    "srt": {
+      "status": "CONDITIONAL",
+      "containers": {
+        "mkv": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+        "mp4": {"status": "CONDITIONAL", "source": "jellyfin_codec_support"},
+        "avi": {"status": "CONDITIONAL", "source": "jellyfin_codec_support"},
+        "ts": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"}
+      },
+      "source": "jellyfin_codec_support"
+    },
+    "webvtt": {
+      "status": "CONDITIONAL",
+      "containers": {
+        "mkv": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+        "mp4": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"},
+        "ts": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"}
+      },
+      "source": "jellyfin_codec_support"
+    },
+    "ass": {
+      "status": "CONDITIONAL",
+      "containers": {
+        "mkv": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+        "mp4": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"},
+        "ts": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"}
+      },
+      "source": "jellyfin_codec_support"
+    },
+    "pgssub": {
+      "status": "CONDITIONAL",
+      "containers": {
+        "mkv": {"status": "SUPPORTED", "source": "jellyfin_codec_support"},
+        "mp4": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"},
+        "ts": {"status": "UNSUPPORTED", "source": "jellyfin_codec_support"}
+      },
+      "source": "jellyfin_codec_support"
+    }
+  },
+  "hdr": {
+    "hdr10": {"status": "UNKNOWN", "source": "jellyfin_codec_support"},
+    "hlg": {"status": "UNKNOWN", "source": "jellyfin_codec_support"},
+    "dolby_vision": {"status": "UNKNOWN", "source": "jellyfin_codec_support"}
+  }
+}

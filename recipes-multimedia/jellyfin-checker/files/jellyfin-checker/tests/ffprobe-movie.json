@@ -1,0 +1,70 @@
+{
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "h264",
+      "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+      "codec_type": "video",
+      "profile": "High",
+      "level": 41,
+      "width": 1920,
+      "height": 800,
+      "coded_width": 1920,
+      "coded_height": 800,
+      "pix_fmt": "yuv420p",
+      "bits_per_raw_sample": "8",
+      "bit_rate": "4000000",
+      "avg_frame_rate": "24000/1001",
+      "r_frame_rate": "24000/1001",
+      "sample_aspect_ratio": "1:1",
+      "display_aspect_ratio": "12:5",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "color_primaries": "bt709",
+      "chroma_location": "left",
+      "field_order": "progressive",
+      "codec_tag_string": "avc1"
+    },
+    {
+      "index": 1,
+      "codec_name": "dts",
+      "codec_type": "audio",
+      "profile": "DTS",
+      "sample_rate": "48000",
+      "channels": 6,
+      "channel_layout": "5.1",
+      "bit_rate": "768000",
+      "sample_fmt": "s16p",
+      "codec_tag_string": "DTS ",
+      "tags": {"language": "eng", "title": "Original"}
+    },
+    {
+      "index": 2,
+      "codec_name": "aac",
+      "codec_type": "audio",
+      "profile": "LC",
+      "sample_rate": "48000",
+      "channels": 2,
+      "channel_layout": "stereo",
+      "bit_rate": "192000",
+      "sample_fmt": "fltp",
+      "codec_tag_string": "mp4a",
+      "tags": {"language": "pol", "title": "Stereo"}
+    },
+    {
+      "index": 3,
+      "codec_name": "subrip",
+      "codec_type": "subtitle",
+      "codec_tag_string": "SRT ",
+      "disposition": {"default": 1, "forced": 0},
+      "tags": {"language": "pol", "title": "Polskie"}
+    }
+  ],
+  "format": {
+    "format_name": "matroska,webm",
+    "format_long_name": "Matroska / WebM",
+    "duration": "600.000000",
+    "size": "400000000",
+    "bit_rate": "5333333"
+  }
+}
