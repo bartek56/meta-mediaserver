@@ -42,7 +42,11 @@ do_install:append() {
     if [ -f ${D}${systemd_system_unitdir}/mpd.service ]; then
         sed -i '/^ExecStart=/i ExecStartPre=${bindir}/mpd-output-configurator.py' \
             ${D}${systemd_system_unitdir}/mpd.service
+        sed -i '/^ExecStart=/i ExecStop=${bindir}/mpd-output-configurator.py --save-playback-state' \
+            ${D}${systemd_system_unitdir}/mpd.service
         sed -i '/^ExecStart=/a ExecStartPost=${bindir}/mpd-output-configurator.py --enable-single-output' \
+            ${D}${systemd_system_unitdir}/mpd.service
+        sed -i '/^ExecStartPost=.*enable-single-output/a ExecStartPost=${bindir}/mpd-output-configurator.py --restore-playback-state' \
             ${D}${systemd_system_unitdir}/mpd.service
         sed -i '/^After=/s/$/ avahi-daemon.service network-online.target/' \
             ${D}${systemd_system_unitdir}/mpd.service
