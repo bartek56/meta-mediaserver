@@ -53,7 +53,8 @@ class AudioManagerConfig:
     recovery_ping_interval: float = 30.0
     ping_failure_threshold: int = 3
     pulse_interval: float = 5.0
-    pulse_timeout: float = 1.0
+    pulse_timeout: float = 3.0
+    pulse_failure_threshold: int = 3
     snapclient_interval: float = 2.0
     snapclient_failure_threshold: int = 2
     snapclient_last_seen_max_age: float = 5.0
@@ -111,6 +112,10 @@ class AudioManagerConfig:
             ),
             pulse_interval=number("AUDIO_MANAGER_PULSE_INTERVAL", cls.pulse_interval),
             pulse_timeout=number("AUDIO_MANAGER_PULSE_TIMEOUT", cls.pulse_timeout),
+            pulse_failure_threshold=integer(
+                "AUDIO_MANAGER_PULSE_FAILURE_THRESHOLD",
+                cls.pulse_failure_threshold,
+            ),
             snapclient_interval=number(
                 "AUDIO_MANAGER_SNAPCLIENT_INTERVAL",
                 cls.snapclient_interval,
@@ -169,6 +174,7 @@ class AudioManagerApplication:
             ping_failure_threshold=self.config.ping_failure_threshold,
             pulse_interval=self.config.pulse_interval,
             pulse_timeout=self.config.pulse_timeout,
+            pulse_failure_threshold=self.config.pulse_failure_threshold,
             snapclient_failure_threshold=self.config.snapclient_failure_threshold,
             snapclient_last_seen_max_age=self.config.snapclient_last_seen_max_age,
         )

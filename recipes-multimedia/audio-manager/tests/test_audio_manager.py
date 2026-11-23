@@ -25,6 +25,7 @@ from audio_manager.monitoring import (
     SnapcastStatusPoller,
     SnapclientObservation,
 )
+from audio_manager.events import PulseProbeCompleted
 from audio_manager.lifecycle import SnapserverDesiredStatePolicy
 from audio_manager.registry import DeviceRegistry
 from audio_manager.scheduler import EventLoop, MonotonicScheduler, WorkerPool
@@ -129,6 +130,48 @@ def test_snapclient_becomes_inactive_after_two_invalid_polls() -> None:
         SnapclientObservation(True, True, int(time.time())),
     )
     assert registry.get("room").snapclient_status is ServiceStatus.ACTIVE  # type: ignore[union-attr]
+    workers.shutdown()
+
+
+def test_pulseaudio_stays_active_until_three_failed_handshakes() -> None:
+    """Transient PulseAudio probe failures must not remove an active device."""
+
+    registry = DeviceRegistry()
+    loop = EventLoop()
+    workers = WorkerPool(loop, max_workers=1)
+    manager = DeviceMonitorManager(
+        registry,
+        loop,
+        loop.scheduler,
+        workers,
+        FakePingProbe(),
+        FakePulseProbe(),
+        lambda _device_id: None,
+        pulse_timeout=3.0,
+        pulse_failure_threshold=3,
+    )
+    key = ServiceKey(ServiceKind.PULSE_AUDIO, 1, 0, "pulse@room")
+    manager.add_service(key, 4713)
+    manager.resolve_service(key, "192.0.2.10", 4713)
+    registry.update_host("room", HostStatus.AVAILABLE, 0)
+    monitor = manager._monitors["room"]  # type: ignore[attr-defined]
+
+    monitor._on_pulse_result(PulseProbeCompleted("room", True))  # type: ignore[attr-defined]
+    assert registry.get("room").pulse_status is ServiceStatus.ACTIVE  # type: ignore[union-attr]
+
+    monitor._on_pulse_result(PulseProbeCompleted("room", False))  # type: ignore[attr-defined]
+    assert registry.get("room").pulse_status is ServiceStatus.ACTIVE  # type: ignore[union-attr]
+    assert registry.get("room").pulse_failure_count == 1  # type: ignore[union-attr]
+
+    monitor._on_pulse_result(PulseProbeCompleted("room", False))  # type: ignore[attr-defined]
+    assert registry.get("room").pulse_status is ServiceStatus.ACTIVE  # type: ignore[union-attr]
+
+    monitor._on_pulse_result(PulseProbeCompleted("room", False))  # type: ignore[attr-defined]
+    assert registry.get("room").pulse_status is ServiceStatus.INACTIVE  # type: ignore[union-attr]
+
+    monitor._on_pulse_result(PulseProbeCompleted("room", True))  # type: ignore[attr-defined]
+    assert registry.get("room").pulse_status is ServiceStatus.ACTIVE  # type: ignore[union-attr]
+    assert registry.get("room").pulse_failure_count == 0  # type: ignore[union-attr]
     workers.shutdown()
 
 

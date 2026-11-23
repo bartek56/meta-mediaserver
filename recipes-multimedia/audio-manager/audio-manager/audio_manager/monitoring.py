@@ -57,6 +57,7 @@ class DeviceMonitor:
         ping_failure_threshold: int,
         pulse_interval: float,
         pulse_timeout: float,
+        pulse_failure_threshold: int,
         snapclient_failure_threshold: int,
         snapclient_last_seen_max_age: float,
     ) -> None:
@@ -73,6 +74,7 @@ class DeviceMonitor:
         self._ping_failure_threshold = ping_failure_threshold
         self._pulse_interval = pulse_interval
         self._pulse_timeout = pulse_timeout
+        self._pulse_failure_threshold = pulse_failure_threshold
         self._snapclient_failure_threshold = snapclient_failure_threshold
         self._snapclient_last_seen_max_age = snapclient_last_seen_max_age
         self._ping_timer: TimerHandle | None = None
@@ -270,11 +272,33 @@ class DeviceMonitor:
         if not self._running or state is None:
             return
         failures = 0 if result.success else state.pulse_failure_count + 1
-        status = ServiceStatus.ACTIVE if result.success else ServiceStatus.INACTIVE
         if result.success:
+            status = ServiceStatus.ACTIVE
             LOG.debug("PulseAudio handshake succeeded for %s", self.device_id)
+        elif failures >= self._pulse_failure_threshold:
+            status = ServiceStatus.INACTIVE
+            LOG.warning(
+                "PulseAudio %s removed from active state after %d consecutive "
+                "failed handshakes",
+                self.device_id,
+                failures,
+            )
+        elif state.pulse_status is ServiceStatus.ACTIVE:
+            status = ServiceStatus.ACTIVE
+            LOG.debug(
+                "PulseAudio handshake failed for %s (%d/%d); retaining active state",
+                self.device_id,
+                failures,
+                self._pulse_failure_threshold,
+            )
         else:
-            LOG.warning("PulseAudio is unavailable on %s", self.device_id)
+            status = ServiceStatus.UNKNOWN
+            LOG.debug(
+                "PulseAudio handshake failed for %s (%d/%d)",
+                self.device_id,
+                failures,
+                self._pulse_failure_threshold,
+            )
         if self._registry.update_pulse(self.device_id, status, failures):
             self._on_changed(self.device_id)
 
@@ -375,7 +399,8 @@ class DeviceMonitorManager:
         recovery_ping_interval: float = 30.0,
         ping_failure_threshold: int = 3,
         pulse_interval: float = 5.0,
-        pulse_timeout: float = 1.0,
+        pulse_timeout: float = 3.0,
+        pulse_failure_threshold: int = 3,
         snapclient_failure_threshold: int = 2,
         snapclient_last_seen_max_age: float = 5.0,
     ) -> None:
@@ -392,6 +417,7 @@ class DeviceMonitorManager:
             "ping_failure_threshold": ping_failure_threshold,
             "pulse_interval": pulse_interval,
             "pulse_timeout": pulse_timeout,
+            "pulse_failure_threshold": pulse_failure_threshold,
             "snapclient_failure_threshold": snapclient_failure_threshold,
             "snapclient_last_seen_max_age": snapclient_last_seen_max_age,
         }
